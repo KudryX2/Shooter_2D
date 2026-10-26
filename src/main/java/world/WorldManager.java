@@ -23,6 +23,8 @@ public final class WorldManager {
     public static final List<Projectile> projectiles = new ArrayList<>();
     public static final List<Npc> npcs = new ArrayList<>();
 
+    public static final List<MuzzleFlash> muzzleFlashes = new ArrayList<>();
+
     public static int zombiesKilled;
 
     private WorldManager() {
@@ -30,6 +32,8 @@ public final class WorldManager {
 
     public static void update() {
         projectiles.removeIf(WorldManager::updateProjectile);
+        long now = System.currentTimeMillis();
+        muzzleFlashes.removeIf(f -> now - f.time() > MuzzleFlash.DURATION_MS);
         updateNpcs();
         updateChunks();
     }
@@ -52,7 +56,7 @@ public final class WorldManager {
                 if (overlaps(p.x, p.y, Player.cursorWorldX(), Player.cursorWorldY(), PROJECTILE_HITBOX)) {
                     npc.die(true);
                 } else {
-                    npc.hp -= p.damage;
+                    npc.takeDamage(p.damage);
                 }
                 return true;
             }

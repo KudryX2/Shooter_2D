@@ -28,14 +28,19 @@ public final class Sprite {
         }
         glTranslatef(-width / 2, -height / 2, 0);
 
+        // slick-util amplía las imágenes a potencias de 2 con relleno transparente (p.ej. 20x20 -> 32x32);
+        // getWidth()/getHeight() dan la fracción de la textura que ocupa la imagen real
+        float u = texture.getWidth();
+        float v = texture.getHeight();
+
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0);
         glVertex2f(0, 0);
-        glTexCoord2f(1, 0);
+        glTexCoord2f(u, 0);
         glVertex2f(width, 0);
-        glTexCoord2f(1, 1);
+        glTexCoord2f(u, v);
         glVertex2f(width, height);
-        glTexCoord2f(0, 1);
+        glTexCoord2f(0, v);
         glVertex2f(0, height);
         glEnd();
 

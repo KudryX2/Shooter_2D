@@ -1,5 +1,6 @@
 package items;
 
+import world.MuzzleFlash;
 import world.WorldManager;
 
 public final class Gun extends Item {
@@ -54,6 +55,7 @@ public final class Gun extends Item {
             }
             case PISTOL, SNIPER, ASSAULT_RIFLE -> fire(x, y, rotation);
         }
+        WorldManager.muzzleFlashes.add(new MuzzleFlash(x, y, rotation, now, shotByPlayer)); // uno por disparo, también en la escopeta
         lastShot = now;
     }
 

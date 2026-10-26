@@ -17,6 +17,13 @@ public final class TexturesManager {
     public static final int HP_LOW = 7;
     public static final int HP_BACKGROUND = 8;
 
+    // Índices de environmentTextures
+    public static final int ENV_TEEMO = 0;
+    public static final int ENV_DIRT = 1;
+    public static final int ENV_WALL = 2;
+    public static final int ENV_GRASS = 3;
+    public static final int ENV_HALF_WALL = 4;
+
     public static List<Texture> effectTextures = List.of();         // efectos
     public static List<Texture> playerTextures = List.of();         // jugador
     public static List<Texture> guiTextures = List.of();            // HUD

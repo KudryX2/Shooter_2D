@@ -52,6 +52,7 @@ public class Npc {
     private boolean wandering;
     private long lastBite;
     private long riseDelay;
+    private long lastHitTime;
 
     public final List<Item> inventory = new ArrayList<>();
 
@@ -242,6 +243,16 @@ public class Npc {
         textureID = TEXTURE_DEAD;
         alive = false;
         canMove = false;
+    }
+
+    public void takeDamage(int damage) {
+        hp -= damage;
+        lastHitTime = System.currentTimeMillis();
+    }
+
+    /** {@code true} si ha recibido daño en los últimos {@code millis} ms (para el parpadeo al dibujarlo). */
+    public boolean wasHitWithin(long millis) {
+        return System.currentTimeMillis() - lastHitTime < millis;
     }
 
     /**
