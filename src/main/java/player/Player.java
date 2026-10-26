@@ -41,7 +41,10 @@ public final class Player {
 
     public static boolean buildMode, canBuild;
 
-    private static boolean collUp, collDown, collLeft, collRight;
+    /** Más allá de esta distancia (en cada eje) un muro no puede bloquear al jugador: medio muro + medio jugador + margen. */
+    private static final float COLLISION_RANGE = Struct.SIZE / 2 + SIZE / 2 + WALL_MARGIN;
+
+    static boolean collUp, collDown, collLeft, collRight; // visibles para los tests del paquete
     private static boolean wasButton0, wasButton1, wasQ, wasE, wasB;
 
     private Player() {
@@ -129,23 +132,21 @@ public final class Player {
         return y + DisplayManager.HEIGHT / 2f - Mouse.getY();
     }
 
-    private static void checkCollisions() {
+    /** Decide en qué direcciones no puede moverse el jugador porque hay un muro o medio muro pegado. */
+    static void checkCollisions() {
         collUp = collDown = collLeft = collRight = false;
+        WorldManager.forEachSolidNear(x, y, COLLISION_RANGE, Player::checkCollision);
+    }
+
+    private static void checkCollision(Struct w) {
         float half = SIZE / 2;
         float s = Struct.SIZE / 2;
-
-        for (Chunk chunk : WorldManager.chunks) {
-            for (List<Struct> structs : List.of(chunk.walls, chunk.halfWalls)) {
-                for (Struct w : structs) {
-                    boolean overlapX = w.x() + s > x - half && w.x() - s < x + half;
-                    boolean overlapY = w.y() + s > y - half && w.y() - s < y + half;
-                    if (overlapX && w.y() + s + WALL_MARGIN > y - half && w.y() - s + WALL_MARGIN < y - half) collUp = true;
-                    if (overlapX && w.y() + s - WALL_MARGIN > y + half && w.y() - s - WALL_MARGIN < y + half) collDown = true;
-                    if (overlapY && w.x() + s + WALL_MARGIN > x - half && w.x() - s + WALL_MARGIN < x - half) collLeft = true;
-                    if (overlapY && w.x() + s - WALL_MARGIN > x + half && w.x() - s - WALL_MARGIN < x + half) collRight = true;
-                }
-            }
-        }
+        boolean overlapX = w.x() + s > x - half && w.x() - s < x + half;
+        boolean overlapY = w.y() + s > y - half && w.y() - s < y + half;
+        if (overlapX && w.y() + s + WALL_MARGIN > y - half && w.y() - s + WALL_MARGIN < y - half) collUp = true;
+        if (overlapX && w.y() + s - WALL_MARGIN > y + half && w.y() - s - WALL_MARGIN < y + half) collDown = true;
+        if (overlapY && w.x() + s + WALL_MARGIN > x - half && w.x() - s + WALL_MARGIN < x - half) collLeft = true;
+        if (overlapY && w.x() + s - WALL_MARGIN > x + half && w.x() - s - WALL_MARGIN < x + half) collRight = true;
     }
 
     private static void primaryAction(boolean justPressed) {

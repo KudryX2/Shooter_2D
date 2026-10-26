@@ -18,7 +18,7 @@ class NpcTest {
 
     @BeforeEach
     void setUp() {
-        WorldManager.chunks.clear();
+        WorldManager.reset();
         WorldManager.chunks.add(new Chunk(0, 0)); // al morir sueltan su arma
         WorldManager.npcs.clear();
         WorldManager.projectiles.clear();

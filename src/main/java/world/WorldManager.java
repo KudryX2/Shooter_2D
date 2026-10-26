@@ -5,10 +5,12 @@ import static util.Geometry.overlaps;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Consumer;
 
 import graphics.DisplayManager;
 import items.DroppedItem;
 import items.Item;
+import items.ItemKind;
 import items.Projectile;
 import npc.Npc;
 import player.Player;
@@ -24,6 +26,11 @@ public final class WorldManager {
     public static final List<Npc> npcs = new ArrayList<>();
 
     public static final List<MuzzleFlash> muzzleFlashes = new ArrayList<>();
+
+    /** Muros (no medios muros) indexados por posición, para que cada bala solo compruebe los cercanos. */
+    private static final StructGrid bulletWalls = new StructGrid();
+    /** Muros y medios muros: bloquean el paso a jugador y NPC ({@link #isSolidAt}). */
+    private static final StructGrid solids = new StructGrid();
 
     public static int zombiesKilled;
 
@@ -62,14 +69,7 @@ public final class WorldManager {
             }
         }
 
-        for (Chunk chunk : chunks) {
-            for (Struct wall : chunk.walls) {
-                if (overlaps(p.x, p.y, wall.x(), wall.y(), WALL_HITBOX)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return bulletWalls.anyOverlapping(p.x, p.y, WALL_HITBOX);
     }
 
     private static void updateNpcs() {
@@ -90,20 +90,38 @@ public final class WorldManager {
 
     /** {@code true} si hay un muro o medio muro bloqueando el punto (x, y). */
     public static boolean isSolidAt(float x, float y) {
-        for (Chunk chunk : chunks) {
-            for (List<Struct> structs : List.of(chunk.walls, chunk.halfWalls)) {
-                for (Struct s : structs) {
-                    if (overlaps(s.x(), s.y(), x, y, Struct.SIZE)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
+        return solids.anyOverlapping(x, y, Struct.SIZE);
     }
 
+    /**
+     * Pasa a {@code action} los muros y medios muros a unos {@code range} px de (x, y), y quizá alguno algo más
+     * lejano: {@code action} debe hacer su propia comprobación de distancia.
+     */
+    public static void forEachSolidNear(float x, float y, float range, Consumer<Struct> action) {
+        solids.forEachNear(x, y, range, action);
+    }
+
+    /** Única forma de añadir estructuras al mundo: así la rejilla de colisiones queda sincronizada. */
     public static void build(Struct struct) {
         closestChunk(struct.x(), struct.y()).add(struct);
+        if (struct.kind() == ItemKind.WALL) {
+            bulletWalls.add(struct);
+        }
+        if (struct.kind() == ItemKind.WALL || struct.kind() == ItemKind.HALF_WALL) {
+            solids.add(struct);
+        }
+    }
+
+    /** Vacía el mundo por completo (chunks, NPCs, proyectiles, efectos, rejilla de colisiones y contador). */
+    public static void reset() {
+        chunks.clear();
+        activeChunks.clear();
+        projectiles.clear();
+        npcs.clear();
+        muzzleFlashes.clear();
+        bulletWalls.clear();
+        solids.clear();
+        zombiesKilled = 0;
     }
 
     public static void dropItem(Item item, float x, float y) {

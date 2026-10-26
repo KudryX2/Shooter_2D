@@ -14,8 +14,7 @@ class GunTest {
     @BeforeEach
     void setUp() {
         ItemManager.init();
-        WorldManager.projectiles.clear();
-        WorldManager.muzzleFlashes.clear();
+        WorldManager.reset();
     }
 
     @Test
@@ -46,7 +45,6 @@ class GunTest {
         shotgun.shoot(0, 0, 0, true, true);
         assertEquals(1, WorldManager.muzzleFlashes.size(), "uno por disparo, no por perdigón");
 
-        WorldManager.chunks.clear();
         Thread.sleep(world.MuzzleFlash.DURATION_MS + 30);
         WorldManager.update();
         assertEquals(0, WorldManager.muzzleFlashes.size());

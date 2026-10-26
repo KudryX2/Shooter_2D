@@ -24,7 +24,7 @@ class OutpostWorldTest {
 
     @BeforeEach
     void setUp() {
-        WorldManager.chunks.clear();
+        WorldManager.reset();
         WorldManager.activeChunks.clear();
         WorldManager.projectiles.clear();
         WorldManager.npcs.clear();

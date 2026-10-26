@@ -18,7 +18,7 @@ import world.WorldManager;
 class SimulationTest {
 
     private static void resetWorld() {
-        WorldManager.chunks.clear();
+        WorldManager.reset();
         WorldManager.activeChunks.clear();
         WorldManager.projectiles.clear();
         WorldManager.npcs.clear();
