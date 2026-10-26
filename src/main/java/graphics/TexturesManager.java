@@ -31,6 +31,7 @@ public final class TexturesManager {
     public static List<Texture> zombieTextures = List.of();         // NPCs
     public static List<Texture> weaponTextures = List.of();         // armas (inventario / suelo)
     public static List<Texture> weaponEquippedTextures = List.of(); // armas en la mano
+    public static List<Texture> consumableTextures = List.of();     // botiquines
 
     private TexturesManager() {
     }
@@ -45,6 +46,7 @@ public final class TexturesManager {
         // Orden según Npc.TEXTURE_*. No hay sprite propio para los humanos: se reutiliza el del jugador
         zombieTextures = load("4-zombie", "4-blood", "4-zombie1", "1-player");
         weaponTextures = load("5-pistol", "5-shootgun", "5-sniper", "5-ak47");
+        consumableTextures = load("7-medkit");
         // No hay sprite "en la mano" para la AK-47: se reutiliza el del sniper
         weaponEquippedTextures = load("6-pistol", "6-shootgun", "6-sniper", "6-sniper");
     }

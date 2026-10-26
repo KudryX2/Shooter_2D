@@ -10,6 +10,7 @@ import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.newdawn.slick.opengl.Texture;
 
+import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
 import items.Item;
@@ -336,6 +337,8 @@ public final class GraphicsManager {
             // 32 px: antes se dibujaba a 50 pero la imagen solo ocupaba 20/32 del cuadro (relleno)
             case Gun gun -> drawSprite(weaponEquippedTextures.get(gun.equippedTextureID),
                     handX - 16, handY - 16, 32, 32, Player.rotation);
+            case Consumable consumable -> drawSprite(consumableTextures.get(consumable.equippedTextureID),
+                    handX - 12, handY - 12, 24, 24, Player.rotation);
             case StructItem struct -> {
                 if (Player.buildMode) {
                     drawSprite(environmentTextures.get(struct.equippedTextureID),
@@ -399,6 +402,7 @@ public final class GraphicsManager {
         return switch (item) {
             case Gun gun -> weaponTextures.get(gun.cellTextureID);
             case StructItem struct -> environmentTextures.get(struct.cellTextureID);
+            case Consumable consumable -> consumableTextures.get(consumable.cellTextureID);
         };
     }
 }

@@ -36,6 +36,8 @@ final class DemoWorld {
         WorldManager.dropItem(ItemManager.guns.get(1).copy(), 100, 900);
         WorldManager.dropItem(ItemManager.guns.get(2).copy(), 100, 950);
         WorldManager.dropItem(ItemManager.guns.get(3).copy(), 100, 1000);
+        WorldManager.dropItem(ItemManager.medkit(), 100, 1050);
+        WorldManager.dropItem(ItemManager.medkit(), 100, 1100);
 
         // Suelo
         for (int i = 0; i < WORLD_SIZE; i += TILE) {

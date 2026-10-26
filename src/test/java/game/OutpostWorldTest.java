@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import graphics.DisplayManager;
+import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
 import items.ItemManager;
@@ -48,6 +49,13 @@ class OutpostWorldTest {
                 .filter(d -> distance(d.x(), d.y(), Player.SPAWN_X, Player.SPAWN_Y) < 300)
                 .count();
         assertTrue(gunsInHouse >= 2, "la casa inicial debería tener armas");
+
+        long medkitsInHouse = WorldManager.chunks.stream()
+                .flatMap(chunk -> chunk.droppedItems.stream())
+                .filter(d -> d.item() instanceof Consumable)
+                .filter(d -> distance(d.x(), d.y(), Player.SPAWN_X, Player.SPAWN_Y) < 300)
+                .count();
+        assertTrue(medkitsInHouse >= 1, "la casa inicial debería tener botiquines");
     }
 
     @Test

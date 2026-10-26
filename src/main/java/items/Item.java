@@ -1,6 +1,6 @@
 package items;
 
-public abstract sealed class Item permits Gun, StructItem {
+public abstract sealed class Item permits Gun, StructItem, Consumable {
     public final String name;
     public final ItemKind itemKind;
     public final int cellTextureID;

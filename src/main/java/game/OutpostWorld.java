@@ -271,6 +271,8 @@ final class OutpostWorld {
         item(ItemManager.buildables.get(WALL_ITEM), cx + 2, cy + 3);
         item(ItemManager.buildables.get(HALF_WALL_ITEM), cx + 3, cy + 3);
         item(ItemManager.buildables.get(FLOOR_ITEM), cx + 4, cy + 3);
+        item(ItemManager.medkit(), cx - 3, cy + 3);
+        item(ItemManager.medkit(), cx - 2, cy + 3);
         // Guardias aliados entre la casa y los sacos terreros (solo disparan a zombis)
         human(NpcManager.HUMAN_REACTIVE, cx - 3, cy + 7);
         human(NpcManager.HUMAN_REACTIVE, cx + 3, cy + 7);
@@ -282,6 +284,8 @@ final class OutpostWorld {
         item(ItemManager.randomGun().copy(), 45, 3);
         item(ItemManager.randomGun().copy(), 39, 15);
         item(ItemManager.buildables.get(HALF_WALL_ITEM), 47, 2);
+        item(ItemManager.medkit(), 33, 5);
+        item(ItemManager.medkit(), 41, 14);
         human(NpcManager.HUMAN_PASSIVE, 33, 3);
         human(NpcManager.HUMAN_PASSIVE, 37, 4);
         human(NpcManager.HUMAN_PASSIVE, 43, 4);
@@ -296,6 +300,8 @@ final class OutpostWorld {
         item(ItemManager.guns.get(AK47).copy(), 41, 45);
         item(ItemManager.guns.get(SNIPER).copy(), 40, 47);
         item(ItemManager.buildables.get(WALL_ITEM), 42, 47);
+        item(ItemManager.medkit(), 38, 47);
+        item(ItemManager.medkit(), 42, 44);
         human(NpcManager.HUMAN_AGGRESSIVE, 30, 43);
         human(NpcManager.HUMAN_AGGRESSIVE, 34, 49);
         human(NpcManager.HUMAN_AGGRESSIVE, 28, 49);
@@ -306,6 +312,8 @@ final class OutpostWorld {
         // Cementerio: la horda, y un premio dentro del mausoleo
         item(ItemManager.guns.get(SNIPER).copy(), 90, 24);
         item(ItemManager.randomGun().copy(), 89, 23);
+        item(ItemManager.medkit(), 91, 23);
+        item(ItemManager.medkit(), 91, 25);
         zombies(25, 81, 15, 99, 33);
 
         // Ruinas
@@ -315,6 +323,8 @@ final class OutpostWorld {
 
         // Secreto
         item(ItemManager.guns.get(AK47).copy(), 112, 112);
+        item(ItemManager.medkit(), 111, 113);
+        item(ItemManager.medkit(), 113, 113);
 
         // Zombis sueltos por todo el mapa
         zombies(30, 0, 0, SIZE_TILES - 1, SIZE_TILES - 1);

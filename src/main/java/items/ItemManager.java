@@ -9,6 +9,9 @@ public final class ItemManager {
     public static final List<Gun> guns = new ArrayList<>();
     public static final List<StructItem> buildables = new ArrayList<>();
 
+    public static final int MEDKIT_HEAL = 40;
+    private static final int MEDKIT_TEXTURE = 0; // índice en TexturesManager.consumableTextures
+
     private ItemManager() {
     }
 
@@ -24,6 +27,11 @@ public final class ItemManager {
         buildables.add(new StructItem("Wall", ItemKind.WALL, 2));
         buildables.add(new StructItem("Half wall", ItemKind.HALF_WALL, 4));
         buildables.add(new StructItem("Floor", ItemKind.FLOOR, 3));
+    }
+
+    /** Botiquín nuevo (cada uno se gasta al usarlo). */
+    public static Consumable medkit() {
+        return new Consumable("Medkit", MEDKIT_TEXTURE, MEDKIT_HEAL);
     }
 
     public static Gun randomGun() {

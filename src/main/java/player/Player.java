@@ -10,6 +10,7 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import graphics.DisplayManager;
+import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
 import items.Item;
@@ -22,6 +23,7 @@ public final class Player {
     public static final float SPAWN_X = 600;
     public static final float SPAWN_Y = 600;
     public static final int HAND_SLOTS = 4;
+    public static final int MAX_HP = 100;
     private static final float PICKUP_RANGE = 50;
     private static final float BUILD_RANGE = 250;
     private static final float WALL_MARGIN = 10;
@@ -48,7 +50,7 @@ public final class Player {
     public static void create() {
         x = SPAWN_X;
         y = SPAWN_Y;
-        hp = 100;
+        hp = MAX_HP;
         textureID = 0;
         selectedCell = 0;
         buildMode = false;
@@ -163,7 +165,22 @@ public final class Player {
         if (buildMode && canBuild && item.itemKind.isBuildable()) {
             WorldManager.build(new Struct(buildX, buildY, item.itemKind, item.cellTextureID));
         }
-        // TODO: usar consumibles (ItemKind.CONSUMABLE)
+        useSelectedConsumable();
+    }
+
+    /**
+     * Usa el consumible de la casilla seleccionada (p.ej. un botiquín) y lo gasta.
+     * Con la vida al máximo no hace nada, para no malgastarlo.
+     *
+     * @return {@code true} si se ha usado
+     */
+    public static boolean useSelectedConsumable() {
+        if (!(selectedItem() instanceof Consumable consumable) || hp >= MAX_HP) {
+            return false;
+        }
+        hp = Math.min(MAX_HP, hp + consumable.heal);
+        inventory.remove(selectedCell);
+        return true;
     }
 
     private static void updateBuildPosition() {
@@ -207,7 +224,7 @@ public final class Player {
 
     public static void respawn() {
         teleportToSpawn();
-        hp = 100;
+        hp = MAX_HP;
     }
 
     public static void teleportToSpawn() {
