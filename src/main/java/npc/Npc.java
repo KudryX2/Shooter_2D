@@ -15,15 +15,25 @@ import world.WorldManager;
 public class Npc {
     private static final float CHASE_RANGE = 600;
     private static final float ATTACK_DISTANCE = 75;
+    /** Algo más que ATTACK_DISTANCE para que el mordisco llegue aunque el jugador se aleje un poco. */
+    private static final float BITE_RANGE = 90;
+    private static final int BITE_DAMAGE = 10;
+    private static final long BITE_COOLDOWN_MS = 800;
     private static final float WANDER_RADIUS = 200;
     private static final float CHASE_SPEED = 0.25f;
     private static final float AGGRESSIVE_ZOMBIE_RANGE = 800;
     private static final float AGGRESSIVE_PLAYER_RANGE = 400;
     private static final float REACTIVE_RANGE = 800;
     private static final float FLEE_RANGE = 500;
-    private static final long REVIVE_TIME_MS = 5000;
+    /** Tiempo (aleatorio entre estos dos valores) que tarda un humano convertido en levantarse como zombi. */
+    private static final long RISE_MIN_MS = 2000;
+    private static final long RISE_MAX_MS = 5000;
     private static final long CORPSE_TIME_MS = 4000;
-    private static final int DEAD_TEXTURE = 1;
+    // Índices de TexturesManager.zombieTextures
+    public static final int TEXTURE_ZOMBIE = 0;
+    public static final int TEXTURE_DEAD = 1;
+    public static final int TEXTURE_ZOMBIE_ALT = 2;
+    public static final int TEXTURE_HUMAN = 3;
     private static final float GUN_OFFSET = 50;
 
     public float x, y, rotation;
@@ -40,6 +50,8 @@ public class Npc {
     public boolean canDisappear;
     private long deathTime;
     private boolean wandering;
+    private long lastBite;
+    private long riseDelay;
 
     public final List<Item> inventory = new ArrayList<>();
 
@@ -80,9 +92,10 @@ public class Npc {
             case HUMAN -> updateHuman();
         }
 
-        // Un humano convertido en zombi tarda un rato en levantarse
-        if (!canMove && millisSinceDeath() > REVIVE_TIME_MS) {
+        // Un humano convertido en zombi tarda un rato en levantarse; hasta entonces conserva su aspecto
+        if (isRising() && millisSinceDeath() > riseDelay) {
             canMove = true;
+            textureID = TEXTURE_ZOMBIE_ALT;
         }
     }
 
@@ -95,6 +108,9 @@ public class Npc {
             wandering = false;
             speed = CHASE_SPEED;
             lookAt(Player.x, Player.y);
+            if (playerDistance < BITE_RANGE) {
+                bite();
+            }
             if (playerDistance > ATTACK_DISTANCE) {
                 walk();
             }
@@ -112,10 +128,19 @@ public class Npc {
         }
     }
 
+    /** Ataque cuerpo a cuerpo al jugador, como mucho una vez cada {@link #BITE_COOLDOWN_MS}. */
+    private void bite() {
+        long now = System.currentTimeMillis();
+        if (now - lastBite >= BITE_COOLDOWN_MS) {
+            Player.hp -= BITE_DAMAGE;
+            lastBite = now;
+        }
+    }
+
     private void updateHuman() {
         switch (behaviour) {
             case AGGRESSIVE -> {
-                Npc zombie = findZombieInRange(AGGRESSIVE_ZOMBIE_RANGE, false);
+                Npc zombie = findZombieInRange(AGGRESSIVE_ZOMBIE_RANGE);
                 if (zombie != null) {
                     lookAt(zombie.x, zombie.y);
                     shoot();
@@ -125,14 +150,14 @@ public class Npc {
                 }
             }
             case REACTIVE -> {
-                Npc zombie = findZombieInRange(REACTIVE_RANGE, true);
+                Npc zombie = findZombieInRange(REACTIVE_RANGE);
                 if (zombie != null) {
                     lookAt(zombie.x, zombie.y);
                     shoot();
                 }
             }
             case PASSIVE -> {
-                Npc zombie = findZombieInRange(FLEE_RANGE, true);
+                Npc zombie = findZombieInRange(FLEE_RANGE);
                 if (zombie != null) {
                     lookAt(zombie.x, zombie.y);
                     rotation += 180;
@@ -142,9 +167,10 @@ public class Npc {
         }
     }
 
-    private Npc findZombieInRange(float range, boolean mustBeMoving) {
+    /** Zombi en pie más cercano en la lista; los que aún se están levantando no cuentan como amenaza. */
+    private Npc findZombieInRange(float range) {
         for (Npc other : WorldManager.npcs) {
-            if (other.kind == NpcKind.ZOMBIE && other.alive && (!mustBeMoving || other.canMove)
+            if (other.kind == NpcKind.ZOMBIE && other.alive && other.canMove
                     && distance(x, y, other.x, other.y) < range) {
                 return other;
             }
@@ -201,6 +227,7 @@ public class Npc {
             kind = NpcKind.ZOMBIE;
             hp = 100;
             canMove = false;
+            riseDelay = ThreadLocalRandom.current().nextLong(RISE_MIN_MS, RISE_MAX_MS + 1);
             return;
         }
 
@@ -212,9 +239,17 @@ public class Npc {
         }
         inventory.clear();
         hp = 0;
-        textureID = DEAD_TEXTURE;
+        textureID = TEXTURE_DEAD;
         alive = false;
         canMove = false;
+    }
+
+    /**
+     * Humano recién convertido que todavía está en el suelo: no se mueve, no muerde y los NPC no le apuntan,
+     * aunque las balas sí le dan.
+     */
+    public boolean isRising() {
+        return alive && kind == NpcKind.ZOMBIE && !canMove;
     }
 
     private long millisSinceDeath() {

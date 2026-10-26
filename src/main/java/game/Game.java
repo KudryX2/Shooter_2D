@@ -15,15 +15,26 @@ import world.WorldManager;
 /**
  * Punto de entrada.
  *
- * <p>Argumentos: {@code --windowed} para jugar en ventana en lugar de pantalla completa.
+ * <p>Argumentos:
+ * <ul>
+ *   <li>{@code --windowed}: jugar en ventana en lugar de pantalla completa.</li>
+ *   <li>{@code --classic}: cargar el mapa de pruebas original ({@link DemoWorld}) en lugar de
+ *       {@link OutpostWorld}.</li>
+ * </ul>
  */
 public final class Game {
+    private final boolean classicWorld;
     private boolean wasP, wasN, wasM;
+
+    private Game(boolean classicWorld) {
+        this.classicWorld = classicWorld;
+    }
 
     public static void main(String[] args) {
         NativeLibraries.configure();
-        boolean fullScreen = !List.of(args).contains("--windowed");
-        new Game().run(fullScreen);
+        List<String> options = List.of(args);
+        boolean fullScreen = !options.contains("--windowed");
+        new Game(options.contains("--classic")).run(fullScreen);
     }
 
     private void run(boolean fullScreen) {
@@ -34,7 +45,11 @@ public final class Game {
             GraphicsManager.init();
             ItemManager.init();
             NpcManager.init();
-            DemoWorld.create();
+            if (classicWorld) {
+                DemoWorld.create();
+            } else {
+                OutpostWorld.create();
+            }
 
             loop();
         } finally {
@@ -71,7 +86,13 @@ public final class Game {
         wasM = m;
 
         boolean p = Keyboard.isKeyDown(Keyboard.KEY_P);
-        if (p && !wasP) DemoWorld.spawnWave(DisplayManager.WIDTH);
+        if (p && !wasP) {
+            if (classicWorld) {
+                DemoWorld.spawnWave(DisplayManager.WIDTH);
+            } else {
+                OutpostWorld.spawnWave();
+            }
+        }
         wasP = p;
 
         if (Keyboard.isKeyDown(Keyboard.KEY_R)) Player.teleportToSpawn();

@@ -2,6 +2,7 @@ package graphics;
 
 import static graphics.Sprite.drawSprite;
 import static graphics.TexturesManager.*;
+import static org.lwjgl.opengl.GL11.glColor3f;
 import static util.Geometry.distance;
 
 import java.util.List;
@@ -15,6 +16,7 @@ import items.Item;
 import items.Projectile;
 import items.StructItem;
 import npc.Npc;
+import npc.NpcKind;
 import player.Player;
 import structs.Struct;
 import world.Chunk;
@@ -22,6 +24,12 @@ import world.WorldManager;
 
 public final class GraphicsManager {
     private static final int CELL_SPACING = 50;
+    /** Tamaño en pantalla del sprite del jugador (también lo usan los NPC humanos). */
+    private static final float CHARACTER_SIZE = 100;
+    /** Tamaño en pantalla de zombis y cadáveres: su sprite apenas tiene margen, así que se dibuja más pequeño. */
+    private static final float ZOMBIE_SIZE = 72;
+    /** Charco bajo un humano abatido mientras se convierte en zombi. */
+    private static final float BLOOD_PUDDLE_SIZE = 110;
 
     /** Escala del HUD (teclas N/M). */
     public static float hudScale;
@@ -74,13 +82,39 @@ public final class GraphicsManager {
     }
 
     private static void drawNpcs() {
+        // Charco de sangre bajo los abatidos que se están levantando (antes que los cuerpos para que quede debajo)
+        float puddleHalf = BLOOD_PUDDLE_SIZE / 2;
+        for (Npc npc : WorldManager.npcs) {
+            if (npc.isRising() && inRenderDistance(npc.x, npc.y)) {
+                // Giro fijo por NPC para que no todos los charcos sean iguales
+                float rotation = Math.floorMod(System.identityHashCode(npc), 360);
+                drawSprite(zombieTextures.get(Npc.TEXTURE_DEAD), screenX(npc.x) - puddleHalf,
+                        screenY(npc.y) - puddleHalf, BLOOD_PUDDLE_SIZE, BLOOD_PUDDLE_SIZE, rotation);
+            }
+        }
+
         for (Npc npc : WorldManager.npcs) {
             if (!inRenderDistance(npc.x, npc.y)) {
                 continue;
             }
-            drawSprite(zombieTextures.get(npc.textureID), screenX(npc.x) - 32, screenY(npc.y) - 32, 64, 64, npc.rotation);
+            if (npc.kind == NpcKind.HUMAN) {
+                // Tinte según el comportamiento para distinguir aliados, civiles y hostiles
+                switch (npc.behaviour) {
+                    case REACTIVE -> glColor3f(0.6f, 1f, 0.6f);
+                    case PASSIVE -> glColor3f(0.7f, 0.8f, 1f);
+                    case AGGRESSIVE -> glColor3f(1f, 0.55f, 0.55f);
+                }
+            }
+            // El sprite del jugador mira hacia abajo y el de los zombis hacia arriba
+            boolean humanSprite = npc.textureID == Npc.TEXTURE_HUMAN;
+            float rotation = humanSprite ? npc.rotation + 180 : npc.rotation;
+            float size = humanSprite ? CHARACTER_SIZE : ZOMBIE_SIZE;
+            float half = size / 2;
+            drawSprite(zombieTextures.get(npc.textureID), screenX(npc.x) - half, screenY(npc.y) - half,
+                    size, size, rotation);
+            glColor3f(1f, 1f, 1f);
             if (npc.hp > 0 && npc.hp < 100) {
-                drawHealthBar(npc.hp, screenX(npc.x) - 32, screenY(npc.y) - 45);
+                drawHealthBar(npc.hp, screenX(npc.x) - 25, screenY(npc.y) - half + 5);
             }
         }
     }
@@ -96,7 +130,9 @@ public final class GraphicsManager {
         float centerY = DisplayManager.HEIGHT / 2f;
 
         // El sprite del jugador está girado 90º
-        drawSprite(playerTextures.get(Player.textureID), centerX - 50, centerY - 50, 100, 100, Player.rotation - 90);
+        float half = CHARACTER_SIZE / 2;
+        drawSprite(playerTextures.get(Player.textureID), centerX - half, centerY - half,
+                CHARACTER_SIZE, CHARACTER_SIZE, Player.rotation - 90);
         if (Player.hp > 0) {
             drawHealthBar(Player.hp, centerX - Player.SIZE / 2, centerY - Player.SIZE - 5);
         }
