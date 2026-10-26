@@ -14,10 +14,11 @@ public final class ItemManager {
 
     public static void init() {
         guns.clear();
-        guns.add(new Gun("Pistol", GunKind.PISTOL, 0, 0, 600, 3, 35, 100));
-        guns.add(new Gun("Shotgun", GunKind.SHOTGUN, 1, 1, 350, 3, 50, 400));
-        guns.add(new Gun("Sniper", GunKind.SNIPER, 2, 2, 1000, 5, 80, 500));
-        guns.add(new Gun("AK-47", GunKind.ASSAULT_RIFLE, 3, 3, 800, 4, 25, 50));
+        // nombre, tipo, texturas (inventario, mano), alcance, velocidad, daño, cadencia (ms), dispersión (º)
+        guns.add(new Gun("Pistol", GunKind.PISTOL, 0, 0, 600, 3, 35, 100, 2f));
+        guns.add(new Gun("Shotgun", GunKind.SHOTGUN, 1, 1, 350, 3, 50, 400, 4f)); // por perdigón, sobre el abanico
+        guns.add(new Gun("Sniper", GunKind.SNIPER, 2, 2, 1000, 5, 80, 500, 0.5f));
+        guns.add(new Gun("AK-47", GunKind.ASSAULT_RIFLE, 3, 3, 800, 4, 25, 50, 6f));
 
         buildables.clear();
         buildables.add(new StructItem("Wall", ItemKind.WALL, 2));

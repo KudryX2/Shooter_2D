@@ -2,6 +2,7 @@ package items;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,28 @@ class GunTest {
         ItemManager.init();
         WorldManager.projectiles.clear();
         WorldManager.muzzleFlashes.clear();
+    }
+
+    @Test
+    void bulletsDeviateWithinEachGunsSpread() {
+        for (Gun template : ItemManager.guns) {
+            for (int i = 0; i < 50; i++) {
+                WorldManager.projectiles.clear();
+                Gun gun = template.copy(); // copia nueva: sin tiempo de recarga
+                gun.shoot(0, 0, 90, true, true);
+                float center = template.gunKind == GunKind.SHOTGUN ? 12 : 0; // primer perdigón del abanico
+                float deviation = WorldManager.projectiles.getFirst().rotation - 90 - center;
+                assertTrue(Math.abs(deviation) <= template.spread, template.name + " se desvía " + deviation);
+            }
+        }
+    }
+
+    @Test
+    void sniperIsMoreAccurateThanPistolAndPistolMoreThanAutomatics() {
+        Gun pistol = ItemManager.guns.get(0), shotgun = ItemManager.guns.get(1);
+        Gun sniper = ItemManager.guns.get(2), ak = ItemManager.guns.get(3);
+        assertTrue(sniper.spread < pistol.spread);
+        assertTrue(pistol.spread < shotgun.spread && pistol.spread < ak.spread);
     }
 
     @Test

@@ -1,10 +1,13 @@
 package items;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 import world.MuzzleFlash;
 import world.WorldManager;
 
 public final class Gun extends Item {
-    private static final int[] SHOTGUN_SPREAD = {12, 6, 0, -6, -12};
+    /** Abanico fijo de los perdigones de la escopeta (grados); la dispersión aleatoria se suma encima. */
+    private static final int[] SHOTGUN_PATTERN = {12, 6, 0, -6, -12};
 
     public final GunKind gunKind;
     public final int range;
@@ -12,22 +15,25 @@ public final class Gun extends Item {
     public final int damage;
     /** Tiempo mínimo entre disparos, en milisegundos. */
     public final int rate;
+    /** Desviación aleatoria máxima de cada bala, en grados a cada lado (0 = disparo perfecto). */
+    public final float spread;
 
     private long lastShot;
 
     public Gun(String name, GunKind gunKind, int cellTextureID, int equippedTextureID,
-               int range, float speed, int damage, int rate) {
+               int range, float speed, int damage, int rate, float spread) {
         super(name, ItemKind.GUN, cellTextureID, equippedTextureID);
         this.gunKind = gunKind;
         this.range = range;
         this.speed = speed;
         this.damage = damage;
         this.rate = rate;
+        this.spread = spread;
     }
 
     /** Devuelve una copia independiente (cada arma lleva su propio tiempo de recarga). */
     public Gun copy() {
-        return new Gun(name, gunKind, cellTextureID, equippedTextureID, range, speed, damage, rate);
+        return new Gun(name, gunKind, cellTextureID, equippedTextureID, range, speed, damage, rate, spread);
     }
 
     /**
@@ -49,7 +55,7 @@ public final class Gun extends Item {
 
         switch (gunKind) {
             case SHOTGUN -> {
-                for (int angle : SHOTGUN_SPREAD) {
+                for (int angle : SHOTGUN_PATTERN) {
                     fire(x, y, rotation + angle);
                 }
             }
@@ -60,6 +66,7 @@ public final class Gun extends Item {
     }
 
     private void fire(float x, float y, float rotation) {
-        WorldManager.projectiles.add(new Projectile(x, y, rotation, speed, range, damage, 0));
+        float deviation = spread > 0 ? (float) ThreadLocalRandom.current().nextDouble(-spread, spread) : 0;
+        WorldManager.projectiles.add(new Projectile(x, y, rotation + deviation, speed, range, damage, 0));
     }
 }
