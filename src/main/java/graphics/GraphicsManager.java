@@ -65,10 +65,11 @@ public final class GraphicsManager {
         hudScale = DisplayManager.WIDTH / 100f;
     }
 
+    /** Orden de capas, de abajo arriba: suelo y muros, objetos tirados, NPC, jugador, fogonazos y HUD. */
     public static void render() {
         drawEnvironment();
-        drawNpcs();
         drawDroppedItems();
+        drawNpcs();
         drawPlayer();
         drawMuzzleFlashes();
         drawHud();
@@ -253,56 +254,77 @@ public final class GraphicsManager {
         glEnable(GL_TEXTURE_2D);
     }
 
+    /**
+     * Los NPC se dibujan por capas, sin depender del orden de la lista: así nada del suelo (cadáveres, charcos,
+     * sombras) puede quedar encima de un NPC en pie.
+     */
     private static void drawNpcs() {
-        // Sombras y charcos de sangre primero, para que queden debajo de todos los cuerpos
+        // 1. Suelo: cadáveres, charcos de los que se están levantando y sombras
         float puddleHalf = BLOOD_PUDDLE_SIZE / 2;
         for (Npc npc : WorldManager.npcs) {
             if (!inRenderDistance(npc.x, npc.y)) {
                 continue;
             }
-            if (npc.alive && !npc.isRising()) {
-                drawCharacterShadow(screenX(npc.x), screenY(npc.y), CHARACTER_SHADOW_RADIUS);
-            }
-            if (npc.isRising()) {
+            if (!npc.alive) {
+                drawNpcBody(npc); // cadáver: sprite de sangre
+            } else if (npc.isRising()) {
                 // Giro fijo por NPC para que no todos los charcos sean iguales
                 float rotation = Math.floorMod(System.identityHashCode(npc), 360);
                 drawSprite(tex(TextureId.BLOOD), screenX(npc.x) - puddleHalf,
                         screenY(npc.y) - puddleHalf, BLOOD_PUDDLE_SIZE, BLOOD_PUDDLE_SIZE, rotation);
+            } else {
+                drawCharacterShadow(screenX(npc.x), screenY(npc.y), CHARACTER_SHADOW_RADIUS);
             }
         }
 
+        // 2. Abatidos que se están levantando (tumbados en el suelo)
         for (Npc npc : WorldManager.npcs) {
-            if (!inRenderDistance(npc.x, npc.y)) {
-                continue;
+            if (npc.isRising() && inRenderDistance(npc.x, npc.y)) {
+                drawNpcBody(npc);
             }
-            if (npc.kind == NpcKind.HUMAN) {
-                // Tinte según el comportamiento para distinguir aliados, civiles y hostiles
-                switch (npc.behaviour) {
-                    case REACTIVE -> glColor3f(0.6f, 1f, 0.6f);
-                    case PASSIVE -> glColor3f(0.7f, 0.8f, 1f);
-                    case AGGRESSIVE -> glColor3f(1f, 0.55f, 0.55f);
-                }
+        }
+
+        // 3. NPC en pie, encima de todo lo anterior
+        for (Npc npc : WorldManager.npcs) {
+            if (npc.alive && !npc.isRising() && inRenderDistance(npc.x, npc.y)) {
+                drawNpcBody(npc);
             }
-            // El sprite del jugador mira hacia abajo y el de los zombis hacia arriba
-            boolean humanSprite = npc.texture == TextureId.HUMAN;
-            float rotation = humanSprite ? npc.rotation + 180 : npc.rotation;
-            float size = spriteSize(npc);
-            float half = size / 2;
+        }
+
+        // 4. Barras de vida, por encima de todos los cuerpos
+        for (Npc npc : WorldManager.npcs) {
+            if (npc.hp > 0 && npc.hp < 100 && inRenderDistance(npc.x, npc.y)) {
+                drawHealthBar(npc.hp, screenX(npc.x) - 25, screenY(npc.y) - spriteSize(npc) / 2 + 5);
+            }
+        }
+    }
+
+    /** Sprite del NPC (con tinte según comportamiento y parpadeo si acaba de recibir un balazo). */
+    private static void drawNpcBody(Npc npc) {
+        if (npc.kind == NpcKind.HUMAN) {
+            // Tinte según el comportamiento para distinguir aliados, civiles y hostiles
+            switch (npc.behaviour) {
+                case REACTIVE -> glColor3f(0.6f, 1f, 0.6f);
+                case PASSIVE -> glColor3f(0.7f, 0.8f, 1f);
+                case AGGRESSIVE -> glColor3f(1f, 0.55f, 0.55f);
+            }
+        }
+        // El sprite del jugador mira hacia abajo y el de los zombis hacia arriba
+        boolean humanSprite = npc.texture == TextureId.HUMAN;
+        float rotation = humanSprite ? npc.rotation + 180 : npc.rotation;
+        float size = spriteSize(npc);
+        float half = size / 2;
+        drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half,
+                size, size, rotation);
+        glColor3f(1f, 1f, 1f);
+        if (npc.wasHitWithin(HIT_FLASH_MS)) {
+            // Parpadeo al recibir un balazo: se vuelve a dibujar el sprite con mezcla aditiva para aclararlo
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            glColor4f(1f, 0.75f, 0.75f, 0.85f);
             drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half,
                     size, size, rotation);
-            glColor3f(1f, 1f, 1f);
-            if (npc.wasHitWithin(HIT_FLASH_MS)) {
-                // Parpadeo al recibir un balazo: se vuelve a dibujar el sprite con mezcla aditiva para aclararlo
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-                glColor4f(1f, 0.75f, 0.75f, 0.85f);
-                drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half,
-                        size, size, rotation);
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                glColor4f(1, 1, 1, 1);
-            }
-            if (npc.hp > 0 && npc.hp < 100) {
-                drawHealthBar(npc.hp, screenX(npc.x) - 25, screenY(npc.y) - half + 5);
-            }
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glColor4f(1, 1, 1, 1);
         }
     }
 
