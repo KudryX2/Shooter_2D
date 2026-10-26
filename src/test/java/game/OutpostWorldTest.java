@@ -8,7 +8,6 @@ import static util.Geometry.distance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import graphics.DisplayManager;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
@@ -17,6 +16,7 @@ import npc.Npc;
 import npc.NpcKind;
 import npc.NpcManager;
 import player.Player;
+import util.GameClock;
 import world.Chunk;
 import world.WorldManager;
 
@@ -35,7 +35,8 @@ class OutpostWorldTest {
         Player.x = Player.SPAWN_X;
         Player.y = Player.SPAWN_Y;
         Player.hp = 100;
-        DisplayManager.delta = 8;
+        GameClock.reset();
+        GameClock.tick(8);
     }
 
     @Test
@@ -97,6 +98,7 @@ class OutpostWorldTest {
         OutpostWorld.spawnWave();
         long worst = 0;
         for (int i = 0; i < 1_500; i++) {
+            GameClock.tick(8);
             long start = System.nanoTime();
             WorldManager.update();
             worst = Math.max(worst, System.nanoTime() - start);

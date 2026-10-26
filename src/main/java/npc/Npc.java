@@ -6,10 +6,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import graphics.DisplayManager;
 import items.Gun;
 import items.Item;
 import player.Player;
+import util.GameClock;
 import world.WorldManager;
 
 public class Npc {
@@ -50,9 +50,9 @@ public class Npc {
     public boolean canDisappear;
     private long deathTime;
     private boolean wandering;
-    private long lastBite;
+    private long lastBite = GameClock.NEVER;
     private long riseDelay;
-    private long lastHitTime;
+    private long lastHitTime = GameClock.NEVER;
 
     public final List<Item> inventory = new ArrayList<>();
 
@@ -131,7 +131,7 @@ public class Npc {
 
     /** Ataque cuerpo a cuerpo al jugador, como mucho una vez cada {@link #BITE_COOLDOWN_MS}. */
     private void bite() {
-        long now = System.currentTimeMillis();
+        long now = GameClock.now();
         if (now - lastBite >= BITE_COOLDOWN_MS) {
             Player.hp -= BITE_DAMAGE;
             lastBite = now;
@@ -204,7 +204,7 @@ public class Npc {
 
     /** Avanza; si hay un obstáculo va girando hasta encontrar una dirección libre. */
     private void walk() {
-        float step = speed * DisplayManager.delta;
+        float step = speed * GameClock.delta();
         // Si ya está dentro de un obstáculo le dejamos moverse para que pueda salir
         boolean stuck = WorldManager.isSolidAt(x, y);
         for (int attempt = 0; attempt < 360; attempt++) {
@@ -221,7 +221,7 @@ public class Npc {
     }
 
     public void die(boolean headshot) {
-        deathTime = System.currentTimeMillis();
+        deathTime = GameClock.now();
 
         if (kind == NpcKind.HUMAN && !headshot) {
             // Se convierte en zombi
@@ -247,12 +247,12 @@ public class Npc {
 
     public void takeDamage(int damage) {
         hp -= damage;
-        lastHitTime = System.currentTimeMillis();
+        lastHitTime = GameClock.now();
     }
 
     /** {@code true} si ha recibido daño en los últimos {@code millis} ms (para el parpadeo al dibujarlo). */
     public boolean wasHitWithin(long millis) {
-        return System.currentTimeMillis() - lastHitTime < millis;
+        return GameClock.since(lastHitTime) < millis;
     }
 
     /**
@@ -264,6 +264,6 @@ public class Npc {
     }
 
     private long millisSinceDeath() {
-        return System.currentTimeMillis() - deathTime;
+        return GameClock.since(deathTime);
     }
 }

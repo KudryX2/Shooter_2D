@@ -1,12 +1,14 @@
 package items;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import util.GameClock;
 import world.WorldManager;
 
 class GunTest {
@@ -15,6 +17,7 @@ class GunTest {
     void setUp() {
         ItemManager.init();
         WorldManager.reset();
+        GameClock.reset();
     }
 
     @Test
@@ -40,14 +43,34 @@ class GunTest {
     }
 
     @Test
-    void eachShotLeavesOneShortMuzzleFlash() throws Exception {
+    void eachShotLeavesOneShortMuzzleFlash() {
         Gun shotgun = ItemManager.guns.get(1).copy();
         shotgun.shoot(0, 0, 0, true, true);
         assertEquals(1, WorldManager.muzzleFlashes.size(), "uno por disparo, no por perdigón");
 
-        Thread.sleep(world.MuzzleFlash.DURATION_MS + 30);
+        GameClock.tick(world.MuzzleFlash.DURATION_MS + 30);
         WorldManager.update();
         assertEquals(0, WorldManager.muzzleFlashes.size());
+    }
+
+    @Test
+    void fireRateFollowsTheGameClock() {
+        Gun ak = ItemManager.guns.get(3).copy(); // cadencia: 50 ms
+        ak.shoot(0, 0, 0, true, false);
+        ak.shoot(0, 0, 0, true, false); // mismo instante: no dispara
+        assertEquals(1, WorldManager.projectiles.size());
+
+        GameClock.tick(51);
+        ak.shoot(0, 0, 0, true, false);
+        assertEquals(2, WorldManager.projectiles.size());
+    }
+
+    @Test
+    void bulletsRememberWhoFiredThem() {
+        ItemManager.guns.getFirst().copy().shoot(0, 0, 0, true, true);
+        ItemManager.guns.getFirst().copy().shoot(0, 0, 0, false, true);
+        assertTrue(WorldManager.projectiles.get(0).byPlayer);
+        assertFalse(WorldManager.projectiles.get(1).byPlayer);
     }
 
     @Test

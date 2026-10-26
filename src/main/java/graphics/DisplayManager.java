@@ -7,6 +7,8 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 
+import util.GameClock;
+
 public final class DisplayManager {
     public static final String TITLE = "Too Late To Retrieve 2D";
     public static final int FPS = 120;
@@ -16,8 +18,6 @@ public final class DisplayManager {
     public static int WIDTH = 1200;
     public static int HEIGHT = 800;
 
-    /** Milisegundos transcurridos desde el frame anterior. */
-    public static float delta;
     private static long lastTime;
 
     private DisplayManager() {
@@ -55,8 +55,9 @@ public final class DisplayManager {
         Display.update();
         glClear(GL_COLOR_BUFFER_BIT);
 
+        // Único sitio que mide tiempo real: el resto del juego usa GameClock
         long now = System.nanoTime();
-        delta = Math.min((now - lastTime) / 1_000_000f, MAX_DELTA);
+        GameClock.tick(Math.min((now - lastTime) / 1_000_000f, MAX_DELTA));
         lastTime = now;
     }
 

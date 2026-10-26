@@ -20,6 +20,7 @@ import npc.Npc;
 import npc.NpcKind;
 import player.Player;
 import structs.Struct;
+import util.GameClock;
 import world.Chunk;
 import world.MuzzleFlash;
 import world.WorldManager;
@@ -135,7 +136,7 @@ public final class GraphicsManager {
 
     /** Destello en forma de rombo alargado hacia delante, con mezcla aditiva y que se apaga en {@link MuzzleFlash#DURATION_MS}. */
     private static void drawMuzzleFlashes() {
-        long now = System.currentTimeMillis();
+        long now = GameClock.now();
         glDisable(GL_TEXTURE_2D);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         for (MuzzleFlash flash : WorldManager.muzzleFlashes) {

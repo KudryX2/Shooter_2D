@@ -7,10 +7,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import graphics.DisplayManager;
 import items.ItemManager;
 import items.Projectile;
 import player.Player;
+import util.GameClock;
 import world.Chunk;
 import world.WorldManager;
 
@@ -27,7 +27,10 @@ class NpcTest {
         Player.x = 0;
         Player.y = 0;
         Player.hp = 100;
-        DisplayManager.delta = 8;
+        Player.aimX = Float.NaN; // no apunta a nada: sin headshots salvo que el test lo pida
+        Player.aimY = Float.NaN;
+        GameClock.reset();
+        GameClock.tick(8);
     }
 
     @Test
@@ -50,15 +53,15 @@ class NpcTest {
     }
 
     @Test
-    void convertedHumanRisesAfterTwoToFiveSeconds() throws Exception {
+    void convertedHumanRisesAfterTwoToFiveSeconds() {
         Npc human = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 400, 0, 0);
-        long start = System.currentTimeMillis();
+        long start = GameClock.now();
         human.die(false);
-        while (human.isRising() && System.currentTimeMillis() - start < 6_000) {
+        while (human.isRising() && GameClock.since(start) < 6_000) {
+            GameClock.tick(20);
             human.update();
-            Thread.sleep(20);
         }
-        long elapsed = System.currentTimeMillis() - start;
+        long elapsed = GameClock.since(start);
 
         assertFalse(human.isRising(), "no se ha levantado");
         assertTrue(elapsed >= 2_000 && elapsed <= 5_200, "se levantó a los " + elapsed + " ms");
@@ -91,11 +94,70 @@ class NpcTest {
         Player.x = 5_000;
         Npc victim = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
         victim.die(false);
-        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, 0));
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, 0, false));
 
         WorldManager.update(); // la bala impacta
         WorldManager.update(); // sin vida: muere del todo, ya no vuelve a levantarse
         assertFalse(victim.alive);
+    }
+
+    @Test
+    void onlyPlayerBulletsCanHeadshot() {
+        Player.x = 5_000;
+        Npc target = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
+        Player.aimX = 100; // el jugador apunta justo al objetivo
+        Player.aimY = 0;
+
+        // Bala de un NPC: aunque el jugador apunte ahí, es un impacto normal (se convierte en zombi)
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, 0, false));
+        WorldManager.update(); // impacto
+        WorldManager.update(); // sin vida: se convierte
+        assertTrue(target.alive);
+        assertTrue(target.isRising());
+
+        // Bala del jugador apuntando al objetivo: headshot, muere del todo
+        Npc second = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 300, 0, 0);
+        Player.aimX = 300;
+        WorldManager.projectiles.add(new Projectile(300, 0, 0, 0, 600, 1, 0, true));
+        WorldManager.update();
+        assertFalse(second.alive);
+    }
+
+    @Test
+    void playerBulletWithoutAimingAtTargetIsANormalHit() {
+        Player.x = 5_000;
+        Npc target = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
+        Player.aimX = 900; // apunta a otro sitio
+        Player.aimY = 0;
+
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, 0, true));
+        WorldManager.update();
+        assertTrue(target.alive);
+        assertEquals(90, target.hp);
+    }
+
+    @Test
+    void pauseFreezesNpcsAndTimers() {
+        Player.x = 0;
+        Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 300, 0, 0);
+        Npc human = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 2_000, 0, 0);
+        human.die(false);
+
+        GameClock.togglePause();
+        long before = GameClock.now();
+        for (int i = 0; i < 1_000; i++) {
+            GameClock.tick(20); // 20 s de tiempo real
+            WorldManager.update();
+        }
+        assertEquals(before, GameClock.now());
+        assertEquals(0, GameClock.delta());
+        assertEquals(300, zombie.x, "un zombi no debería moverse en pausa");
+        assertTrue(human.isRising(), "no debería levantarse en pausa");
+
+        GameClock.togglePause();
+        GameClock.tick(8);
+        WorldManager.update();
+        assertTrue(zombie.x < 300, "al quitar la pausa vuelve a perseguir al jugador");
     }
 
     @Test
@@ -104,7 +166,7 @@ class NpcTest {
         Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 100, 0, 0);
         assertFalse(zombie.wasHitWithin(100));
 
-        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, 0));
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, 0, false));
         WorldManager.update();
         assertTrue(zombie.wasHitWithin(100));
         assertEquals(90, zombie.hp);

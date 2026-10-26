@@ -53,7 +53,7 @@ class WorldManagerTest {
         Player.x = 100_000; // lejos, para que la bala no le dé al jugador
         Player.y = 100_000;
         WorldManager.projectiles.clear();
-        WorldManager.projectiles.add(new Projectile(x, y, 0, 0, 600, 1, 0));
+        WorldManager.projectiles.add(new Projectile(x, y, 0, 0, 600, 1, 0, false));
         WorldManager.update();
         return WorldManager.projectiles.isEmpty();
     }

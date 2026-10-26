@@ -15,6 +15,7 @@ import items.Projectile;
 import npc.Npc;
 import player.Player;
 import structs.Struct;
+import util.GameClock;
 
 public final class WorldManager {
     private static final float PROJECTILE_HITBOX = 20;
@@ -39,8 +40,7 @@ public final class WorldManager {
 
     public static void update() {
         projectiles.removeIf(WorldManager::updateProjectile);
-        long now = System.currentTimeMillis();
-        muzzleFlashes.removeIf(f -> now - f.time() > MuzzleFlash.DURATION_MS);
+        muzzleFlashes.removeIf(f -> GameClock.since(f.time()) > MuzzleFlash.DURATION_MS);
         updateNpcs();
         updateChunks();
     }
@@ -59,8 +59,8 @@ public final class WorldManager {
 
         for (Npc npc : npcs) {
             if (npc.alive && overlaps(p.x, p.y, npc.x, npc.y, PROJECTILE_HITBOX)) {
-                // Headshot si el cursor del jugador está encima del objetivo
-                if (overlaps(p.x, p.y, Player.cursorWorldX(), Player.cursorWorldY(), PROJECTILE_HITBOX)) {
+                // Headshot: solo balas del jugador, y solo si estaba apuntando justo al objetivo
+                if (p.byPlayer && overlaps(p.x, p.y, Player.aimX, Player.aimY, PROJECTILE_HITBOX)) {
                     npc.die(true);
                 } else {
                     npc.takeDamage(p.damage);

@@ -15,6 +15,7 @@ import items.DroppedItem;
 import items.Gun;
 import items.Item;
 import structs.Struct;
+import util.GameClock;
 import world.Chunk;
 import world.WorldManager;
 
@@ -41,6 +42,12 @@ public final class Player {
 
     public static boolean buildMode, canBuild;
 
+    /**
+     * Punto del mundo al que apunta el cursor, actualizado en cada frame. Lo usa el mundo para los headshots,
+     * así la lógica del juego no lee el ratón. NaN = no apunta a nada.
+     */
+    public static float aimX = Float.NaN, aimY = Float.NaN;
+
     /** Más allá de esta distancia (en cada eje) un muro no puede bloquear al jugador: medio muro + medio jugador + margen. */
     private static final float COLLISION_RANGE = Struct.SIZE / 2 + SIZE / 2 + WALL_MARGIN;
 
@@ -64,11 +71,13 @@ public final class Player {
     }
 
     public static void update() {
-        float step = speed * DisplayManager.delta;
+        float step = speed * GameClock.delta();
         if (Keyboard.isKeyDown(Keyboard.KEY_W) && !collUp) y -= step;
         if (Keyboard.isKeyDown(Keyboard.KEY_S) && !collDown) y += step;
         if (Keyboard.isKeyDown(Keyboard.KEY_A) && !collLeft) x -= step;
         if (Keyboard.isKeyDown(Keyboard.KEY_D) && !collRight) x += step;
+        aimX = cursorWorldX();
+        aimY = cursorWorldY();
 
         rotation = -(float) Math.toDegrees(Math.atan2(
                 Mouse.getY() - DisplayManager.HEIGHT / 2f, Mouse.getX() - DisplayManager.WIDTH / 2f));

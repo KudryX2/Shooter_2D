@@ -14,6 +14,7 @@ N/M     - change hud size
 P       - spawn zombies
 R       - teleport to spawn
 B       - build mode
+SPACE   - pause
 ESCAPE  - exit the game	
 		
 Utiliza: https://www.lwjgl.org/ (las dependencias estan en el proyecto)

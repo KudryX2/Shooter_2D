@@ -10,6 +10,7 @@ import graphics.TexturesManager;
 import items.ItemManager;
 import npc.NpcManager;
 import player.Player;
+import util.GameClock;
 import world.WorldManager;
 
 /**
@@ -24,7 +25,7 @@ import world.WorldManager;
  */
 public final class Game {
     private final boolean classicWorld;
-    private boolean wasP, wasN, wasM;
+    private boolean wasP, wasN, wasM, wasSpace;
 
     private Game(boolean classicWorld) {
         this.classicWorld = classicWorld;
@@ -63,8 +64,11 @@ public final class Game {
 
     private void loop() {
         while (!DisplayManager.isCloseRequested()) {
-            Player.update();
-            WorldManager.update();
+            // En pausa el mundo queda congelado, pero se sigue dibujando
+            if (!GameClock.isPaused()) {
+                Player.update();
+                WorldManager.update();
+            }
 
             GraphicsManager.render();
             DisplayManager.update();
@@ -84,6 +88,14 @@ public final class Game {
         boolean m = Keyboard.isKeyDown(Keyboard.KEY_M);
         if (m && !wasM) GraphicsManager.hudScale++;
         wasM = m;
+
+        boolean space = Keyboard.isKeyDown(Keyboard.KEY_SPACE);
+        if (space && !wasSpace) GameClock.togglePause();
+        wasSpace = space;
+        if (GameClock.isPaused()) {
+            wasP = Keyboard.isKeyDown(Keyboard.KEY_P); // que no salte una oleada al quitar la pausa
+            return !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE);
+        }
 
         boolean p = Keyboard.isKeyDown(Keyboard.KEY_P);
         if (p && !wasP) {

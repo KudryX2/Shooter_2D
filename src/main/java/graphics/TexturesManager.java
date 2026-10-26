@@ -43,7 +43,7 @@ public final class TexturesManager {
         guiTextures = load("2-pointer", "2-selectedCell", "2-normalCell", "2-hp", "2-buildModePointer",
                 "2-buildModePointer1", "2-hp1", "2-hp2", "2-hpFont");
         // "3-dirt2" sustituye a la tierra original "3-dirt", que se conserva en res/ (cámbialo aquí para volver a ella)
-        environmentTextures = load("3-Teemo", "3-dirt2", "3-wall", "3-grass", "3-halfWall");
+        environmentTextures = load("3-Teemo", "3-dirt", "3-wall", "3-grass", "3-halfWall");
         // Orden según Npc.TEXTURE_*. No hay sprite propio para los humanos: se reutiliza el del jugador
         zombieTextures = load("4-zombie", "4-blood", "4-zombie1", "1-player");
         weaponTextures = load("5-pistol", "5-shootgun", "5-sniper", "5-ak47");
