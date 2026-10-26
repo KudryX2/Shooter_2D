@@ -53,6 +53,7 @@ public final class Player {
 
     static boolean collUp, collDown, collLeft, collRight; // visibles para los tests del paquete
     private static boolean wasButton0, wasButton1, wasQ, wasE, wasB;
+    private static boolean clickStartedOnUi;
 
     private Player() {
     }
@@ -70,7 +71,10 @@ public final class Player {
         buildY = cursorWorldY();
     }
 
-    public static void update() {
+    /**
+     * @param mouseOnUi el cursor está sobre un botón del HUD: un clic que empieza ahí no dispara (hasta soltarlo)
+     */
+    public static void update(boolean mouseOnUi) {
         float step = speed * GameClock.delta();
         if (Keyboard.isKeyDown(Keyboard.KEY_W) && !collUp) y -= step;
         if (Keyboard.isKeyDown(Keyboard.KEY_S) && !collDown) y += step;
@@ -86,7 +90,8 @@ public final class Player {
 
         // Acciones
         boolean button0 = Mouse.isButtonDown(0);
-        if (button0) primaryAction(!wasButton0);
+        if (button0 && !wasButton0) clickStartedOnUi = mouseOnUi;
+        if (button0 && !clickStartedOnUi) primaryAction(!wasButton0);
         wasButton0 = button0;
 
         boolean button1 = Mouse.isButtonDown(1);

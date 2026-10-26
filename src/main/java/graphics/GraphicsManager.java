@@ -379,7 +379,9 @@ public final class GraphicsManager {
             }
         }
 
-        // Cursor
+        PauseButton.draw();
+
+        // Cursor (siempre lo último, por encima de todo el HUD)
         Item selected = Player.selectedItem();
         if (Player.buildMode && selected != null && selected.itemKind.isBuildable()) {
             int texture = Player.canBuild ? BUILD_POINTER_OK : BUILD_POINTER_BLOCKED;

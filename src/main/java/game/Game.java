@@ -6,6 +6,7 @@ import org.lwjgl.input.Keyboard;
 
 import graphics.DisplayManager;
 import graphics.GraphicsManager;
+import graphics.PauseButton;
 import graphics.TexturesManager;
 import items.ItemManager;
 import npc.NpcManager;
@@ -64,9 +65,10 @@ public final class Game {
 
     private void loop() {
         while (!DisplayManager.isCloseRequested()) {
+            PauseButton.update();
             // En pausa el mundo queda congelado, pero se sigue dibujando
             if (!GameClock.isPaused()) {
-                Player.update();
+                Player.update(PauseButton.isHovered());
                 WorldManager.update();
             }
 
