@@ -6,6 +6,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
+import assets.TextureId;
 import items.Item;
 import items.ItemKind;
 import items.ItemManager;
@@ -37,12 +38,6 @@ final class OutpostWorld {
     private static final int CHUNK_TILES = 10;
     private static final long SEED = 2026;
 
-    // Índices de TexturesManager.environmentTextures
-    private static final int TEX_TEEMO = 0;
-    private static final int TEX_DIRT = 1;
-    private static final int TEX_WALL = 2;
-    private static final int TEX_GRASS = 3;
-    private static final int TEX_HALF_WALL = 4;
 
     // Índices de ItemManager.guns / buildables
     private static final int SHOTGUN = 1;
@@ -59,7 +54,7 @@ final class OutpostWorld {
     private static final int WAVE_SIZE = 16;
 
     private final Random random = new Random(SEED);
-    private final int[][] ground = new int[SIZE_TILES][SIZE_TILES];
+    private final TextureId[][] ground = new TextureId[SIZE_TILES][SIZE_TILES];
     private final Map<Long, ItemKind> solids = new HashMap<>();
     private final int spawnX = Math.round(Player.SPAWN_X / TILE);
     private final int spawnY = Math.round(Player.SPAWN_Y / TILE);
@@ -103,8 +98,8 @@ final class OutpostWorld {
     // ---------------------------------------------------------------------------------------------
 
     private void layout() {
-        for (int[] column : ground) {
-            Arrays.fill(column, TEX_GRASS);
+        for (TextureId[] column : ground) {
+            Arrays.fill(column, TextureId.GRASS);
         }
         roads();
         house();
@@ -118,11 +113,11 @@ final class OutpostWorld {
     private void roads() {
         int cx = spawnX, cy = spawnY;
         // Sur: de la puerta de la casa hasta la altura del fuerte y luego al este hasta su puerta
-        ground(cx - 1, cy + 6, cx + 1, 50, TEX_DIRT);
-        ground(cx - 1, 48, 25, 50, TEX_DIRT);
+        ground(cx - 1, cy + 6, cx + 1, 50, TextureId.DIRT);
+        ground(cx - 1, 48, 25, 50, TextureId.DIRT);
         // Este: atraviesa la aldea y llega al cementerio
-        ground(cx + 6, cy - 1, 91, cy + 1, TEX_DIRT);
-        ground(89, cy - 1, 91, 13, TEX_DIRT);
+        ground(cx + 6, cy - 1, 91, cy + 1, TextureId.DIRT);
+        ground(89, cy - 1, 91, 13, TextureId.DIRT);
     }
 
     /** Casa inicial centrada en el punto de aparición del jugador. */
@@ -136,7 +131,7 @@ final class OutpostWorld {
 
         // Casa
         outline(cx - 5, cy - 5, cx + 5, cy + 5, ItemKind.WALL);
-        ground(cx - 4, cy - 4, cx + 4, cy + 4, TEX_DIRT);
+        ground(cx - 4, cy - 4, cx + 4, cy + 4, TextureId.DIRT);
         open(cx - 1, cy + 5, cx + 1, cy + 5); // puerta
         // Ventanas para disparar desde dentro
         fill(cx - 1, cy - 5, cx + 1, cy - 5, ItemKind.HALF_WALL);
@@ -155,7 +150,7 @@ final class OutpostWorld {
     /** Casa pequeña con suelo de tierra, puerta de 3 casillas en el lado indicado y algún muro caído. */
     private void hut(int x0, int y0, int x1, int y1, char door) {
         outline(x0, y0, x1, y1, ItemKind.WALL);
-        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TEX_DIRT);
+        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TextureId.DIRT);
         ruin(x0, y0, x1, y1, 0.15);
         int mid = (x0 + x1) / 2;
         int doorY = door == 'S' ? y1 : y0;
@@ -165,7 +160,7 @@ final class OutpostWorld {
     private void fort() {
         int x0 = 25, y0 = 40, x1 = 45, y1 = 58;
         outline(x0, y0, x1, y1, ItemKind.WALL);
-        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TEX_DIRT);
+        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TextureId.DIRT);
 
         // Almenas: medio muro cada 3 casillas para que los soldados disparen hacia fuera
         for (int x = x0 + 2; x < x1 - 1; x += 3) {
@@ -197,7 +192,7 @@ final class OutpostWorld {
     private void cemetery() {
         int x0 = 80, y0 = 14, x1 = 100, y1 = 34;
         outline(x0, y0, x1, y1, ItemKind.HALF_WALL);
-        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TEX_DIRT);
+        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TextureId.DIRT);
         open(89, y0, 91, y0); // entrada norte, donde acaba el camino
 
         // Mausoleo
@@ -243,7 +238,7 @@ final class OutpostWorld {
     private void teemoShrine() {
         outline(109, 109, 115, 115, ItemKind.HALF_WALL);
         open(111, 109, 113, 109);
-        ground(111, 111, 113, 113, TEX_TEEMO);
+        ground(111, 111, 113, 113, TextureId.TEEMO);
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -257,7 +252,7 @@ final class OutpostWorld {
             }
         }
         solids.forEach((key, kind) -> {
-            int texture = kind == ItemKind.WALL ? TEX_WALL : TEX_HALF_WALL;
+            TextureId texture = kind == ItemKind.WALL ? TextureId.WALL : TextureId.HALF_WALL;
             WorldManager.build(new Struct(px(tileX(key)), px(tileY(key)), kind, texture));
         });
     }
@@ -424,7 +419,7 @@ final class OutpostWorld {
         }
     }
 
-    private void ground(int x0, int y0, int x1, int y1, int texture) {
+    private void ground(int x0, int y0, int x1, int y1, TextureId texture) {
         for (int x = x0; x <= x1; x++) {
             for (int y = y0; y <= y1; y++) {
                 if (inWorld(x, y)) {

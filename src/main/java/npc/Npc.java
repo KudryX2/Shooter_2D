@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import assets.TextureId;
 import items.Gun;
 import items.Item;
 import player.Player;
@@ -29,11 +30,6 @@ public class Npc {
     private static final long RISE_MIN_MS = 2000;
     private static final long RISE_MAX_MS = 5000;
     private static final long CORPSE_TIME_MS = 4000;
-    // Índices de TexturesManager.zombieTextures
-    public static final int TEXTURE_ZOMBIE = 0;
-    public static final int TEXTURE_DEAD = 1;
-    public static final int TEXTURE_ZOMBIE_ALT = 2;
-    public static final int TEXTURE_HUMAN = 3;
     private static final float GUN_OFFSET = 50;
 
     public float x, y, rotation;
@@ -42,7 +38,7 @@ public class Npc {
 
     public NpcKind kind;
     public final NpcBehaviour behaviour;
-    public int textureID;
+    public TextureId texture;
 
     public int hp = 100;
     public boolean alive = true;
@@ -56,16 +52,16 @@ public class Npc {
 
     public final List<Item> inventory = new ArrayList<>();
 
-    public Npc(float speed, int textureID, NpcKind kind, NpcBehaviour behaviour) {
+    public Npc(float speed, TextureId texture, NpcKind kind, NpcBehaviour behaviour) {
         this.speed = speed;
-        this.textureID = textureID;
+        this.texture = texture;
         this.kind = kind;
         this.behaviour = behaviour;
     }
 
     /** Crea un NPC nuevo a partir de una plantilla. */
     public Npc(Npc template) {
-        this(template.speed, template.textureID, template.kind, template.behaviour);
+        this(template.speed, template.texture, template.kind, template.behaviour);
     }
 
     public void setPosition(float x, float y, float rotation) {
@@ -96,7 +92,7 @@ public class Npc {
         // Un humano convertido en zombi tarda un rato en levantarse; hasta entonces conserva su aspecto
         if (isRising() && millisSinceDeath() > riseDelay) {
             canMove = true;
-            textureID = TEXTURE_ZOMBIE_ALT;
+            texture = TextureId.ZOMBIE_ALT;
         }
     }
 
@@ -240,7 +236,7 @@ public class Npc {
         }
         inventory.clear();
         hp = 0;
-        textureID = TEXTURE_DEAD;
+        texture = TextureId.BLOOD;
         alive = false;
         canMove = false;
     }

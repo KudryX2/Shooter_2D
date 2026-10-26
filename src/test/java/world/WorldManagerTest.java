@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import assets.TextureId;
 import items.ItemKind;
 import items.ItemManager;
 import items.Projectile;
@@ -26,16 +27,16 @@ class WorldManagerTest {
 
     @Test
     void buildGoesToClosestChunk() {
-        WorldManager.build(new Struct(600, 10, ItemKind.WALL, 2));
+        WorldManager.build(new Struct(600, 10, ItemKind.WALL, TextureId.WALL));
         assertEquals(0, WorldManager.chunks.get(0).walls.size());
         assertEquals(1, WorldManager.chunks.get(1).walls.size());
     }
 
     @Test
     void wallsAndHalfWallsAreSolidButFloorsAreNot() {
-        WorldManager.build(new Struct(100, 100, ItemKind.WALL, 2));
-        WorldManager.build(new Struct(400, 100, ItemKind.HALF_WALL, 4));
-        WorldManager.build(new Struct(1000, 1000, ItemKind.FLOOR, 3));
+        WorldManager.build(new Struct(100, 100, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(new Struct(400, 100, ItemKind.HALF_WALL, TextureId.HALF_WALL));
+        WorldManager.build(new Struct(1000, 1000, ItemKind.FLOOR, TextureId.GRASS));
 
         assertTrue(WorldManager.isSolidAt(110, 90));
         assertTrue(WorldManager.isSolidAt(400, 100));
@@ -53,16 +54,16 @@ class WorldManagerTest {
         Player.x = 100_000; // lejos, para que la bala no le dé al jugador
         Player.y = 100_000;
         WorldManager.projectiles.clear();
-        WorldManager.projectiles.add(new Projectile(x, y, 0, 0, 600, 1, 0, false));
+        WorldManager.projectiles.add(new Projectile(x, y, 0, 0, 600, 1, false));
         WorldManager.update();
         return WorldManager.projectiles.isEmpty();
     }
 
     @Test
     void bulletsStopAtWallsButCrossHalfWallsAndFloors() {
-        WorldManager.build(new Struct(100, 100, ItemKind.WALL, 2));
-        WorldManager.build(new Struct(400, 100, ItemKind.HALF_WALL, 4));
-        WorldManager.build(new Struct(700, 100, ItemKind.FLOOR, 3));
+        WorldManager.build(new Struct(100, 100, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(new Struct(400, 100, ItemKind.HALF_WALL, TextureId.HALF_WALL));
+        WorldManager.build(new Struct(700, 100, ItemKind.FLOOR, TextureId.GRASS));
 
         assertTrue(bulletStoppedAt(100, 100));
         assertTrue(bulletStoppedAt(129, 71)); // borde de la caja de impacto (30 px)
@@ -77,7 +78,7 @@ class WorldManagerTest {
         var random = new java.util.Random(7);
         var walls = new java.util.ArrayList<Struct>();
         for (int i = 0; i < 200; i++) {
-            Struct wall = new Struct(random.nextFloat() * 1400 - 400, random.nextFloat() * 1400 - 400, ItemKind.WALL, 2);
+            Struct wall = new Struct(random.nextFloat() * 1400 - 400, random.nextFloat() * 1400 - 400, ItemKind.WALL, TextureId.WALL);
             walls.add(wall);
             WorldManager.build(wall);
         }
@@ -95,11 +96,11 @@ class WorldManagerTest {
         var solids = new java.util.ArrayList<Struct>();
         for (int i = 0; i < 200; i++) {
             ItemKind kind = random.nextBoolean() ? ItemKind.WALL : ItemKind.HALF_WALL;
-            Struct s = new Struct(random.nextFloat() * 1400 - 400, random.nextFloat() * 1400 - 400, kind, 2);
+            Struct s = new Struct(random.nextFloat() * 1400 - 400, random.nextFloat() * 1400 - 400, kind, TextureId.WALL);
             solids.add(s);
             WorldManager.build(s);
             WorldManager.build(new Struct(random.nextFloat() * 1400 - 400, random.nextFloat() * 1400 - 400,
-                    ItemKind.FLOOR, 3)); // los suelos nunca bloquean
+                    ItemKind.FLOOR, TextureId.GRASS)); // los suelos nunca bloquean
         }
         for (int i = 0; i < 5_000; i++) {
             float x = random.nextFloat() * 1600 - 500;
@@ -111,7 +112,7 @@ class WorldManagerTest {
 
     @Test
     void resetForgetsOldWalls() {
-        WorldManager.build(new Struct(100, 100, ItemKind.WALL, 2));
+        WorldManager.build(new Struct(100, 100, ItemKind.WALL, TextureId.WALL));
         WorldManager.reset();
         WorldManager.chunks.add(new Chunk(0, 0));
         assertFalse(bulletStoppedAt(100, 100));
@@ -120,6 +121,6 @@ class WorldManagerTest {
 
     @Test
     void gunsCannotBeBuilt() {
-        assertThrows(IllegalArgumentException.class, () -> new Struct(0, 0, ItemKind.GUN, 0));
+        assertThrows(IllegalArgumentException.class, () -> new Struct(0, 0, ItemKind.GUN, TextureId.WALL));
     }
 }

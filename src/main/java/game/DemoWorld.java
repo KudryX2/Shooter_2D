@@ -2,6 +2,7 @@ package game;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import assets.TextureId;
 import items.ItemKind;
 import items.ItemManager;
 import npc.NpcManager;
@@ -42,7 +43,7 @@ final class DemoWorld {
         // Suelo
         for (int i = 0; i < WORLD_SIZE; i += TILE) {
             for (int j = 0; j < WORLD_SIZE; j += TILE) {
-                WorldManager.build(new Struct(i, j, ItemKind.FLOOR, 3));
+                WorldManager.build(new Struct(i, j, ItemKind.FLOOR, TextureId.GRASS));
             }
         }
 
@@ -56,9 +57,9 @@ final class DemoWorld {
         wall(TILE * 7, TILE * 7);
         wall(TILE * 9, TILE * 7);
 
-        WorldManager.build(new Struct(TILE * 20, TILE * 5, ItemKind.HALF_WALL, 4));
-        WorldManager.build(new Struct(TILE * 20, TILE * 6, ItemKind.HALF_WALL, 4));
-        WorldManager.build(new Struct(TILE * 20, TILE * 7, ItemKind.HALF_WALL, 4));
+        WorldManager.build(new Struct(TILE * 20, TILE * 5, ItemKind.HALF_WALL, TextureId.HALF_WALL));
+        WorldManager.build(new Struct(TILE * 20, TILE * 6, ItemKind.HALF_WALL, TextureId.HALF_WALL));
+        WorldManager.build(new Struct(TILE * 20, TILE * 7, ItemKind.HALF_WALL, TextureId.HALF_WALL));
 
         // NPCs
         var random = ThreadLocalRandom.current();
@@ -80,6 +81,6 @@ final class DemoWorld {
     }
 
     private static void wall(float x, float y) {
-        WorldManager.build(new Struct(x, y, ItemKind.WALL, 2));
+        WorldManager.build(new Struct(x, y, ItemKind.WALL, TextureId.WALL));
     }
 }

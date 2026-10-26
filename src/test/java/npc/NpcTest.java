@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import assets.TextureId;
 import items.ItemManager;
 import items.Projectile;
 import player.Player;
@@ -65,7 +66,7 @@ class NpcTest {
 
         assertFalse(human.isRising(), "no se ha levantado");
         assertTrue(elapsed >= 2_000 && elapsed <= 5_200, "se levantó a los " + elapsed + " ms");
-        assertEquals(Npc.TEXTURE_ZOMBIE_ALT, human.textureID);
+        assertEquals(TextureId.ZOMBIE_ALT, human.texture);
     }
 
     @Test
@@ -94,7 +95,7 @@ class NpcTest {
         Player.x = 5_000;
         Npc victim = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
         victim.die(false);
-        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, 0, false));
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, false));
 
         WorldManager.update(); // la bala impacta
         WorldManager.update(); // sin vida: muere del todo, ya no vuelve a levantarse
@@ -109,7 +110,7 @@ class NpcTest {
         Player.aimY = 0;
 
         // Bala de un NPC: aunque el jugador apunte ahí, es un impacto normal (se convierte en zombi)
-        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, 0, false));
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, false));
         WorldManager.update(); // impacto
         WorldManager.update(); // sin vida: se convierte
         assertTrue(target.alive);
@@ -118,7 +119,7 @@ class NpcTest {
         // Bala del jugador apuntando al objetivo: headshot, muere del todo
         Npc second = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 300, 0, 0);
         Player.aimX = 300;
-        WorldManager.projectiles.add(new Projectile(300, 0, 0, 0, 600, 1, 0, true));
+        WorldManager.projectiles.add(new Projectile(300, 0, 0, 0, 600, 1, true));
         WorldManager.update();
         assertFalse(second.alive);
     }
@@ -130,7 +131,7 @@ class NpcTest {
         Player.aimX = 900; // apunta a otro sitio
         Player.aimY = 0;
 
-        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, 0, true));
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, true));
         WorldManager.update();
         assertTrue(target.alive);
         assertEquals(90, target.hp);
@@ -166,7 +167,7 @@ class NpcTest {
         Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 100, 0, 0);
         assertFalse(zombie.wasHitWithin(100));
 
-        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, 0, false));
+        WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, false));
         WorldManager.update();
         assertTrue(zombie.wasHitWithin(100));
         assertEquals(90, zombie.hp);

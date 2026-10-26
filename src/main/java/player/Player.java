@@ -35,7 +35,6 @@ public final class Player {
     public static float rotation;
     public static float speed = 0.5f;
     public static int hp;
-    public static int textureID;
 
     public static int selectedCell;
     public static final List<Item> inventory = new ArrayList<>();
@@ -62,7 +61,6 @@ public final class Player {
         x = SPAWN_X;
         y = SPAWN_Y;
         hp = MAX_HP;
-        textureID = 0;
         selectedCell = 0;
         buildMode = false;
 
@@ -178,7 +176,7 @@ public final class Player {
             return;
         }
         if (buildMode && canBuild && item.itemKind.isBuildable()) {
-            WorldManager.build(new Struct(buildX, buildY, item.itemKind, item.cellTextureID));
+            WorldManager.build(new Struct(buildX, buildY, item.itemKind, item.icon));
         }
         useSelectedConsumable();
     }

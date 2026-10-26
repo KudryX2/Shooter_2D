@@ -1,60 +1,33 @@
 package graphics;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.EnumMap;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.newdawn.slick.opengl.Texture;
 
+import assets.TextureId;
+
+/** Carga las texturas de {@link TextureId} y las sirve por nombre. */
 public final class TexturesManager {
-    // Índices de guiTextures
-    public static final int POINTER = 0;
-    public static final int SELECTED_CELL = 1;
-    public static final int NORMAL_CELL = 2;
-    public static final int HP_HIGH = 3;
-    public static final int BUILD_POINTER_OK = 4;
-    public static final int BUILD_POINTER_BLOCKED = 5;
-    public static final int HP_MEDIUM = 6;
-    public static final int HP_LOW = 7;
-    public static final int HP_BACKGROUND = 8;
-
-    // Índices de environmentTextures
-    public static final int ENV_TEEMO = 0;
-    public static final int ENV_DIRT = 1;
-    public static final int ENV_WALL = 2;
-    public static final int ENV_GRASS = 3;
-    public static final int ENV_HALF_WALL = 4;
-
-    public static List<Texture> effectTextures = List.of();         // efectos
-    public static List<Texture> playerTextures = List.of();         // jugador
-    public static List<Texture> guiTextures = List.of();            // HUD
-    public static List<Texture> environmentTextures = List.of();    // construcciones
-    public static List<Texture> zombieTextures = List.of();         // NPCs
-    public static List<Texture> weaponTextures = List.of();         // armas (inventario / suelo)
-    public static List<Texture> weaponEquippedTextures = List.of(); // armas en la mano
-    public static List<Texture> consumableTextures = List.of();     // botiquines
+    private static final Map<TextureId, Texture> textures = new EnumMap<>(TextureId.class);
 
     private TexturesManager() {
     }
 
-    /** Requiere un contexto OpenGL ya creado. */
+    /** Requiere un contexto OpenGL ya creado. Cada archivo se carga una sola vez aunque lo usen varias constantes. */
     public static void init() {
-        effectTextures = load("0-bullet");
-        playerTextures = load("1-player");
-        guiTextures = load("2-pointer", "2-selectedCell", "2-normalCell", "2-hp", "2-buildModePointer",
-                "2-buildModePointer1", "2-hp1", "2-hp2", "2-hpFont");
-        // "3-dirt2" sustituye a la tierra original "3-dirt", que se conserva en res/ (cámbialo aquí para volver a ella)
-        environmentTextures = load("3-Teemo", "3-dirt", "3-wall", "3-grass", "3-halfWall");
-        // Orden según Npc.TEXTURE_*. No hay sprite propio para los humanos: se reutiliza el del jugador
-        zombieTextures = load("4-zombie", "4-blood", "4-zombie1", "1-player");
-        weaponTextures = load("5-pistol", "5-shootgun", "5-sniper", "5-ak47");
-        consumableTextures = load("7-medkit");
-        // No hay sprite "en la mano" para la AK-47: se reutiliza el del sniper
-        weaponEquippedTextures = load("6-pistol", "6-shootgun", "6-sniper", "6-sniper");
+        Map<String, Texture> byFile = new HashMap<>();
+        for (TextureId id : TextureId.values()) {
+            textures.put(id, byFile.computeIfAbsent(id.file, file -> Sprite.loadTexture("res/" + file + ".png")));
+        }
     }
 
-    private static List<Texture> load(String... names) {
-        return Arrays.stream(names)
-                .map(name -> Sprite.loadTexture("res/" + name + ".png"))
-                .toList();
+    public static Texture get(TextureId id) {
+        Texture texture = textures.get(id);
+        if (texture == null) {
+            throw new IllegalStateException("Textura no cargada (¿falta TexturesManager.init()?): " + id);
+        }
+        return texture;
     }
 }

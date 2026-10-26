@@ -6,12 +6,11 @@ import util.Geometry;
 public final class Projectile {
     public float x, y;
     public final float startX, startY, speed, rotation;
-    public final int range, damage, textureID;
+    public final int range, damage;
     /** Disparada por el jugador. Solo sus balas pueden hacer headshot. */
     public final boolean byPlayer;
 
-    public Projectile(float x, float y, float rotation, float speed, int range, int damage, int textureID,
-                      boolean byPlayer) {
+    public Projectile(float x, float y, float rotation, float speed, int range, int damage, boolean byPlayer) {
         this.x = x;
         this.y = y;
         this.startX = x;
@@ -20,7 +19,6 @@ public final class Projectile {
         this.speed = speed;
         this.range = range;
         this.damage = damage;
-        this.textureID = textureID;
         this.byPlayer = byPlayer;
     }
 

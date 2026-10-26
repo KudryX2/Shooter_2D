@@ -58,7 +58,7 @@ class SimulationTest {
         for (Npc npc : WorldManager.npcs) {
             if (npc.kind == NpcKind.ZOMBIE) {
                 for (int i = 0; i < 5; i++) {
-                    WorldManager.projectiles.add(new Projectile(npc.x - 30, npc.y, 0, 3, 600, 35, 0, true));
+                    WorldManager.projectiles.add(new Projectile(npc.x - 30, npc.y, 0, 3, 600, 35, true));
                 }
             }
         }

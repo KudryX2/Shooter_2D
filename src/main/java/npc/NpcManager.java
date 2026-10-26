@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
+import assets.TextureId;
 import items.ItemManager;
 import world.WorldManager;
 
@@ -23,11 +24,11 @@ public final class NpcManager {
 
     public static void init() {
         templates.clear();
-        templates.add(new Npc(0.25f, Npc.TEXTURE_ZOMBIE, NpcKind.ZOMBIE, NpcBehaviour.AGGRESSIVE));     // ZOMBIE
-        templates.add(new Npc(0.25f, Npc.TEXTURE_ZOMBIE_ALT, NpcKind.ZOMBIE, NpcBehaviour.AGGRESSIVE)); // ZOMBIE_ALT
-        templates.add(new Npc(0.25f, Npc.TEXTURE_HUMAN, NpcKind.HUMAN, NpcBehaviour.AGGRESSIVE));       // HUMAN_AGGRESSIVE
-        templates.add(new Npc(0.25f, Npc.TEXTURE_HUMAN, NpcKind.HUMAN, NpcBehaviour.REACTIVE));         // HUMAN_REACTIVE
-        templates.add(new Npc(0.25f, Npc.TEXTURE_HUMAN, NpcKind.HUMAN, NpcBehaviour.PASSIVE));          // HUMAN_PASSIVE
+        templates.add(new Npc(0.25f, TextureId.ZOMBIE, NpcKind.ZOMBIE, NpcBehaviour.AGGRESSIVE));     // ZOMBIE
+        templates.add(new Npc(0.25f, TextureId.ZOMBIE_ALT, NpcKind.ZOMBIE, NpcBehaviour.AGGRESSIVE)); // ZOMBIE_ALT
+        templates.add(new Npc(0.25f, TextureId.HUMAN, NpcKind.HUMAN, NpcBehaviour.AGGRESSIVE));       // HUMAN_AGGRESSIVE
+        templates.add(new Npc(0.25f, TextureId.HUMAN, NpcKind.HUMAN, NpcBehaviour.REACTIVE));         // HUMAN_REACTIVE
+        templates.add(new Npc(0.25f, TextureId.HUMAN, NpcKind.HUMAN, NpcBehaviour.PASSIVE));          // HUMAN_PASSIVE
     }
 
     public static Npc spawnNpc(int type, float x, float y, float rotation) {

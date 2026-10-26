@@ -8,6 +8,7 @@ import static util.Geometry.distance;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import assets.TextureId;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
@@ -73,15 +74,15 @@ class OutpostWorldTest {
     @Test
     void humansLookHumanUntilTheyTurn() {
         Npc human = WorldManager.npcs.stream().filter(n -> n.kind == NpcKind.HUMAN).findFirst().orElseThrow();
-        assertEquals(Npc.TEXTURE_HUMAN, human.textureID);
+        assertEquals(TextureId.HUMAN, human.texture);
         for (Npc npc : WorldManager.npcs) {
-            assertEquals(npc.kind == NpcKind.HUMAN, npc.textureID == Npc.TEXTURE_HUMAN);
+            assertEquals(npc.kind == NpcKind.HUMAN, npc.texture == TextureId.HUMAN);
         }
 
         human.die(false); // sin headshot se convierte en zombi, pero conserva su aspecto hasta levantarse
         assertEquals(NpcKind.ZOMBIE, human.kind);
         assertTrue(human.isRising());
-        assertEquals(Npc.TEXTURE_HUMAN, human.textureID);
+        assertEquals(TextureId.HUMAN, human.texture);
     }
 
     @Test

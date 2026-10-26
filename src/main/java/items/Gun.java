@@ -2,6 +2,7 @@ package items;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import assets.TextureId;
 import util.GameClock;
 import world.MuzzleFlash;
 import world.WorldManager;
@@ -21,9 +22,9 @@ public final class Gun extends Item {
 
     private long lastShot = GameClock.NEVER;
 
-    public Gun(String name, GunKind gunKind, int cellTextureID, int equippedTextureID,
+    public Gun(String name, GunKind gunKind, TextureId icon, TextureId heldTexture,
                int range, float speed, int damage, int rate, float spread) {
-        super(name, ItemKind.GUN, cellTextureID, equippedTextureID);
+        super(name, ItemKind.GUN, icon, heldTexture);
         this.gunKind = gunKind;
         this.range = range;
         this.speed = speed;
@@ -34,7 +35,7 @@ public final class Gun extends Item {
 
     /** Devuelve una copia independiente (cada arma lleva su propio tiempo de recarga). */
     public Gun copy() {
-        return new Gun(name, gunKind, cellTextureID, equippedTextureID, range, speed, damage, rate, spread);
+        return new Gun(name, gunKind, icon, heldTexture, range, speed, damage, rate, spread);
     }
 
     /**
@@ -68,6 +69,6 @@ public final class Gun extends Item {
 
     private void fire(float x, float y, float rotation, boolean byPlayer) {
         float deviation = spread > 0 ? (float) ThreadLocalRandom.current().nextDouble(-spread, spread) : 0;
-        WorldManager.projectiles.add(new Projectile(x, y, rotation + deviation, speed, range, damage, 0, byPlayer));
+        WorldManager.projectiles.add(new Projectile(x, y, rotation + deviation, speed, range, damage, byPlayer));
     }
 }

@@ -12,6 +12,7 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import assets.TextureId;
 import items.ItemKind;
 import items.ItemManager;
 import structs.Struct;
@@ -53,7 +54,7 @@ class PlayerTest {
             ItemKind kind = random.nextBoolean() ? ItemKind.WALL : ItemKind.HALF_WALL;
             float wx = i % 2 == 0 ? random.nextInt(15) * Struct.SIZE : random.nextFloat() * 1000 - 100;
             float wy = i % 2 == 0 ? random.nextInt(15) * Struct.SIZE : random.nextFloat() * 1000 - 100;
-            Struct wall = new Struct(wx, wy, kind, 2);
+            Struct wall = new Struct(wx, wy, kind, TextureId.WALL);
             solids.add(wall);
             WorldManager.build(wall);
         }

@@ -1,7 +1,6 @@
 package graphics;
 
 import static graphics.Sprite.drawSprite;
-import static graphics.TexturesManager.*;
 import static org.lwjgl.opengl.GL11.*;
 import static util.Geometry.distance;
 
@@ -10,6 +9,7 @@ import java.util.List;
 import org.lwjgl.input.Mouse;
 import org.newdawn.slick.opengl.Texture;
 
+import assets.TextureId;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
@@ -129,7 +129,7 @@ public final class GraphicsManager {
 
         for (Projectile p : WorldManager.projectiles) {
             if (inRenderDistance(p.x, p.y)) {
-                drawSprite(effectTextures.get(p.textureID), screenX(p.x) - 2, screenY(p.y) - 2, 4, 4, p.rotation);
+                drawSprite(tex(TextureId.BULLET), screenX(p.x) - 2, screenY(p.y) - 2, 4, 4, p.rotation);
             }
         }
     }
@@ -188,11 +188,11 @@ public final class GraphicsManager {
                 continue;
             }
             int hash = tileHash(s.x(), s.y());
-            boolean picture = s.textureID() == ENV_TEEMO; // las imágenes no se giran
+            boolean picture = s.texture() == TextureId.TEEMO; // las imágenes no se giran
             float rotation = picture ? 0 : (hash & 3) * 90;
             float tone = picture ? 1 : 0.9f + ((hash >>> 8) & 0xFF) / 255f * 0.1f;
             glColor3f(tone, tone, tone);
-            drawSprite(environmentTextures.get(s.textureID()),
+            drawSprite(tex(s.texture()),
                     screenX(s.x()) - half, screenY(s.y()) - half, Struct.SIZE, Struct.SIZE, rotation);
         }
         glColor3f(1f, 1f, 1f);
@@ -209,7 +209,7 @@ public final class GraphicsManager {
         float half = Struct.SIZE / 2;
         for (Struct s : structs) {
             if (inRenderDistance(s.x(), s.y())) {
-                drawSprite(environmentTextures.get(s.textureID()),
+                drawSprite(tex(s.texture()),
                         screenX(s.x()) - half, screenY(s.y()) - half, Struct.SIZE, Struct.SIZE);
             }
         }
@@ -266,7 +266,7 @@ public final class GraphicsManager {
             if (npc.isRising()) {
                 // Giro fijo por NPC para que no todos los charcos sean iguales
                 float rotation = Math.floorMod(System.identityHashCode(npc), 360);
-                drawSprite(zombieTextures.get(Npc.TEXTURE_DEAD), screenX(npc.x) - puddleHalf,
+                drawSprite(tex(TextureId.BLOOD), screenX(npc.x) - puddleHalf,
                         screenY(npc.y) - puddleHalf, BLOOD_PUDDLE_SIZE, BLOOD_PUDDLE_SIZE, rotation);
             }
         }
@@ -284,18 +284,18 @@ public final class GraphicsManager {
                 }
             }
             // El sprite del jugador mira hacia abajo y el de los zombis hacia arriba
-            boolean humanSprite = npc.textureID == Npc.TEXTURE_HUMAN;
+            boolean humanSprite = npc.texture == TextureId.HUMAN;
             float rotation = humanSprite ? npc.rotation + 180 : npc.rotation;
             float size = spriteSize(npc);
             float half = size / 2;
-            drawSprite(zombieTextures.get(npc.textureID), screenX(npc.x) - half, screenY(npc.y) - half,
+            drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half,
                     size, size, rotation);
             glColor3f(1f, 1f, 1f);
             if (npc.wasHitWithin(HIT_FLASH_MS)) {
                 // Parpadeo al recibir un balazo: se vuelve a dibujar el sprite con mezcla aditiva para aclararlo
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE);
                 glColor4f(1f, 0.75f, 0.75f, 0.85f);
-                drawSprite(zombieTextures.get(npc.textureID), screenX(npc.x) - half, screenY(npc.y) - half,
+                drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half,
                         size, size, rotation);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
                 glColor4f(1, 1, 1, 1);
@@ -307,13 +307,13 @@ public final class GraphicsManager {
     }
 
     private static float spriteSize(Npc npc) {
-        return npc.textureID == Npc.TEXTURE_HUMAN ? CHARACTER_SIZE : ZOMBIE_SIZE;
+        return npc.texture == TextureId.HUMAN ? CHARACTER_SIZE : ZOMBIE_SIZE;
     }
 
     private static void drawHealthBar(int hp, float x, float y) {
-        drawSprite(guiTextures.get(HP_BACKGROUND), x, y, 50, 5);
-        int texture = hp > 50 ? HP_HIGH : hp > 25 ? HP_MEDIUM : HP_LOW;
-        drawSprite(guiTextures.get(texture), x, y, hp / 2f, 5);
+        drawSprite(tex(TextureId.HP_BACKGROUND), x, y, 50, 5);
+        TextureId texture = hp > 50 ? TextureId.HP_HIGH : hp > 25 ? TextureId.HP_MEDIUM : TextureId.HP_LOW;
+        drawSprite(tex(texture), x, y, hp / 2f, 5);
     }
 
     private static void drawPlayer() {
@@ -323,7 +323,7 @@ public final class GraphicsManager {
         // El sprite del jugador está girado 90º
         float half = CHARACTER_SIZE / 2;
         drawCharacterShadow(centerX, centerY, CHARACTER_SHADOW_RADIUS);
-        drawSprite(playerTextures.get(Player.textureID), centerX - half, centerY - half,
+        drawSprite(tex(TextureId.PLAYER), centerX - half, centerY - half,
                 CHARACTER_SIZE, CHARACTER_SIZE, Player.rotation - 90);
         if (Player.hp > 0) {
             drawHealthBar(Player.hp, centerX - Player.SIZE / 2, centerY - Player.SIZE - 5);
@@ -336,13 +336,13 @@ public final class GraphicsManager {
         switch (Player.selectedItem()) {
             case null -> { }
             // 32 px: antes se dibujaba a 50 pero la imagen solo ocupaba 20/32 del cuadro (relleno)
-            case Gun gun -> drawSprite(weaponEquippedTextures.get(gun.equippedTextureID),
+            case Gun gun -> drawSprite(tex(gun.heldTexture),
                     handX - 16, handY - 16, 32, 32, Player.rotation);
-            case Consumable consumable -> drawSprite(consumableTextures.get(consumable.equippedTextureID),
+            case Consumable consumable -> drawSprite(tex(consumable.heldTexture),
                     handX - 12, handY - 12, 24, 24, Player.rotation);
             case StructItem struct -> {
                 if (Player.buildMode) {
-                    drawSprite(environmentTextures.get(struct.equippedTextureID),
+                    drawSprite(tex(struct.heldTexture),
                             handX - 20, handY - 20, 40, 40, Player.rotation);
                 }
             }
@@ -367,15 +367,15 @@ public final class GraphicsManager {
         // Inventario
         for (int i = 0; i < Player.inventory.size(); i++) {
             float x = width / 2 + 5 + (CELL_SPACING + hudScale) * i;
-            drawSprite(cellTexture(Player.inventory.get(i)), x, cellY + 5, 40 + hudScale, 40 + hudScale);
+            drawSprite(tex(Player.inventory.get(i).icon), x, cellY + 5, 40 + hudScale, 40 + hudScale);
         }
 
         // Casillas de la mano
         for (int i = 0; i < Player.HAND_SLOTS; i++) {
             float x = width / 2 + (CELL_SPACING + hudScale) * i;
-            drawSprite(guiTextures.get(NORMAL_CELL), x, cellY, cellSize, cellSize);
+            drawSprite(tex(TextureId.NORMAL_CELL), x, cellY, cellSize, cellSize);
             if (i == Player.selectedCell) {
-                drawSprite(guiTextures.get(SELECTED_CELL), x, cellY, cellSize, cellSize);
+                drawSprite(tex(TextureId.SELECTED_CELL), x, cellY, cellSize, cellSize);
             }
         }
 
@@ -384,10 +384,10 @@ public final class GraphicsManager {
         // Cursor (siempre lo último, por encima de todo el HUD)
         Item selected = Player.selectedItem();
         if (Player.buildMode && selected != null && selected.itemKind.isBuildable()) {
-            int texture = Player.canBuild ? BUILD_POINTER_OK : BUILD_POINTER_BLOCKED;
-            drawSprite(guiTextures.get(texture), Mouse.getX() - 32, height - Mouse.getY() - 32, 64, 64);
+            TextureId texture = Player.canBuild ? TextureId.BUILD_POINTER_OK : TextureId.BUILD_POINTER_BLOCKED;
+            drawSprite(tex(texture), Mouse.getX() - 32, height - Mouse.getY() - 32, 64, 64);
         } else {
-            drawSprite(guiTextures.get(POINTER), Mouse.getX() - 20 - hudScale / 2,
+            drawSprite(tex(TextureId.POINTER), Mouse.getX() - 20 - hudScale / 2,
                     height - hudScale / 2 - Mouse.getY() - 20, 40 + hudScale, 40 + hudScale);
         }
     }
@@ -395,17 +395,12 @@ public final class GraphicsManager {
     private static void drawDroppedItems() {
         for (Chunk chunk : WorldManager.activeChunks) {
             for (DroppedItem dropped : chunk.droppedItems) {
-                drawSprite(cellTexture(dropped.item()), screenX(dropped.x()) - 16, screenY(dropped.y()) - 16, 32, 32);
+                drawSprite(tex(dropped.item().icon), screenX(dropped.x()) - 16, screenY(dropped.y()) - 16, 32, 32);
             }
         }
     }
 
-    /** Textura del objeto en el inventario / en el suelo. */
-    private static Texture cellTexture(Item item) {
-        return switch (item) {
-            case Gun gun -> weaponTextures.get(gun.cellTextureID);
-            case StructItem struct -> environmentTextures.get(struct.cellTextureID);
-            case Consumable consumable -> consumableTextures.get(consumable.cellTextureID);
-        };
+    private static Texture tex(TextureId id) {
+        return TexturesManager.get(id);
     }
 }
