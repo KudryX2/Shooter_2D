@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import structs.StructKind;
 import util.GameClock;
+import world.Structures;
 import world.WorldManager;
 
 class GunTest {
@@ -114,7 +115,7 @@ class GunTest {
     void shootingPointBlankAtAWallDoesNotPutBulletsBehindIt() {
         WorldManager.chunks.add(new world.Chunk(0, 0));
         // Muro vertical en x = 32.5; el tirador está en x = 0 y la boca del arma, a 40 px, ya al otro lado
-        WorldManager.build(structs.Struct.westWall(1, 0, StructKind.WALL));
+        Structures.build(structs.Struct.westWall(1, 0, StructKind.WALL));
         Gun shotgun = new Gun(GunType.SHOTGUN);
         shotgun.shoot(0, 0, 40, 0, 0, true, true);
         assertTrue(WorldManager.projectiles.isEmpty());
@@ -123,7 +124,7 @@ class GunTest {
     @Test
     void halfWallsDoNotStopPointBlankShots() {
         WorldManager.chunks.add(new world.Chunk(0, 0));
-        WorldManager.build(structs.Struct.westWall(1, 0, StructKind.HALF_WALL));
+        Structures.build(structs.Struct.westWall(1, 0, StructKind.HALF_WALL));
         new Gun(GunType.PISTOL).shoot(0, 0, 40, 0, 0, true, true);
         assertEquals(1, WorldManager.projectiles.size());
     }

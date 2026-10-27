@@ -23,6 +23,11 @@ public final class TexturesManager {
         }
     }
 
+    /** Atajo de {@link #get} para el código de dibujo. */
+    static Texture tex(TextureId id) {
+        return get(id);
+    }
+
     public static Texture get(TextureId id) {
         Texture texture = textures.get(id);
         if (texture == null) {

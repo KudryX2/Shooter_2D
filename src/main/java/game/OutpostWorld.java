@@ -18,6 +18,7 @@ import player.Player;
 import structs.Struct;
 import structs.StructKind;
 import world.Chunk;
+import world.Structures;
 import world.WorldManager;
 
 /**
@@ -84,7 +85,7 @@ final class OutpostWorld {
             double angle = 2 * Math.PI * i / WAVE_SIZE;
             float x = Player.x + (float) Math.cos(angle) * WAVE_RADIUS;
             float y = Player.y + (float) Math.sin(angle) * WAVE_RADIUS;
-            if (!WorldManager.isSolidAt(x, y)) {
+            if (!Structures.isSolidAt(x, y)) {
                 NpcManager.spawn(random.nextBoolean() ? NpcType.ZOMBIE : NpcType.ZOMBIE_ALT,
                         x, y, random.nextInt(360));
             }
@@ -246,12 +247,12 @@ final class OutpostWorld {
     private void build() {
         for (int x = 0; x < SIZE_TILES; x++) {
             for (int y = 0; y < SIZE_TILES; y++) {
-                WorldManager.build(new Struct(px(x), px(y), StructKind.FLOOR, ground[x][y]));
+                Structures.build(new Struct(px(x), px(y), StructKind.FLOOR, ground[x][y]));
             }
         }
         walls.forEach((key, kind) -> {
             int x = edgeX(key), y = edgeY(key);
-            WorldManager.build(isVertical(key)
+            Structures.build(isVertical(key)
                     ? Struct.westWall(x, y, kind)
                     : Struct.northWall(x, y, kind));
         });

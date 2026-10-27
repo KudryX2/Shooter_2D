@@ -6,6 +6,7 @@ import org.lwjgl.input.Keyboard;
 
 import graphics.DisplayManager;
 import graphics.GraphicsManager;
+import graphics.HudRenderer;
 import graphics.PauseButton;
 import graphics.TexturesManager;
 import input.Input;
@@ -82,8 +83,8 @@ public final class Game {
 
     /** Teclas de desarrollo. Devuelve {@code false} si hay que salir del juego. */
     private boolean handleDebugKeys() {
-        if (Input.wasKeyPressed(Keyboard.KEY_N)) GraphicsManager.hudScale--;
-        if (Input.wasKeyPressed(Keyboard.KEY_M)) GraphicsManager.hudScale++;
+        if (Input.wasKeyPressed(Keyboard.KEY_N)) HudRenderer.hudScale--;
+        if (Input.wasKeyPressed(Keyboard.KEY_M)) HudRenderer.hudScale++;
         if (Input.wasKeyPressed(Keyboard.KEY_SPACE)) GameClock.togglePause();
 
         // En pausa no se lanzan oleadas ni se vuelve al inicio

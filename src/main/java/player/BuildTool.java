@@ -6,7 +6,7 @@ import items.Item;
 import items.StructItem;
 import structs.Struct;
 import structs.StructKind;
-import world.WorldManager;
+import world.Structures;
 
 /**
  * Construir y derribar con un {@link StructItem} en la mano. Un muro va al borde de casilla más cercano al punto
@@ -46,7 +46,7 @@ public final class BuildTool {
     /** Construye la vista previa, si se puede. */
     static void build() {
         if (preview != null && canBuild) {
-            WorldManager.build(preview);
+            Structures.build(preview);
             canBuild = false; // ese borde ya está ocupado hasta el siguiente frame
         }
     }
@@ -63,7 +63,7 @@ public final class BuildTool {
             return true;
         }
         float half = Player.SIZE / 2;
-        return !WorldManager.hasWallAt(struct) && !struct.overlaps(Player.x, Player.y, half, half);
+        return !Structures.hasWallAt(struct) && !struct.overlaps(Player.x, Player.y, half, half);
     }
 
     /**
@@ -74,11 +74,11 @@ public final class BuildTool {
      */
     static boolean demolish(float wx, float wy) {
         Struct edge = Struct.snapped(wx, wy, StructKind.WALL, null);
-        if (inRange(edge) && WorldManager.removeWallAt(edge)) {
+        if (inRange(edge) && Structures.removeWallAt(edge)) {
             return true;
         }
         Struct tile = Struct.snapped(wx, wy, StructKind.FLOOR, null);
-        return inRange(tile) && WorldManager.removeBuiltFloorAt(tile.x(), tile.y());
+        return inRange(tile) && Structures.removeBuiltFloorAt(tile.x(), tile.y());
     }
 
     private static boolean inRange(Struct struct) {

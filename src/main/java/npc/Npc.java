@@ -26,6 +26,8 @@ public class Npc {
     /** Distancia del centro a la boca del arma. */
     private static final float GUN_OFFSET = 50;
     private static final int INVENTORY_SLOTS = 4;
+    /** Medio lado de la caja con la que choca contra los muros (su cuerpo visible mide ~22 px de radio). */
+    public static final float BODY_HALF = 20;
 
     /** Tipo con el que apareció; si un humano se convierte, sigue siendo el mismo (ver {@link #kind}). */
     public final NpcType type;
@@ -97,7 +99,7 @@ public class Npc {
         for (int attempt = 0; attempt < 360; attempt++) {
             float nextX = x + dirX(rotation) * step;
             float nextY = y + dirY(rotation) * step;
-            if (Movement.canMove(x, y, nextX, nextY, WorldManager.CHARACTER_HALF)) {
+            if (Movement.canMove(x, y, nextX, nextY, Npc.BODY_HALF)) {
                 x = nextX;
                 y = nextY;
                 return;

@@ -15,6 +15,7 @@ import structs.Struct;
 import structs.StructKind;
 import util.GameClock;
 import world.Chunk;
+import world.Structures;
 import world.WorldManager;
 
 class PlayerTest {
@@ -54,7 +55,7 @@ class PlayerTest {
     @Test
     void stopsRightAtAThinWall() {
         Struct wall = Struct.westWall(1, 0, StructKind.WALL); // vertical en x = 32.5, 16 px de grosor
-        WorldManager.build(wall);
+        Structures.build(wall);
 
         walk(1, 0, 50);
         float touching = wall.x() - wall.halfWidth() - HALF;
@@ -63,15 +64,15 @@ class PlayerTest {
 
     @Test
     void halfWallsAlsoBlockThePlayer() {
-        WorldManager.build(Struct.westWall(1, 0, StructKind.HALF_WALL));
+        Structures.build(Struct.westWall(1, 0, StructKind.HALF_WALL));
         walk(1, 0, 50);
         assertTrue(Player.x < 32.5f);
     }
 
     @Test
     void slidesAlongAWallWhenWalkingDiagonally() {
-        WorldManager.build(Struct.westWall(1, 0, StructKind.WALL));
-        WorldManager.build(Struct.westWall(1, 1, StructKind.WALL));
+        Structures.build(Struct.westWall(1, 0, StructKind.WALL));
+        Structures.build(Struct.westWall(1, 1, StructKind.WALL));
         walk(1, 1, 10);
         assertTrue(Player.x < 32.5f, "no atraviesa el muro");
         assertEquals(10 * 16 * 0.5f, Player.y, 0.01f, "pero sigue avanzando a lo largo de él");
@@ -79,7 +80,7 @@ class PlayerTest {
 
     @Test
     void aSlowFrameDoesNotGoThroughAThinWall() {
-        WorldManager.build(Struct.westWall(1, 0, StructKind.WALL));
+        Structures.build(Struct.westWall(1, 0, StructKind.WALL));
         GameClock.tick(500); // un frame de medio segundo: 250 px de golpe
         Player.move(1, 0);
         assertTrue(Player.x < 32.5f, "ha atravesado el muro: " + Player.x);
@@ -87,7 +88,7 @@ class PlayerTest {
 
     @Test
     void canWalkOutOfAWallBuiltOnTop() {
-        WorldManager.build(Struct.westWall(0, 0, StructKind.WALL)); // en x = -32.5, tocando al jugador
+        Structures.build(Struct.westWall(0, 0, StructKind.WALL)); // en x = -32.5, tocando al jugador
         Player.x = -32.5f;
         walk(1, 0, 10);
         assertTrue(Player.x > -32.5f);

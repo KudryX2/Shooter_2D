@@ -15,6 +15,7 @@ import items.StructItem;
 import structs.Struct;
 import structs.StructKind;
 import world.Chunk;
+import world.Structures;
 import world.WorldManager;
 
 class BuildToolTest {
@@ -33,7 +34,7 @@ class BuildToolTest {
     @Test
     void wallsCanOnlyBeBuiltOnFreeEdgesInRangeAndNotOnThePlayer() {
         Player.y = -30; // casi sobre el borde norte de la casilla (0, 0), en y = -32.5
-        WorldManager.build(Struct.northWall(2, 2, StructKind.WALL));
+        Structures.build(Struct.northWall(2, 2, StructKind.WALL));
 
         assertFalse(BuildTool.canBuild(Struct.northWall(2, 2, StructKind.HALF_WALL)), "ocupado");
         assertTrue(BuildTool.canBuild(Struct.westWall(2, 2, StructKind.WALL)), "esquina con el otro");
@@ -52,7 +53,7 @@ class BuildToolTest {
         assertTrue(BuildTool.canBuildPreview());
 
         Player.primaryAction(true);
-        assertTrue(WorldManager.hasWallAt(BuildTool.preview()));
+        assertTrue(Structures.hasWallAt(BuildTool.preview()));
         assertFalse(BuildTool.canBuildPreview(), "ese borde ya está ocupado");
     }
 
@@ -67,21 +68,21 @@ class BuildToolTest {
     @Test
     void rightClickWithAWallInHandDemolishesTheAimedWall() {
         Struct wall = Struct.northWall(1, 1, StructKind.WALL);
-        WorldManager.build(wall);
+        Structures.build(wall);
         Player.inventory.add(new StructItem(StructKind.WALL));
         Player.aimAt(wall.x(), wall.y() + 3);
         Player.secondaryAction();
-        assertFalse(WorldManager.hasWallAt(wall));
+        assertFalse(Structures.hasWallAt(wall));
     }
 
     @Test
     void rightClickWithAGunDoesNotDemolish() {
         Struct wall = Struct.northWall(1, 1, StructKind.WALL);
-        WorldManager.build(wall);
+        Structures.build(wall);
         Player.inventory.add(new Gun(GunType.PISTOL));
         Player.aimAt(wall.x(), wall.y());
         Player.secondaryAction();
-        assertTrue(WorldManager.hasWallAt(wall));
+        assertTrue(Structures.hasWallAt(wall));
     }
 
     @Test
@@ -89,27 +90,27 @@ class BuildToolTest {
         Struct wall = Struct.northWall(2, 2, StructKind.WALL);
         Struct next = Struct.northWall(3, 2, StructKind.HALF_WALL);
         Struct far = Struct.westWall(12, 0, StructKind.WALL);
-        WorldManager.build(wall);
-        WorldManager.build(next);
-        WorldManager.build(far);
+        Structures.build(wall);
+        Structures.build(next);
+        Structures.build(far);
 
         assertTrue(BuildTool.demolish(wall.x() + 5, wall.y() - 3)); // apuntando cerca del muro
-        assertFalse(WorldManager.hasWallAt(wall));
-        assertFalse(WorldManager.isBlocked(wall.x(), wall.y(), 1, 1), "ya no bloquea el paso");
-        assertTrue(WorldManager.hasWallAt(next), "el de al lado sigue en pie");
+        assertFalse(Structures.hasWallAt(wall));
+        assertFalse(Structures.isBlocked(wall.x(), wall.y(), 1, 1), "ya no bloquea el paso");
+        assertTrue(Structures.hasWallAt(next), "el de al lado sigue en pie");
         assertTrue(WorldManager.chunks.stream().noneMatch(c -> c.walls.contains(wall)), "ya no se dibuja");
 
         assertFalse(BuildTool.demolish(far.x(), far.y()), "fuera de alcance");
-        assertTrue(WorldManager.hasWallAt(far));
+        assertTrue(Structures.hasWallAt(far));
 
         assertTrue(BuildTool.demolish(next.x(), next.y()), "también medios muros");
-        assertFalse(WorldManager.hasWallAt(next));
+        assertFalse(Structures.hasWallAt(next));
     }
 
     @Test
     void demolishOnlyRemovesBuiltFloorsAndNeverTheMapGround() {
-        WorldManager.build(new Struct(65, 0, StructKind.FLOOR, TextureId.GRASS)); // suelo del mapa
-        WorldManager.build(new Struct(65, 0, StructKind.FLOOR, TextureId.DIRT));  // construido encima
+        Structures.build(new Struct(65, 0, StructKind.FLOOR, TextureId.GRASS)); // suelo del mapa
+        Structures.build(new Struct(65, 0, StructKind.FLOOR, TextureId.DIRT));  // construido encima
 
         assertTrue(BuildTool.demolish(70, 5));
         assertEquals(1, WorldManager.chunks.getFirst().floors.size());

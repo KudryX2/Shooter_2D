@@ -17,6 +17,7 @@ import npc.NpcKind;
 import player.Player;
 import util.GameClock;
 import world.Chunk;
+import world.Structures;
 import world.WorldManager;
 
 class OutpostWorldTest {
@@ -38,7 +39,7 @@ class OutpostWorldTest {
 
     @Test
     void playerStartsFreeWithAPistolAndGunsInTheHouse() {
-        assertFalse(WorldManager.isSolidAt(Player.SPAWN_X, Player.SPAWN_Y));
+        assertFalse(Structures.isSolidAt(Player.SPAWN_X, Player.SPAWN_Y));
         assertTrue(Player.inventory.get(0) instanceof Gun);
 
         long gunsInHouse = WorldManager.chunks.stream()
@@ -60,7 +61,7 @@ class OutpostWorldTest {
     void npcsSpawnOnFreeGroundAndNoZombiesNearSpawn() {
         assertTrue(WorldManager.npcs.size() > 50);
         for (Npc npc : WorldManager.npcs) {
-            assertFalse(WorldManager.isSolidAt(npc.x, npc.y), "NPC dentro de un muro en " + npc.x + "," + npc.y);
+            assertFalse(Structures.isSolidAt(npc.x, npc.y), "NPC dentro de un muro en " + npc.x + "," + npc.y);
             if (npc.kind == NpcKind.ZOMBIE) {
                 assertTrue(distance(npc.x, npc.y, Player.SPAWN_X, Player.SPAWN_Y) > 1000, "zombi demasiado cerca");
             }
@@ -85,7 +86,7 @@ class OutpostWorldTest {
     void droppedItemsAreNotInsideWalls() {
         for (Chunk chunk : WorldManager.chunks) {
             for (DroppedItem d : chunk.droppedItems) {
-                assertFalse(WorldManager.isSolidAt(d.x(), d.y()), d.item().name + " dentro de un muro");
+                assertFalse(Structures.isSolidAt(d.x(), d.y()), d.item().name + " dentro de un muro");
             }
         }
     }

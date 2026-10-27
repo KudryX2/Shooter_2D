@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import util.GameClock;
 import world.MuzzleFlash;
+import world.Structures;
 import world.WorldManager;
 
 /** Un arma concreta: sus estadísticas vienen de {@link GunType} y lleva su propio tiempo de recarga. */
@@ -44,7 +45,7 @@ public final class Gun extends Item {
             return;
         }
 
-        if (!WorldManager.isWallBetween(fromX, fromY, x, y)) {
+        if (!Structures.isWallBetween(fromX, fromY, x, y)) {
             if (type == GunType.SHOTGUN) {
                 for (int angle : SHOTGUN_PATTERN) {
                     fire(x, y, rotation + angle, shotByPlayer);

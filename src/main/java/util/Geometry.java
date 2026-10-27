@@ -54,6 +54,11 @@ public final class Geometry {
         return range[0];
     }
 
+    /** {@code true} si el impacto {@code t} (de {@link #segmentEntersBox}) ocurre antes que {@code best}. */
+    public static boolean isEarlierHit(float t, float best) {
+        return t != NO_HIT && (best == NO_HIT || t < best);
+    }
+
     /** Recorta {@code range} (fracciones del segmento) al tramo en el que el eje queda entre min y max. */
     private static boolean clipAxis(float start, float delta, float min, float max, float[] range) {
         if (delta == 0) {

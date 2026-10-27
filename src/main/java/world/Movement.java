@@ -11,6 +11,6 @@ public final class Movement {
      * meterse en un muro. Si ya está dentro de uno (p.ej. le han construido encima) puede moverse para salir.
      */
     public static boolean canMove(float fromX, float fromY, float toX, float toY, float half) {
-        return !WorldManager.isBlocked(toX, toY, half, half) || WorldManager.isBlocked(fromX, fromY, half, half);
+        return !Structures.isBlocked(toX, toY, half, half) || Structures.isBlocked(fromX, fromY, half, half);
     }
 }

@@ -13,6 +13,7 @@ import player.Player;
 import structs.Struct;
 import structs.StructKind;
 import world.Chunk;
+import world.Structures;
 import world.WorldManager;
 
 /** Mapa de pruebas. */
@@ -47,22 +48,22 @@ final class DemoWorld {
         // Suelo
         for (int i = 0; i < WORLD_SIZE; i += TILE) {
             for (int j = 0; j < WORLD_SIZE; j += TILE) {
-                WorldManager.build(new Struct(i, j, StructKind.FLOOR, TextureId.GRASS));
+                Structures.build(new Struct(i, j, StructKind.FLOOR, TextureId.GRASS));
             }
         }
 
         // Muros
         for (int i = 0; i < 1200 / TILE; i++) {
-            WorldManager.build(Struct.northWall(i, 13, StructKind.WALL));
+            Structures.build(Struct.northWall(i, 13, StructKind.WALL));
         }
-        WorldManager.build(Struct.northWall(15, 15, StructKind.WALL));
-        WorldManager.build(Struct.northWall(10, 5, StructKind.WALL));
-        WorldManager.build(Struct.westWall(7, 6, StructKind.WALL));
-        WorldManager.build(Struct.westWall(7, 7, StructKind.WALL));
-        WorldManager.build(Struct.northWall(9, 7, StructKind.WALL));
+        Structures.build(Struct.northWall(15, 15, StructKind.WALL));
+        Structures.build(Struct.northWall(10, 5, StructKind.WALL));
+        Structures.build(Struct.westWall(7, 6, StructKind.WALL));
+        Structures.build(Struct.westWall(7, 7, StructKind.WALL));
+        Structures.build(Struct.northWall(9, 7, StructKind.WALL));
 
         for (int j = 5; j <= 7; j++) {
-            WorldManager.build(Struct.westWall(20, j, StructKind.HALF_WALL));
+            Structures.build(Struct.westWall(20, j, StructKind.HALF_WALL));
         }
 
         // NPCs
