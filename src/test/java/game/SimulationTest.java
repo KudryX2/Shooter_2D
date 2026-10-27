@@ -20,7 +20,7 @@ class SimulationTest {
         WorldManager.activeChunks.clear();
         WorldManager.projectiles.clear();
         WorldManager.npcs.clear();
-        Player.inventory.clear();
+        Player.inventory.removeAll();
         DemoWorld.create();
         Player.x = Player.SPAWN_X;
         Player.y = Player.SPAWN_Y;
@@ -64,7 +64,7 @@ class SimulationTest {
 
         // Headshot directo
         for (Npc npc : WorldManager.npcs) {
-            if (npc.alive) npc.die(true);
+            if (npc.isAlive()) npc.die(true);
         }
         worstMs = Math.max(worstMs, runFrames(2_000));
 
@@ -73,6 +73,6 @@ class SimulationTest {
                 + ", memoria usada: " + (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1_048_576 + " MB");
         assertTrue(WorldManager.zombiesKilled > 0);
         assertTrue(worstMs < 200, "frame demasiado lento: " + worstMs + " ms");
-        assertFalse(WorldManager.npcs.stream().anyMatch(n -> !n.alive && n.canDisappear));
+        assertFalse(WorldManager.npcs.stream().anyMatch(n -> !n.isAlive() && n.canDisappear()));
     }
 }

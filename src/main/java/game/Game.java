@@ -10,6 +10,7 @@ import graphics.PauseButton;
 import graphics.TexturesManager;
 import input.Input;
 import player.Player;
+import player.PlayerController;
 import util.GameClock;
 import world.WorldManager;
 
@@ -41,6 +42,7 @@ public final class Game {
         try {
             DisplayManager.init(fullScreen);
             Player.create();
+            PlayerController.init();
             TexturesManager.init();
             GraphicsManager.init();
             if (classicWorld) {
@@ -65,7 +67,7 @@ public final class Game {
             PauseButton.update();
             // En pausa el mundo queda congelado, pero se sigue dibujando
             if (!GameClock.isPaused()) {
-                Player.update(PauseButton.isHovered());
+                PlayerController.update(PauseButton.isHovered());
                 WorldManager.update();
             }
 

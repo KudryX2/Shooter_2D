@@ -6,7 +6,6 @@ import static util.Geometry.segmentEntersBox;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import graphics.DisplayManager;
 import items.DroppedItem;
@@ -69,7 +68,7 @@ public final class WorldManager {
             hitsPlayer = true;
         }
         for (Npc npc : npcs) {
-            if (!npc.alive) {
+            if (!npc.isAlive()) {
                 continue;
             }
             t = segmentEntersBox(x0, y0, x1, y1, npc.x, npc.y, PROJECTILE_HITBOX, PROJECTILE_HITBOX);
@@ -125,7 +124,7 @@ public final class WorldManager {
         for (Npc npc : npcs) {
             npc.update();
         }
-        npcs.removeIf(npc -> npc.canDisappear);
+        npcs.removeIf(Npc::canDisappear);
     }
 
     private static void updateChunks() {
@@ -152,14 +151,6 @@ public final class WorldManager {
         boolean[] found = {false};
         solids.forEachNear(wall.x(), wall.y(), 0, s -> found[0] |= s.samePlaceAs(wall));
         return found[0];
-    }
-
-    /**
-     * Pasa a {@code action} los muros y medios muros que tocan la caja de medio lado {@code range} alrededor de
-     * (x, y), y quizá alguno algo más lejano: {@code action} debe hacer su propia comprobación.
-     */
-    public static void forEachSolidNear(float x, float y, float range, Consumer<Struct> action) {
-        solids.forEachNear(x, y, range, action);
     }
 
     /** Única forma de añadir estructuras al mundo: así la rejilla de colisiones queda sincronizada. */

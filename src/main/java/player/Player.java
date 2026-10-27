@@ -1,164 +1,127 @@
 package player;
 
+import static util.Geometry.angleTo;
+import static util.Geometry.dirX;
+import static util.Geometry.dirY;
 import static util.Geometry.distance;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
-import org.lwjgl.input.Keyboard;
-import org.lwjgl.input.Mouse;
-
-import graphics.DisplayManager;
-import input.Input;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
+import items.Inventory;
 import items.Item;
 import items.StructItem;
-import structs.Struct;
-import structs.StructKind;
 import util.GameClock;
 import world.Chunk;
+import world.Movement;
 import world.WorldManager;
 
+/**
+ * El jugador: posición, vida, inventario y lo que puede hacer. No lee el teclado ni el ratón: eso lo hace
+ * {@link PlayerController}, que llama a estos métodos.
+ */
 public final class Player {
     public static final float SIZE = 35;
     public static final float SPAWN_X = 600;
     public static final float SPAWN_Y = 600;
     public static final int HAND_SLOTS = 4;
     public static final int MAX_HP = 100;
+    /** Distancia del centro a la mano (donde se dibuja el arma y salen las balas). */
+    public static final float HAND_OFFSET = 40;
+    /** Velocidad en px/ms. */
+    private static final float SPEED = 0.5f;
+    /** Paso máximo entre comprobaciones de muros, para no atravesar uno fino si un frame va lento. */
+    private static final float MAX_STEP = 8;
     private static final float PICKUP_RANGE = 50;
-    private static final float BUILD_RANGE = 250;
-    private static final float WALL_MARGIN = 10;
-    private static final float HAND_OFFSET = 40;
 
     public static float x, y;
-    /** Estructura que se construiría ahora con el objeto seleccionado (vista previa), o {@code null}. */
-    public static Struct buildPreview;
+    /** Hacia dónde mira, en grados (ver {@link util.Geometry}). */
     public static float rotation;
-    public static float speed = 0.5f;
     public static int hp;
-
-    public static int selectedCell;
-    public static final List<Item> inventory = new ArrayList<>();
-
-    public static boolean canBuild;
+    public static final Inventory inventory = new Inventory(HAND_SLOTS);
 
     /**
-     * Punto del mundo al que apunta el cursor, actualizado en cada frame. Lo usa el mundo para los headshots,
-     * así la lógica del juego no lee el ratón. NaN = no apunta a nada.
+     * Punto del mundo al que apunta, actualizado en cada frame. Lo usa el mundo para los headshots.
+     * NaN = no apunta a nada.
      */
     public static float aimX = Float.NaN, aimY = Float.NaN;
-
-    /** Más allá de esta distancia (en cada eje) un muro no puede bloquear al jugador: medio jugador + margen. */
-    private static final float COLLISION_RANGE = SIZE / 2 + WALL_MARGIN;
-
-    static boolean collUp, collDown, collLeft, collRight; // visibles para los tests del paquete
-
-    private static boolean clickStartedOnUi;
 
     private Player() {
     }
 
     public static void create() {
-        x = SPAWN_X;
-        y = SPAWN_Y;
+        teleportToSpawn();
         hp = MAX_HP;
-        selectedCell = 0;
-        buildPreview = null;
-
-        Mouse.setCursorPosition(DisplayManager.WIDTH / 2, DisplayManager.HEIGHT / 2);
+        inventory.select(0);
+        BuildTool.update(null, x, y);
     }
 
-    /**
-     * @param mouseOnUi el cursor está sobre un botón del HUD: un clic que empieza ahí no dispara (hasta soltarlo)
-     */
-    public static void update(boolean mouseOnUi) {
-        float step = speed * GameClock.delta();
-        if (Input.isKeyDown(Keyboard.KEY_W) && !collUp) y -= step;
-        if (Input.isKeyDown(Keyboard.KEY_S) && !collDown) y += step;
-        if (Input.isKeyDown(Keyboard.KEY_A) && !collLeft) x -= step;
-        if (Input.isKeyDown(Keyboard.KEY_D) && !collRight) x += step;
-        aimX = cursorWorldX();
-        aimY = cursorWorldY();
-
-        rotation = -(float) Math.toDegrees(Math.atan2(
-                Mouse.getY() - DisplayManager.HEIGHT / 2f, Mouse.getX() - DisplayManager.WIDTH / 2f));
-
-        updateSelectedCell();
-        updateBuildPosition(); // antes de los clics, con el objeto que hay ahora en la mano
-
-        // Acciones
-        if (Input.wasButtonPressed(0)) clickStartedOnUi = mouseOnUi;
-        if (Input.isButtonDown(0) && !clickStartedOnUi) primaryAction(Input.wasButtonPressed(0));
-        if (Input.wasButtonPressed(1)) secondaryAction();
-        if (Input.wasKeyPressed(Keyboard.KEY_Q)) dropSelectedItem();
-        if (Input.wasKeyPressed(Keyboard.KEY_E)) pickUpItem();
-
-        checkCollisions();
-
+    /** Muere si se ha quedado sin vida. Una vez por frame, después de sus acciones. */
+    public static void update() {
         if (hp <= 0) {
             die();
             respawn();
         }
     }
 
-    private static void updateSelectedCell() {
-        if (Input.isKeyDown(Keyboard.KEY_1)) selectedCell = 0;
-        if (Input.isKeyDown(Keyboard.KEY_2)) selectedCell = 1;
-        if (Input.isKeyDown(Keyboard.KEY_3)) selectedCell = 2;
-        if (Input.isKeyDown(Keyboard.KEY_4)) selectedCell = 3;
+    // ---------------------------------------------------------------------------------------------
+    // Movimiento y puntería
+    // ---------------------------------------------------------------------------------------------
 
-        int wheel = Mouse.getDWheel();
-        if (wheel < 0) {
-            selectedCell = (selectedCell + 1) % HAND_SLOTS;
-        } else if (wheel > 0) {
-            selectedCell = (selectedCell + HAND_SLOTS - 1) % HAND_SLOTS;
+    /**
+     * Anda en la dirección (dx, dy), cada una -1, 0 o 1. Cada eje se mueve por separado, así que al chocar con
+     * un muro en diagonal se desliza a lo largo de él.
+     */
+    public static void move(int dx, int dy) {
+        float distance = SPEED * GameClock.delta();
+        int steps = Math.max(1, (int) Math.ceil(distance / MAX_STEP));
+        float step = distance / steps;
+        float half = SIZE / 2;
+        for (int i = 0; i < steps; i++) {
+            float nextX = x + dx * step;
+            if (Movement.canMove(x, y, nextX, y, half)) {
+                x = nextX;
+            }
+            float nextY = y + dy * step;
+            if (Movement.canMove(x, y, x, nextY, half)) {
+                y = nextY;
+            }
         }
     }
 
-    /** Objeto en la casilla seleccionada, o {@code null} si está vacía. */
+    /** Apunta (y mira) hacia el punto del mundo (wx, wy). */
+    public static void aimAt(float wx, float wy) {
+        aimX = wx;
+        aimY = wy;
+        if (wx != x || wy != y) {
+            rotation = angleTo(x, y, wx, wy);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Acciones
+    // ---------------------------------------------------------------------------------------------
+
     public static Item selectedItem() {
-        return selectedCell < inventory.size() ? inventory.get(selectedCell) : null;
+        return inventory.selectedItem();
     }
 
-    public static float cursorWorldX() {
-        return x + Mouse.getX() - DisplayManager.WIDTH / 2f;
-    }
-
-    public static float cursorWorldY() {
-        return y + DisplayManager.HEIGHT / 2f - Mouse.getY();
-    }
-
-    /** Decide en qué direcciones no puede moverse el jugador porque hay un muro o medio muro pegado. */
-    static void checkCollisions() {
-        collUp = collDown = collLeft = collRight = false;
-        WorldManager.forEachSolidNear(x, y, COLLISION_RANGE, Player::checkCollision);
-    }
-
-    private static void checkCollision(Struct w) {
-        float half = SIZE / 2;
-        float sw = w.halfWidth(), sh = w.halfHeight();
-        boolean overlapX = w.x() + sw > x - half && w.x() - sw < x + half;
-        boolean overlapY = w.y() + sh > y - half && w.y() - sh < y + half;
-        if (overlapX && w.y() + sh + WALL_MARGIN > y - half && w.y() - sh + WALL_MARGIN < y - half) collUp = true;
-        if (overlapX && w.y() + sh - WALL_MARGIN > y + half && w.y() - sh - WALL_MARGIN < y + half) collDown = true;
-        if (overlapY && w.x() + sw + WALL_MARGIN > x - half && w.x() - sw + WALL_MARGIN < x - half) collLeft = true;
-        if (overlapY && w.x() + sw - WALL_MARGIN > x + half && w.x() - sw - WALL_MARGIN < x + half) collRight = true;
+    /** Recalcula la vista previa de construcción. Antes de las acciones, con el objeto que hay en la mano. */
+    public static void updateBuildPreview() {
+        BuildTool.update(selectedItem(), aimX, aimY);
     }
 
     /** Botón izquierdo: dispara el arma o, con un objeto construible en la mano, construye (una vez por clic). */
-    private static void primaryAction(boolean justPressed) {
+    public static void primaryAction(boolean justPressed) {
         Item item = selectedItem();
         if (item instanceof Gun gun) {
-            double angle = Math.toRadians(-rotation + 90);
-            float shotX = x + (float) Math.sin(angle) * HAND_OFFSET;
-            float shotY = y + (float) Math.cos(angle) * HAND_OFFSET;
-            gun.shoot(x, y, shotX, shotY, rotation, true, justPressed);
-        } else if (justPressed && canBuild && buildPreview != null) {
-            WorldManager.build(buildPreview);
-            canBuild = false; // ese borde ya está ocupado hasta el siguiente frame
+            float muzzleX = x + dirX(rotation) * HAND_OFFSET;
+            float muzzleY = y + dirY(rotation) * HAND_OFFSET;
+            gun.shoot(x, y, muzzleX, muzzleY, rotation, true, justPressed);
+        } else if (item instanceof StructItem && justPressed) {
+            BuildTool.build();
         }
     }
 
@@ -166,29 +129,12 @@ public final class Player {
      * Botón derecho: con un objeto construible en la mano derriba lo apuntado; con un consumible, lo usa. Con
      * un arma no hace nada, para no derribar muros sin querer.
      */
-    private static void secondaryAction() {
-        Item item = selectedItem();
-        if (item instanceof StructItem) {
-            demolish(cursorWorldX(), cursorWorldY());
+    public static void secondaryAction() {
+        if (selectedItem() instanceof StructItem) {
+            BuildTool.demolish(aimX, aimY);
         } else {
             useSelectedConsumable();
         }
-    }
-
-    /**
-     * Derriba, si está al alcance, el muro del borde más cercano a (wx, wy) (el mismo que marcaría la vista
-     * previa); si no hay, un suelo construido en esa casilla.
-     *
-     * @return {@code true} si ha derribado algo
-     */
-    static boolean demolish(float wx, float wy) {
-        Struct edge = Struct.snapped(wx, wy, StructKind.WALL, null);
-        if (distance(edge.x(), edge.y(), x, y) <= BUILD_RANGE && WorldManager.removeWallAt(edge)) {
-            return true;
-        }
-        Struct tile = Struct.snapped(wx, wy, StructKind.FLOOR, null);
-        return distance(tile.x(), tile.y(), x, y) <= BUILD_RANGE
-                && WorldManager.removeBuiltFloorAt(tile.x(), tile.y());
     }
 
     /**
@@ -202,44 +148,20 @@ public final class Player {
             return false;
         }
         hp = Math.min(MAX_HP, hp + consumable.heal);
-        inventory.remove(selectedCell);
+        inventory.removeSelected();
         return true;
     }
 
-    private static void updateBuildPosition() {
-        if (!(selectedItem() instanceof StructItem item)) {
-            buildPreview = null;
-            canBuild = false;
-            return;
-        }
-        buildPreview = Struct.snapped(cursorWorldX(), cursorWorldY(), item.kind, item.icon);
-        canBuild = canBuild(buildPreview);
-    }
-
-    /**
-     * Se puede construir al alcance, y un muro solo en un borde libre y sin quedar encima del jugador. Si deja
-     * huecos con los muros vecinos es cosa del jugador.
-     */
-    static boolean canBuild(Struct struct) {
-        if (distance(struct.x(), struct.y(), x, y) > BUILD_RANGE) {
-            return false;
-        }
-        if (!struct.isWall()) {
-            return true;
-        }
-        return !WorldManager.hasWallAt(struct) && !struct.overlaps(x, y, SIZE / 2, SIZE / 2);
-    }
-
     public static void dropSelectedItem() {
-        Item item = selectedItem();
+        Item item = inventory.removeSelected();
         if (item != null) {
             WorldManager.dropItem(item, x, y);
-            inventory.remove(selectedCell);
         }
     }
 
+    /** Coge un objeto del suelo que esté al lado, si cabe en el inventario. */
     public static void pickUpItem() {
-        if (inventory.size() >= HAND_SLOTS) {
+        if (inventory.isFull()) {
             return;
         }
         for (Chunk chunk : WorldManager.activeChunks) {
@@ -255,11 +177,15 @@ public final class Player {
         }
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Vida
+    // ---------------------------------------------------------------------------------------------
+
+    /** Suelta todo lo que lleva donde está. */
     public static void die() {
-        for (Item item : inventory) {
+        for (Item item : inventory.removeAll()) {
             WorldManager.dropItem(item, x, y);
         }
-        inventory.clear();
     }
 
     public static void respawn() {

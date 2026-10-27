@@ -3,6 +3,8 @@ package graphics;
 import static graphics.Sprite.drawSprite;
 import static graphics.Sprite.drawSpriteCropped;
 import static org.lwjgl.opengl.GL11.*;
+import static util.Geometry.dirX;
+import static util.Geometry.dirY;
 import static util.Geometry.distance;
 
 import java.util.List;
@@ -19,6 +21,7 @@ import items.Projectile;
 import items.StructItem;
 import npc.Npc;
 import npc.NpcKind;
+import player.BuildTool;
 import player.Player;
 import structs.Struct;
 import util.GameClock;
@@ -54,7 +57,6 @@ public final class GraphicsManager {
     private static final float FLASH_LENGTH = 22;
     private static final float FLASH_WIDTH = 6;
     private static final long HIT_FLASH_MS = 100;
-    private static final float HAND_OFFSET = 40;
 
     /** Escala del HUD (teclas N/M). */
     public static float hudScale;
@@ -226,15 +228,15 @@ public final class GraphicsManager {
     /** Vista previa en el mundo de lo que se va a construir: verde si se puede, rojo si no. */
     private static void drawBuildPreview() {
         Item selected = Player.selectedItem();
-        if (Player.buildPreview == null || !(selected instanceof StructItem)) {
+        if (BuildTool.preview() == null || !(selected instanceof StructItem)) {
             return;
         }
-        if (Player.canBuild) {
+        if (BuildTool.canBuildPreview()) {
             glColor4f(0.6f, 1f, 0.6f, 0.7f);
         } else {
             glColor4f(1f, 0.4f, 0.4f, 0.7f);
         }
-        drawStruct(Player.buildPreview);
+        drawStruct(BuildTool.preview());
         glColor4f(1, 1, 1, 1);
     }
 
@@ -287,7 +289,7 @@ public final class GraphicsManager {
             if (!inRenderDistance(npc.x, npc.y)) {
                 continue;
             }
-            if (!npc.alive) {
+            if (!npc.isAlive()) {
                 drawNpcBody(npc); // cadáver: sprite de sangre
             } else if (npc.isRising()) {
                 // Giro fijo por NPC para que no todos los charcos sean iguales
@@ -308,7 +310,7 @@ public final class GraphicsManager {
 
         // 3. NPC en pie, encima de todo lo anterior
         for (Npc npc : WorldManager.npcs) {
-            if (npc.alive && !npc.isRising() && inRenderDistance(npc.x, npc.y)) {
+            if (npc.isAlive() && !npc.isRising() && inRenderDistance(npc.x, npc.y)) {
                 drawNpcBody(npc);
             }
         }
@@ -324,16 +326,17 @@ public final class GraphicsManager {
     /** Sprite del NPC (con tinte según comportamiento y parpadeo si acaba de recibir un balazo). */
     private static void drawNpcBody(Npc npc) {
         if (npc.kind == NpcKind.HUMAN) {
-            // Tinte según el comportamiento para distinguir aliados, civiles y hostiles
-            switch (npc.behaviour) {
-                case REACTIVE -> glColor3f(0.6f, 1f, 0.6f);
-                case PASSIVE -> glColor3f(0.7f, 0.8f, 1f);
-                case AGGRESSIVE -> glColor3f(1f, 0.55f, 0.55f);
+            // Tinte según el tipo para distinguir aliados, civiles y hostiles
+            switch (npc.type) {
+                case GUARD -> glColor3f(0.6f, 1f, 0.6f);
+                case CIVILIAN -> glColor3f(0.7f, 0.8f, 1f);
+                case SOLDIER -> glColor3f(1f, 0.55f, 0.55f);
+                default -> { }
             }
         }
-        // El sprite del jugador mira hacia abajo y el de los zombis hacia arriba
+        // El sprite humano mira hacia abajo (sur) y el de los zombis hacia arriba (norte)
         boolean humanSprite = npc.texture == TextureId.HUMAN;
-        float rotation = humanSprite ? npc.rotation + 180 : npc.rotation;
+        float rotation = humanSprite ? npc.rotation - 90 : npc.rotation + 90;
         float size = spriteSize(npc);
         float half = size / 2;
         drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half,
@@ -391,11 +394,11 @@ public final class GraphicsManager {
 
     /** Posición en pantalla de la mano del jugador (donde se dibuja el arma). */
     private static float playerHandX() {
-        return DisplayManager.WIDTH / 2f + (float) Math.sin(Math.toRadians(-Player.rotation + 90)) * HAND_OFFSET;
+        return DisplayManager.WIDTH / 2f + dirX(Player.rotation) * Player.HAND_OFFSET;
     }
 
     private static float playerHandY() {
-        return DisplayManager.HEIGHT / 2f + (float) Math.cos(Math.toRadians(-Player.rotation + 90)) * HAND_OFFSET;
+        return DisplayManager.HEIGHT / 2f + dirY(Player.rotation) * Player.HAND_OFFSET;
     }
 
     private static void drawHud() {
@@ -414,7 +417,7 @@ public final class GraphicsManager {
         for (int i = 0; i < Player.HAND_SLOTS; i++) {
             float x = width / 2 + (CELL_SPACING + hudScale) * i;
             drawSprite(tex(TextureId.NORMAL_CELL), x, cellY, cellSize, cellSize);
-            if (i == Player.selectedCell) {
+            if (i == Player.inventory.selectedSlot()) {
                 drawSprite(tex(TextureId.SELECTED_CELL), x, cellY, cellSize, cellSize);
             }
         }

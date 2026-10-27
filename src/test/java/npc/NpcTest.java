@@ -96,7 +96,7 @@ class NpcTest {
 
         WorldManager.update(); // la bala impacta
         WorldManager.update(); // sin vida: muere del todo, ya no vuelve a levantarse
-        assertFalse(victim.alive);
+        assertFalse(victim.isAlive());
     }
 
     @Test
@@ -110,7 +110,7 @@ class NpcTest {
         WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, false));
         WorldManager.update(); // impacto
         WorldManager.update(); // sin vida: se convierte
-        assertTrue(target.alive);
+        assertTrue(target.isAlive());
         assertTrue(target.isRising());
 
         // Bala del jugador apuntando al objetivo: headshot, muere del todo
@@ -118,7 +118,7 @@ class NpcTest {
         Player.aimX = 300;
         WorldManager.projectiles.add(new Projectile(300, 0, 0, 0, 600, 1, true));
         WorldManager.update();
-        assertFalse(second.alive);
+        assertFalse(second.isAlive());
     }
 
     @Test
@@ -130,7 +130,7 @@ class NpcTest {
 
         WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, true));
         WorldManager.update();
-        assertTrue(target.alive);
+        assertTrue(target.isAlive());
         assertEquals(90, target.hp);
     }
 
@@ -168,6 +168,51 @@ class NpcTest {
         WorldManager.update();
         assertTrue(zombie.wasHitWithin(100));
         assertEquals(90, zombie.hp);
+    }
+
+    @Test
+    void civiliansRunAwayFromZombies() {
+        Player.x = 5_000;
+        Npc civilian = NpcManager.spawn(NpcType.CIVILIAN, 0, 0, 0);
+        NpcManager.spawn(NpcType.ZOMBIE, 200, 0, 0);
+        civilian.update();
+        assertTrue(civilian.x < 0, "debería alejarse del zombi (hacia -x), está en " + civilian.x);
+    }
+
+    @Test
+    void soldiersShootThePlayerButGuardsDoNot() {
+        Player.x = 300;
+        Npc guard = NpcManager.spawn(NpcType.GUARD, 0, 0, 0);
+        guard.update();
+        assertTrue(WorldManager.projectiles.isEmpty(), "un guardia no dispara al jugador");
+
+        Npc soldier = NpcManager.spawn(NpcType.SOLDIER, 0, 0, 0);
+        soldier.update();
+        assertEquals(1, WorldManager.projectiles.size());
+    }
+
+    @Test
+    void npcBulletsFlyTowardsTheTarget() {
+        Player.x = 5_000;
+        Npc soldier = NpcManager.spawn(NpcType.SOLDIER, 0, 0, 0);
+        NpcManager.spawn(NpcType.ZOMBIE, 0, 300, 0); // al sur
+        soldier.update();
+        var bullet = WorldManager.projectiles.getFirst();
+        assertTrue(bullet.y > 40 && Math.abs(bullet.x) < 15, "sale hacia el sur: " + bullet.x + "," + bullet.y);
+        bullet.move();
+        assertTrue(bullet.y > 40 + bullet.speed * GameClock.delta() - 1, "y sigue hacia el sur");
+    }
+
+    @Test
+    void convertedHumansChaseThePlayerOnceTheyRise() {
+        Npc human = NpcManager.spawn(NpcType.CIVILIAN, 300, 0, 0);
+        human.die(false);
+        GameClock.tick(5_100);
+        human.update(); // se levanta
+        assertTrue(human.isActive());
+        GameClock.tick(8);
+        human.update();
+        assertTrue(human.x < 300, "ahora es un zombi y va a por el jugador");
     }
 
     @Test

@@ -27,7 +27,7 @@ class OutpostWorldTest {
         WorldManager.activeChunks.clear();
         WorldManager.projectiles.clear();
         WorldManager.npcs.clear();
-        Player.inventory.clear();
+        Player.inventory.removeAll();
         OutpostWorld.create();
         Player.x = Player.SPAWN_X;
         Player.y = Player.SPAWN_Y;
@@ -39,7 +39,7 @@ class OutpostWorldTest {
     @Test
     void playerStartsFreeWithAPistolAndGunsInTheHouse() {
         assertFalse(WorldManager.isSolidAt(Player.SPAWN_X, Player.SPAWN_Y));
-        assertTrue(Player.inventory.getFirst() instanceof Gun);
+        assertTrue(Player.inventory.get(0) instanceof Gun);
 
         long gunsInHouse = WorldManager.chunks.stream()
                 .flatMap(chunk -> chunk.droppedItems.stream())

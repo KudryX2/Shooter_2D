@@ -1,6 +1,11 @@
 package util;
 
-/** Utilidades geométricas compartidas. */
+/**
+ * Utilidades geométricas compartidas.
+ *
+ * <p>Ángulos: en grados y en coordenadas de pantalla (y hacia abajo): 0 = este, 90 = sur, 180 = oeste,
+ * 270 = norte. Jugador, NPC y balas usan todos esta convención.
+ */
 public final class Geometry {
     /** Resultado de {@link #segmentEntersBox} cuando el segmento no toca la caja. */
     public static final float NO_HIT = -1;
@@ -12,6 +17,21 @@ public final class Geometry {
         float dx = x1 - x2;
         float dy = y1 - y2;
         return (float) Math.sqrt(dx * dx + dy * dy);
+    }
+
+    /** Ángulo desde (fromX, fromY) hacia (toX, toY). */
+    public static float angleTo(float fromX, float fromY, float toX, float toY) {
+        return (float) Math.toDegrees(Math.atan2(toY - fromY, toX - fromX));
+    }
+
+    /** Componente x de un paso de longitud 1 en la dirección {@code angle}. */
+    public static float dirX(float angle) {
+        return (float) Math.cos(Math.toRadians(angle));
+    }
+
+    /** Componente y de un paso de longitud 1 en la dirección {@code angle}. */
+    public static float dirY(float angle) {
+        return (float) Math.sin(Math.toRadians(angle));
     }
 
     /** {@code true} si los dos puntos están dentro de una caja de {@code halfSize} de lado medio. */

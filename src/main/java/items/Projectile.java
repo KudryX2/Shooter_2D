@@ -1,5 +1,8 @@
 package items;
 
+import static util.Geometry.dirX;
+import static util.Geometry.dirY;
+
 import util.GameClock;
 import util.Geometry;
 
@@ -23,10 +26,9 @@ public final class Projectile {
     }
 
     public void move() {
-        double angle = Math.toRadians(-rotation + 90);
         float step = speed * GameClock.delta();
-        x += (float) (Math.sin(angle) * step);
-        y += (float) (Math.cos(angle) * step);
+        x += dirX(rotation) * step;
+        y += dirY(rotation) * step;
     }
 
     public boolean isOutOfRange() {
