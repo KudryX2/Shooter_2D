@@ -16,9 +16,9 @@ Clic derecho  - usar botiquín / derribar (con un objeto construible en la mano)
 Q             - soltar el objeto seleccionado
 E             - coger un objeto del suelo
 N/M           - cambiar el tamaño del HUD
-P             - lanzar una oleada de zombis
+H             - lanzar una horda de zombis
 R             - volver al punto de inicio
-ESPACIO       - pausa (también el botón de arriba a la derecha)
+P, ESPACIO    - pausa (también el botón de arriba a la derecha)
 ESCAPE        - salir del juego
 
 Mundos:

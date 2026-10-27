@@ -5,8 +5,11 @@ import java.util.List;
 import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window;
+import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter;
 
 import graphics.DisplayManager;
+import input.Input;
 
 /**
  * Punto de entrada: crea la ventana y arranca la partida.
@@ -40,6 +43,24 @@ public final class DesktopLauncher {
         config.setWindowedMode(Math.round(DisplayManager.WINDOWED_WIDTH * fit),
                 Math.round(DisplayManager.WINDOWED_HEIGHT * fit));
         config.setResizable(false);
+        config.setWindowListener(new Lwjgl3WindowAdapter() {
+            @Override
+            public void created(Lwjgl3Window window) {
+                // Windows a veces abre la ventana detrás de las demás (p.ej. al lanzarla desde el IDE)
+                window.focusWindow();
+                Input.setFocused(window.isFocused());
+            }
+
+            @Override
+            public void focusGained() {
+                Input.setFocused(true);
+            }
+
+            @Override
+            public void focusLost() {
+                Input.setFocused(false);
+            }
+        });
 
         new Lwjgl3Application(new Game(options.contains("--classic")), config);
     }

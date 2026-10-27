@@ -57,5 +57,6 @@ tasks.jar {
 }
 
 tasks.test {
+    jvmArgs("--enable-native-access=ALL-UNNAMED") // los tests de cámara cargan código nativo de libGDX
     useJUnitPlatform()
 }

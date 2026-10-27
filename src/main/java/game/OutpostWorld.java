@@ -78,7 +78,7 @@ final class OutpostWorld {
                 + world.walls.size() + " muros, " + WorldManager.npcs.size() + " NPCs");
     }
 
-    /** Oleada de zombis en círculo alrededor del jugador. Tecla P. */
+    /** Oleada de zombis en círculo alrededor del jugador. Tecla H. */
     static void spawnWave() {
         var random = ThreadLocalRandom.current();
         for (int i = 0; i < WAVE_SIZE; i++) {

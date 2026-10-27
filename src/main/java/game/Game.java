@@ -75,11 +75,11 @@ public final class Game extends ApplicationAdapter {
     private boolean handleDebugKeys() {
         if (Input.wasKeyPressed(Keys.N)) HudRenderer.hudScale--;
         if (Input.wasKeyPressed(Keys.M)) HudRenderer.hudScale++;
-        if (Input.wasKeyPressed(Keys.SPACE)) GameClock.togglePause();
+        if (Input.wasKeyPressed(Keys.P) || Input.wasKeyPressed(Keys.SPACE)) GameClock.togglePause();
 
         // En pausa no se lanzan oleadas ni se vuelve al inicio
         if (!GameClock.isPaused()) {
-            if (Input.wasKeyPressed(Keys.P)) {
+            if (Input.wasKeyPressed(Keys.H)) { // horda
                 if (classicWorld) {
                     DemoWorld.spawnWave(DisplayManager.WIDTH);
                 } else {

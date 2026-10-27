@@ -76,7 +76,7 @@ final class DemoWorld {
         }
     }
 
-    /** Oleada de zombis (arriba) y humanos agresivos (abajo). Tecla P. */
+    /** Oleada de zombis (arriba) y humanos agresivos (abajo). Tecla H. */
     static void spawnWave(int width) {
         var random = ThreadLocalRandom.current();
         for (int x = 0; x < width; x += 100) {
