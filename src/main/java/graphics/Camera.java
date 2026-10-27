@@ -4,7 +4,12 @@ import static util.Geometry.distance;
 
 import player.Player;
 
-/** La cámara sigue al jugador, que siempre está en el centro de la pantalla. */
+/**
+ * La cámara sigue al jugador, que siempre está en el centro de la pantalla.
+ *
+ * <p>El mundo se dibuja en "coordenadas de pantalla sin zoom" ({@link #screenX}, {@link #screenY}); la cámara
+ * del mundo ({@link Draw#worldView()}) aplica luego {@link DisplayManager#WORLD_ZOOM} alrededor del centro.
+ */
 final class Camera {
 
     private Camera() {
@@ -28,6 +33,6 @@ final class Camera {
 
     /** {@code true} si (worldX, worldY) está lo bastante cerca para dibujarlo. */
     static boolean isVisible(float worldX, float worldY) {
-        return distance(worldX, worldY, Player.x, Player.y) < DisplayManager.WIDTH;
+        return distance(worldX, worldY, Player.x, Player.y) < DisplayManager.WIDTH * DisplayManager.WORLD_ZOOM;
     }
 }

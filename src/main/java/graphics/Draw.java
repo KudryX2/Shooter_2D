@@ -17,7 +17,10 @@ import assets.TextureId;
  * giro van en grados, en sentido horario en pantalla (como los de {@link util.Geometry}).
  */
 final class Draw {
-    private static OrthographicCamera camera;
+    /** Mundo: alejada {@link DisplayManager#WORLD_ZOOM} alrededor del centro de la pantalla (el jugador). */
+    private static OrthographicCamera worldCamera;
+    /** HUD: un píxel de pantalla por unidad, sin zoom. */
+    private static OrthographicCamera hudCamera;
     private static SpriteBatch batch;
     private static ShapeRenderer shapes;
     private static boolean additive;
@@ -26,25 +29,55 @@ final class Draw {
     }
 
     static void init() {
-        camera = new OrthographicCamera();
+        worldCamera = new OrthographicCamera();
+        hudCamera = new OrthographicCamera();
         batch = new SpriteBatch();
         shapes = new ShapeRenderer();
         resize(DisplayManager.WIDTH, DisplayManager.HEIGHT);
     }
 
     static void resize(int width, int height) {
-        camera.setToOrtho(true, width, height); // y hacia abajo
+        setUpWorldCamera(worldCamera, width, height);
+        hudCamera.setToOrtho(true, width, height); // y hacia abajo
+        hudCamera.update();
     }
 
-    /** Empieza un frame: limpia la pantalla. */
+    /**
+     * Cámara del mundo: y hacia abajo y alejada {@link DisplayManager#WORLD_ZOOM} alrededor del centro de la
+     * pantalla, que es donde está el jugador.
+     */
+    static void setUpWorldCamera(OrthographicCamera camera, int width, int height) {
+        camera.setToOrtho(true, width, height);
+        camera.zoom = DisplayManager.WORLD_ZOOM;
+        // setToOrtho coloca la cámara en (ancho/2, alto/2) multiplicado por el zoom que tuviera antes:
+        // se vuelve a centrar a mano para que el jugador quede siempre en el medio
+        camera.position.set(width / 2f, height / 2f, 0);
+        camera.update();
+    }
+
+    /** Empieza un frame: limpia la pantalla y dibuja el mundo hasta que se pida {@link #hudView()}. */
     static void begin() {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-        camera.update();
-        batch.setProjectionMatrix(camera.combined);
-        shapes.setProjectionMatrix(camera.combined);
         tint(1, 1, 1, 1);
         setAdditive(false);
+        worldView();
+    }
+
+    /** Lo siguiente se dibuja en el mundo (con zoom). */
+    static void worldView() {
+        use(worldCamera);
+    }
+
+    /** Lo siguiente se dibuja en el HUD (en píxeles de pantalla). */
+    static void hudView() {
+        use(hudCamera);
+    }
+
+    private static void use(OrthographicCamera camera) {
+        end(); // lo pendiente se dibuja con la cámara anterior
+        batch.setProjectionMatrix(camera.combined);
+        shapes.setProjectionMatrix(camera.combined);
     }
 
     /** Termina el frame: manda a la pantalla lo que quede pendiente. */

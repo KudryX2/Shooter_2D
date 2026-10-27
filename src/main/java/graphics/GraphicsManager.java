@@ -32,6 +32,7 @@ public final class GraphicsManager {
         CharacterRenderer.drawNpcs();
         CharacterRenderer.drawPlayer();
         EffectsRenderer.drawMuzzleFlashes();
+        Draw.hudView();
         HudRenderer.draw();
         Draw.end();
     }

@@ -4,7 +4,7 @@ Proyecto personal antiguo
 Juego hecho en Java con [libGDX](https://libgdx.com/) (backend de escritorio LWJGL 3), licencia GPL.
 Funciona en Windows, macOS y Linux; Gradle descarga todas las dependencias.
 
-Ejecutar: `./gradlew run` (pantalla completa) o `./gradlew run --args="--windowed"` (ventana).
+Ejecutar: `./gradlew run` (se abre en una ventana de 1600x900, más pequeña si la pantalla no da para tanto).
 
 Controles: 
 
@@ -25,4 +25,4 @@ Mundos:
 
 Por defecto se carga el "Puesto avanzado" (`OutpostWorld`): casa inicial con armas y materiales,
 aldea, fuerte militar, cementerio con horda, ruinas y algún secreto. Con `--classic` se carga el
-mapa de pruebas original (`DemoWorld`). Ejemplo: `./gradlew run --args="--windowed --classic"`
+mapa de pruebas original (`DemoWorld`). Ejemplo: `./gradlew run --args="--classic"`

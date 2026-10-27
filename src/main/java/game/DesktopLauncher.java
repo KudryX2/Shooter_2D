@@ -2,6 +2,7 @@ package game;
 
 import java.util.List;
 
+import com.badlogic.gdx.Graphics;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 
@@ -10,14 +11,15 @@ import graphics.DisplayManager;
 /**
  * Punto de entrada: crea la ventana y arranca la partida.
  *
- * <p>Argumentos:
+ * <p>Por ahora el juego siempre se abre en ventana. Argumentos:
  * <ul>
- *   <li>{@code --windowed}: jugar en ventana en lugar de pantalla completa.</li>
  *   <li>{@code --classic}: cargar el mapa de pruebas original ({@link DemoWorld}) en lugar de
  *       {@link OutpostWorld}.</li>
  * </ul>
  */
 public final class DesktopLauncher {
+    /** La ventana no ocupa más de esta fracción de la pantalla. */
+    private static final float MAX_SCREEN_FRACTION = 0.9f;
 
     private DesktopLauncher() {
     }
@@ -29,12 +31,15 @@ public final class DesktopLauncher {
         config.setTitle(DisplayManager.TITLE);
         config.useVsync(false);
         config.setForegroundFPS(DisplayManager.FPS);
-        if (options.contains("--windowed")) {
-            config.setWindowedMode(DisplayManager.WINDOWED_WIDTH, DisplayManager.WINDOWED_HEIGHT);
-            config.setResizable(false);
-        } else {
-            config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
-        }
+        // Por ahora siempre en ventana; la pantalla completa se añadirá más adelante.
+        // En pantallas pequeñas la ventana se reduce (con las mismas proporciones) para que quepa.
+        Graphics.DisplayMode screen = Lwjgl3ApplicationConfiguration.getDisplayMode();
+        float fit = Math.min(1, MAX_SCREEN_FRACTION * Math.min(
+                (float) screen.width / DisplayManager.WINDOWED_WIDTH,
+                (float) screen.height / DisplayManager.WINDOWED_HEIGHT));
+        config.setWindowedMode(Math.round(DisplayManager.WINDOWED_WIDTH * fit),
+                Math.round(DisplayManager.WINDOWED_HEIGHT * fit));
+        config.setResizable(false);
 
         new Lwjgl3Application(new Game(options.contains("--classic")), config);
     }

@@ -8,8 +8,14 @@ import util.GameClock;
 public final class DisplayManager {
     public static final String TITLE = "Too Late To Retrieve 2D";
     public static final int FPS = 120;
-    public static final int WINDOWED_WIDTH = 1200;
-    public static final int WINDOWED_HEIGHT = 800;
+    /** Tamaño de la ventana (si la pantalla es más pequeña, se reduce para que quepa). */
+    public static final int WINDOWED_WIDTH = 1600;
+    public static final int WINDOWED_HEIGHT = 900;
+    /**
+     * Cuánto se aleja la cámara del mundo: 1 = un píxel de pantalla por unidad del mundo; 1.25 = todo se ve al
+     * 80 % y cabe más mapa. No afecta al HUD.
+     */
+    public static final float WORLD_ZOOM = 1.25f;
     /** Límite del delta (ms) para evitar saltos enormes tras una pausa (carga, ventana arrastrada...). */
     private static final float MAX_DELTA = 50;
 
