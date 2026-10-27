@@ -1,23 +1,25 @@
 # Shooter 2D
 Proyecto personal antiguo 
 
-Juego hecho con java y eclipse, licencia GPL , se puede importar en clipse y ejecutar sin problema
+Juego hecho en Java con [libGDX](https://libgdx.com/) (backend de escritorio LWJGL 3), licencia GPL.
+Funciona en Windows, macOS y Linux; Gradle descarga todas las dependencias.
+
+Ejecutar: `./gradlew run` (pantalla completa) o `./gradlew run --args="--windowed"` (ventana).
 
 Controles: 
 
-W A S D - MOVEMENT
-Q       - drop something
-E       - pick up something
-Mouse0  - attack
-Mouse1  - build/use
-N/M     - change hud size
-P       - spawn zombies
-R       - teleport to spawn
-B       - build mode
-SPACE   - pause
-ESCAPE  - exit the game	
-		
-Utiliza: https://www.lwjgl.org/ (las dependencias estan en el proyecto)
+W A S D       - moverse
+Ratón         - apuntar
+Clic izquierdo - disparar / construir (con un muro, medio muro o suelo en la mano)
+Clic derecho  - usar botiquín / derribar (con un objeto construible en la mano)
+1-9, 0, rueda - elegir casilla del inventario (10 casillas)
+Q             - soltar el objeto seleccionado
+E             - coger un objeto del suelo
+N/M           - cambiar el tamaño del HUD
+P             - lanzar una oleada de zombis
+R             - volver al punto de inicio
+ESPACIO       - pausa (también el botón de arriba a la derecha)
+ESCAPE        - salir del juego
 
 Mundos:
 

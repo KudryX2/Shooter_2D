@@ -3,12 +3,10 @@ package graphics;
 import static graphics.Camera.isVisible;
 import static graphics.Camera.screenX;
 import static graphics.Camera.screenY;
-import static graphics.Sprite.drawSprite;
-import static graphics.Sprite.drawSpriteCropped;
-import static graphics.TexturesManager.tex;
-import static org.lwjgl.opengl.GL11.*;
 
 import java.util.List;
+
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
 import items.DroppedItem;
@@ -42,12 +40,12 @@ final class WorldRenderer {
                 boolean picture = s.texture() == TextureId.TEEMO; // las imágenes no se giran
                 float rotation = picture ? 0 : (hash & 3) * 90;
                 float tone = picture ? 1 : 0.9f + ((hash >>> 8) & 0xFF) / 255f * 0.1f;
-                glColor3f(tone, tone, tone);
-                drawSprite(tex(s.texture()),
-                        screenX(s.x()) - half, screenY(s.y()) - half, Struct.SIZE, Struct.SIZE, rotation);
+                Draw.tint(tone, tone, tone, 1);
+                Draw.sprite(s.texture(), screenX(s.x()) - half, screenY(s.y()) - half,
+                        Struct.SIZE, Struct.SIZE, rotation);
             }
         }
-        glColor3f(1f, 1f, 1f);
+        Draw.tint(1, 1, 1, 1);
     }
 
     private static int tileHash(float x, float y) {
@@ -66,31 +64,22 @@ final class WorldRenderer {
 
     /** Sombra proyectada hacia abajo a la derecha; como todas tienen el mismo desplazamiento, encajan entre sí. */
     private static void drawShadows(List<Struct> structs, float offset) {
-        glDisable(GL_TEXTURE_2D);
-        glColor4f(0, 0, 0, SHADOW_ALPHA);
-        glBegin(GL_QUADS);
+        ShapeRenderer shapes = Draw.shapes();
+        shapes.setColor(0, 0, 0, SHADOW_ALPHA);
         for (Struct s : structs) {
             if (isVisible(s.x(), s.y())) {
                 float w = s.halfWidth() * 2, h = s.halfHeight() * 2;
-                float x = screenX(s.x()) - w / 2 + offset;
-                float y = screenY(s.y()) - h / 2 + offset;
-                glVertex2f(x, y);
-                glVertex2f(x + w, y);
-                glVertex2f(x + w, y + h);
-                glVertex2f(x, y + h);
+                shapes.rect(screenX(s.x()) - w / 2 + offset, screenY(s.y()) - h / 2 + offset, w, h);
             }
         }
-        glEnd();
-        glColor4f(1, 1, 1, 1);
-        glEnable(GL_TEXTURE_2D);
     }
 
     static void drawWalls() {
         for (Chunk chunk : WorldManager.activeChunks) drawStructs(chunk.walls);
         // Medios muros tintados de color saco terrero: se distinguen de los muros (las balas los atraviesan)
-        glColor3f(0.85f, 0.72f, 0.5f);
+        Draw.tint(0.85f, 0.72f, 0.5f, 1);
         for (Chunk chunk : WorldManager.activeChunks) drawStructs(chunk.halfWalls);
-        glColor3f(1f, 1f, 1f);
+        Draw.tint(1, 1, 1, 1);
     }
 
     private static void drawStructs(List<Struct> structs) {
@@ -104,7 +93,7 @@ final class WorldRenderer {
     /** Un muro fino usa una tira de su textura a escala real, en vez de aplastar la imagen entera. */
     private static void drawStruct(Struct s) {
         float w = s.halfWidth() * 2, h = s.halfHeight() * 2;
-        drawSpriteCropped(tex(s.texture()), screenX(s.x()) - w / 2, screenY(s.y()) - h / 2, w, h,
+        Draw.spriteCropped(s.texture(), screenX(s.x()) - w / 2, screenY(s.y()) - h / 2, w, h,
                 Math.min(1, w / Struct.SIZE), Math.min(1, h / Struct.SIZE));
     }
 
@@ -115,19 +104,19 @@ final class WorldRenderer {
             return;
         }
         if (BuildTool.canBuildPreview()) {
-            glColor4f(0.6f, 1f, 0.6f, 0.7f);
+            Draw.tint(0.6f, 1f, 0.6f, 0.7f);
         } else {
-            glColor4f(1f, 0.4f, 0.4f, 0.7f);
+            Draw.tint(1f, 0.4f, 0.4f, 0.7f);
         }
         drawStruct(preview);
-        glColor4f(1, 1, 1, 1);
+        Draw.tint(1, 1, 1, 1);
     }
 
     static void drawDroppedItems() {
         float half = DROPPED_ITEM_SIZE / 2;
         for (Chunk chunk : WorldManager.activeChunks) {
             for (DroppedItem dropped : chunk.droppedItems) {
-                drawSprite(tex(dropped.item().icon), screenX(dropped.x()) - half, screenY(dropped.y()) - half,
+                Draw.sprite(dropped.item().icon, screenX(dropped.x()) - half, screenY(dropped.y()) - half,
                         DROPPED_ITEM_SIZE, DROPPED_ITEM_SIZE);
             }
         }

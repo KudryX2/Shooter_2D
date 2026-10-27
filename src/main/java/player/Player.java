@@ -26,7 +26,8 @@ public final class Player {
     public static final float SIZE = 35;
     public static final float SPAWN_X = 600;
     public static final float SPAWN_Y = 600;
-    public static final int HAND_SLOTS = 4;
+    /** Casillas del inventario; se seleccionan con 1-9, 0 y la rueda. */
+    public static final int INVENTORY_SLOTS = 10;
     public static final int MAX_HP = 100;
     /** Distancia del centro a la mano (donde se dibuja el arma y salen las balas). */
     public static final float HAND_OFFSET = 40;
@@ -40,7 +41,7 @@ public final class Player {
     /** Hacia dónde mira, en grados (ver {@link util.Geometry}). */
     public static float rotation;
     public static int hp;
-    public static final Inventory inventory = new Inventory(HAND_SLOTS);
+    public static final Inventory inventory = new Inventory(INVENTORY_SLOTS);
 
     /**
      * Punto del mundo al que apunta, actualizado en cada frame. Lo usa el mundo para los headshots.

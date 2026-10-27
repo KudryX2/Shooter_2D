@@ -1,11 +1,7 @@
 package graphics;
 
-import static graphics.Sprite.drawSprite;
-import static graphics.TexturesManager.tex;
-
-import org.lwjgl.input.Mouse;
-
 import assets.TextureId;
+import input.Input;
 import player.Player;
 
 /** Inventario, botón de pausa y cursor, en coordenadas de pantalla. */
@@ -27,19 +23,21 @@ public final class HudRenderer {
         float height = DisplayManager.HEIGHT;
         float cellY = height / 1.1f;
         float cellSize = 50 + hudScale;
+        float step = CELL_SPACING + hudScale;
+        float firstX = (width - step * Player.INVENTORY_SLOTS) / 2; // barra centrada
 
         // Objetos del inventario
         for (int i = 0; i < Player.inventory.size(); i++) {
-            float x = width / 2 + 5 + (CELL_SPACING + hudScale) * i;
-            drawSprite(tex(Player.inventory.get(i).icon), x, cellY + 5, 40 + hudScale, 40 + hudScale);
+            float x = firstX + 5 + step * i;
+            Draw.sprite(Player.inventory.get(i).icon, x, cellY + 5, 40 + hudScale, 40 + hudScale);
         }
 
-        // Casillas de la mano
-        for (int i = 0; i < Player.HAND_SLOTS; i++) {
-            float x = width / 2 + (CELL_SPACING + hudScale) * i;
-            drawSprite(tex(TextureId.NORMAL_CELL), x, cellY, cellSize, cellSize);
+        // Casillas
+        for (int i = 0; i < Player.INVENTORY_SLOTS; i++) {
+            float x = firstX + step * i;
+            Draw.sprite(TextureId.NORMAL_CELL, x, cellY, cellSize, cellSize);
             if (i == Player.inventory.selectedSlot()) {
-                drawSprite(tex(TextureId.SELECTED_CELL), x, cellY, cellSize, cellSize);
+                Draw.sprite(TextureId.SELECTED_CELL, x, cellY, cellSize, cellSize);
             }
         }
 
@@ -47,7 +45,8 @@ public final class HudRenderer {
 
         // Cursor (siempre lo último, por encima de todo el HUD). Con un objeto construible, la vista previa en el
         // mundo ya indica si se puede construir.
-        drawSprite(tex(TextureId.POINTER), Mouse.getX() - 20 - hudScale / 2,
-                height - hudScale / 2 - Mouse.getY() - 20, 40 + hudScale, 40 + hudScale);
+        float cursorSize = 40 + hudScale;
+        Draw.sprite(TextureId.POINTER, Input.mouseX() - cursorSize / 2, Input.mouseY() - cursorSize / 2,
+                cursorSize, cursorSize);
     }
 }

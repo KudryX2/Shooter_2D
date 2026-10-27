@@ -5,11 +5,10 @@ import static graphics.Camera.centerY;
 import static graphics.Camera.isVisible;
 import static graphics.Camera.screenX;
 import static graphics.Camera.screenY;
-import static graphics.Sprite.drawSprite;
-import static graphics.TexturesManager.tex;
-import static org.lwjgl.opengl.GL11.*;
 import static util.Geometry.dirX;
 import static util.Geometry.dirY;
+
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
 import items.Consumable;
@@ -59,8 +58,8 @@ final class CharacterRenderer {
             } else if (npc.isRising()) {
                 // Giro fijo por NPC para que no todos los charcos sean iguales
                 float rotation = Math.floorMod(System.identityHashCode(npc), 360);
-                drawSprite(tex(TextureId.BLOOD), screenX(npc.x) - puddleHalf,
-                        screenY(npc.y) - puddleHalf, BLOOD_PUDDLE_SIZE, BLOOD_PUDDLE_SIZE, rotation);
+                Draw.sprite(TextureId.BLOOD, screenX(npc.x) - puddleHalf, screenY(npc.y) - puddleHalf,
+                        BLOOD_PUDDLE_SIZE, BLOOD_PUDDLE_SIZE, rotation);
             } else {
                 drawShadow(screenX(npc.x), screenY(npc.y));
             }
@@ -94,9 +93,9 @@ final class CharacterRenderer {
         if (npc.kind == NpcKind.HUMAN) {
             // Tinte según el tipo para distinguir aliados, civiles y hostiles
             switch (npc.type) {
-                case GUARD -> glColor3f(0.6f, 1f, 0.6f);
-                case CIVILIAN -> glColor3f(0.7f, 0.8f, 1f);
-                case SOLDIER -> glColor3f(1f, 0.55f, 0.55f);
+                case GUARD -> Draw.tint(0.6f, 1f, 0.6f, 1);
+                case CIVILIAN -> Draw.tint(0.7f, 0.8f, 1f, 1);
+                case SOLDIER -> Draw.tint(1f, 0.55f, 0.55f, 1);
                 default -> { }
             }
         }
@@ -105,15 +104,15 @@ final class CharacterRenderer {
         float rotation = humanSprite ? npc.rotation - 90 : npc.rotation + 90;
         float size = spriteSize(npc);
         float half = size / 2;
-        drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
-        glColor3f(1f, 1f, 1f);
+        Draw.sprite(npc.texture, screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
+        Draw.tint(1, 1, 1, 1);
         if (npc.wasHitWithin(HIT_FLASH_MS)) {
             // Parpadeo al recibir un balazo: se vuelve a dibujar el sprite con mezcla aditiva para aclararlo
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-            glColor4f(1f, 0.75f, 0.75f, 0.85f);
-            drawSprite(tex(npc.texture), screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glColor4f(1, 1, 1, 1);
+            Draw.setAdditive(true);
+            Draw.tint(1f, 0.75f, 0.75f, 0.85f);
+            Draw.sprite(npc.texture, screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
+            Draw.setAdditive(false);
+            Draw.tint(1, 1, 1, 1);
         }
     }
 
@@ -128,7 +127,7 @@ final class CharacterRenderer {
         // El sprite del jugador mira hacia abajo (sur)
         float half = CHARACTER_SIZE / 2;
         drawShadow(cx, cy);
-        drawSprite(tex(TextureId.PLAYER), cx - half, cy - half, CHARACTER_SIZE, CHARACTER_SIZE, Player.rotation - 90);
+        Draw.sprite(TextureId.PLAYER, cx - half, cy - half, CHARACTER_SIZE, CHARACTER_SIZE, Player.rotation - 90);
         if (Player.hp > 0) {
             drawHealthBar(Player.hp, cx - Player.SIZE / 2, cy - Player.SIZE - 5);
         }
@@ -139,10 +138,10 @@ final class CharacterRenderer {
         switch (Player.selectedItem()) {
             case null -> { }
             // 32 px: antes se dibujaba a 50 pero la imagen solo ocupaba 20/32 del cuadro (relleno)
-            case Gun gun -> drawSprite(tex(gun.heldTexture), handX - 16, handY - 16, 32, 32, Player.rotation);
-            case Consumable consumable -> drawSprite(tex(consumable.heldTexture),
+            case Gun gun -> Draw.sprite(gun.heldTexture, handX - 16, handY - 16, 32, 32, Player.rotation);
+            case Consumable consumable -> Draw.sprite(consumable.heldTexture,
                     handX - 12, handY - 12, 24, 24, Player.rotation);
-            case StructItem struct -> drawSprite(tex(struct.heldTexture),
+            case StructItem struct -> Draw.sprite(struct.heldTexture,
                     handX - 20, handY - 20, 40, 40, Player.rotation);
         }
     }
@@ -158,25 +157,15 @@ final class CharacterRenderer {
 
     /** Sombra elíptica bajo un personaje, centrada en (x, y) de pantalla. */
     private static void drawShadow(float x, float y) {
-        glDisable(GL_TEXTURE_2D);
-        glColor4f(0, 0, 0, WorldRenderer.SHADOW_ALPHA);
-        glBegin(GL_TRIANGLE_FAN);
-        float cx = x + SHADOW_OFFSET;
-        float cy = y + SHADOW_OFFSET;
-        glVertex2f(cx, cy);
-        for (int i = 0; i <= SHADOW_SEGMENTS; i++) {
-            double angle = 2 * Math.PI * i / SHADOW_SEGMENTS;
-            glVertex2f(cx + (float) Math.cos(angle) * SHADOW_RADIUS,
-                    cy + (float) Math.sin(angle) * SHADOW_RADIUS * 0.8f);
-        }
-        glEnd();
-        glColor4f(1, 1, 1, 1);
-        glEnable(GL_TEXTURE_2D);
+        ShapeRenderer shapes = Draw.shapes();
+        shapes.setColor(0, 0, 0, WorldRenderer.SHADOW_ALPHA);
+        float width = SHADOW_RADIUS * 2, height = SHADOW_RADIUS * 2 * 0.8f;
+        shapes.ellipse(x + SHADOW_OFFSET - width / 2, y + SHADOW_OFFSET - height / 2, width, height, SHADOW_SEGMENTS);
     }
 
     private static void drawHealthBar(int hp, float x, float y) {
-        drawSprite(tex(TextureId.HP_BACKGROUND), x, y, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
+        Draw.sprite(TextureId.HP_BACKGROUND, x, y, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
         TextureId texture = hp > 50 ? TextureId.HP_HIGH : hp > 25 ? TextureId.HP_MEDIUM : TextureId.HP_LOW;
-        drawSprite(tex(texture), x, y, HEALTH_BAR_WIDTH * hp / 100f, HEALTH_BAR_HEIGHT);
+        Draw.sprite(texture, x, y, HEALTH_BAR_WIDTH * hp / 100f, HEALTH_BAR_HEIGHT);
     }
 }

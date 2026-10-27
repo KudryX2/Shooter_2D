@@ -1,8 +1,6 @@
 package graphics;
 
-import static org.lwjgl.opengl.GL11.*;
-
-import org.lwjgl.input.Mouse;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import input.Input;
 import util.GameClock;
@@ -11,7 +9,6 @@ import util.GameClock;
 public final class PauseButton {
     private static final float SIZE = 40;
     private static final float MARGIN = 16;
-
 
     private PauseButton() {
     }
@@ -31,7 +28,7 @@ public final class PauseButton {
 
     /** El cursor está encima del botón (los clics sobre él no deben disparar). */
     public static boolean isHovered() {
-        return contains(Mouse.getX(), DisplayManager.HEIGHT - Mouse.getY());
+        return contains(Input.mouseX(), Input.mouseY());
     }
 
     /** Llamar una vez por frame: alterna la pausa al hacer clic izquierdo sobre el botón. */
@@ -44,41 +41,23 @@ public final class PauseButton {
     static void draw() {
         float x = left(), y = top();
         boolean hovered = isHovered();
+        ShapeRenderer shapes = Draw.shapes();
 
-        glDisable(GL_TEXTURE_2D);
         // Fondo
-        glColor4f(0, 0, 0, hovered ? 0.65f : 0.4f);
-        glBegin(GL_QUADS);
-        glVertex2f(x, y);
-        glVertex2f(x + SIZE, y);
-        glVertex2f(x + SIZE, y + SIZE);
-        glVertex2f(x, y + SIZE);
-        glEnd();
+        shapes.setColor(0, 0, 0, hovered ? 0.65f : 0.4f);
+        shapes.rect(x, y, SIZE, SIZE);
 
         // Icono
-        glColor4f(1, 1, 1, hovered ? 1f : 0.85f);
+        shapes.setColor(1, 1, 1, hovered ? 1f : 0.85f);
         if (GameClock.isPaused()) {
             // ▶ reanudar
-            glBegin(GL_TRIANGLES);
-            glVertex2f(x + SIZE * 0.36f, y + SIZE * 0.25f);
-            glVertex2f(x + SIZE * 0.36f, y + SIZE * 0.75f);
-            glVertex2f(x + SIZE * 0.74f, y + SIZE * 0.5f);
-            glEnd();
+            shapes.triangle(x + SIZE * 0.36f, y + SIZE * 0.25f,
+                    x + SIZE * 0.36f, y + SIZE * 0.75f,
+                    x + SIZE * 0.74f, y + SIZE * 0.5f);
         } else {
             // ⏸ pausar
-            glBegin(GL_QUADS);
-            bar(x + SIZE * 0.3f, y + SIZE * 0.25f, SIZE * 0.14f, SIZE * 0.5f);
-            bar(x + SIZE * 0.56f, y + SIZE * 0.25f, SIZE * 0.14f, SIZE * 0.5f);
-            glEnd();
+            shapes.rect(x + SIZE * 0.3f, y + SIZE * 0.25f, SIZE * 0.14f, SIZE * 0.5f);
+            shapes.rect(x + SIZE * 0.56f, y + SIZE * 0.25f, SIZE * 0.14f, SIZE * 0.5f);
         }
-        glColor4f(1, 1, 1, 1);
-        glEnable(GL_TEXTURE_2D);
-    }
-
-    private static void bar(float x, float y, float w, float h) {
-        glVertex2f(x, y);
-        glVertex2f(x + w, y);
-        glVertex2f(x + w, y + h);
-        glVertex2f(x, y + h);
     }
 }

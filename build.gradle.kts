@@ -5,6 +5,8 @@ plugins {
 group = "game"
 version = "1.1.0"
 
+val gdxVersion = "1.14.2"
+
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -15,21 +17,25 @@ repositories {
     mavenCentral()
 }
 
-val nativesDir = layout.projectDirectory.dir("JavaLibs/natives")
-
 dependencies {
-    // LWJGL 2.9.1 + slick-util, incluidos en el repositorio
-    implementation(files("JavaLibs/jars/lwjgl.jar", "JavaLibs/jars/slick-util.jar"))
+    // libGDX con el backend de escritorio (LWJGL 3) y sus librerías nativas para Windows, Linux y macOS
+    implementation("com.badlogicgames.gdx:gdx:$gdxVersion")
+    implementation("com.badlogicgames.gdx:gdx-backend-lwjgl3:$gdxVersion")
+    runtimeOnly("com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop")
 
     testImplementation(platform("org.junit:junit-bom:5.13.4"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
+val isMac = System.getProperty("os.name").lowercase().contains("mac")
+
 application {
-    mainClass = "game.Game"
-    // LWJGL 2 carga librerías nativas por JNI; evita el aviso de "restricted method" de Java 24+
-    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
+    mainClass = "game.DesktopLauncher"
+    // LWJGL carga librerías nativas; evita el aviso de "restricted method" de Java 24+.
+    // En macOS, GLFW necesita que la ventana se cree en el primer hilo.
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED") +
+            if (isMac) listOf("-XstartOnFirstThread") else emptyList()
 }
 
 tasks.withType<JavaCompile>().configureEach {
@@ -39,7 +45,6 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.named<JavaExec>("run") {
     workingDir = projectDir
-    systemProperty("org.lwjgl.librarypath", nativesDir.asFile.absolutePath)
 }
 
 tasks.jar {
@@ -48,15 +53,6 @@ tasks.jar {
             "Main-Class" to application.mainClass.get(),
             "Enable-Native-Access" to "ALL-UNNAMED",
         )
-    }
-}
-
-// La distribución (installDist / distZip) incluye las DLLs en <app>/natives
-distributions {
-    main {
-        contents {
-            from(nativesDir) { into("natives") }
-        }
     }
 }
 

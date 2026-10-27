@@ -3,12 +3,12 @@ package graphics;
 import static graphics.Camera.isVisible;
 import static graphics.Camera.screenX;
 import static graphics.Camera.screenY;
-import static graphics.Sprite.drawSprite;
-import static graphics.TexturesManager.tex;
-import static org.lwjgl.opengl.GL11.*;
 import static util.Geometry.dirX;
 import static util.Geometry.dirY;
 import static util.Geometry.distance;
+
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
 import items.Projectile;
@@ -22,43 +22,37 @@ final class EffectsRenderer {
     private static final float BULLET_SIZE = 4;
     private static final float TRAIL_LENGTH = 22;
     private static final float TRAIL_WIDTH = 1.5f;
+    private static final Color TRAIL_HEAD = new Color(1f, 0.95f, 0.75f, 0.9f);
+    private static final Color TRAIL_TAIL = new Color(1f, 0.75f, 0.35f, 0f);
     /** El fogonazo empieza un poco por delante de la boca del arma. */
     private static final float FLASH_FORWARD = 14;
     private static final float FLASH_LENGTH = 22;
     private static final float FLASH_WIDTH = 6;
+    private static final Color FLASH_EDGE = new Color(1f, 0.6f, 0.1f, 0f);
+    /** Centro del fogonazo; su opacidad cambia con el tiempo. */
+    private static final Color flashCenter = new Color(1f, 1f, 0.85f, 1f);
 
     private EffectsRenderer() {
     }
 
     /** Bala con una estela fina que se desvanece hacia atrás (nunca más larga que lo que lleva recorrido). */
     static void drawProjectiles() {
-        glDisable(GL_TEXTURE_2D);
-        glEnable(GL_LINE_SMOOTH);
-        glLineWidth(TRAIL_WIDTH);
-        glBegin(GL_LINES);
+        ShapeRenderer shapes = Draw.shapes();
         for (Projectile p : WorldManager.projectiles) {
             if (!isVisible(p.x, p.y)) {
                 continue;
             }
-            float dx = dirX(p.rotation);
-            float dy = dirY(p.rotation);
             float length = Math.min(TRAIL_LENGTH, distance(p.x, p.y, p.startX, p.startY));
             float headX = screenX(p.x);
             float headY = screenY(p.y);
-            glColor4f(1f, 0.95f, 0.75f, 0.9f);
-            glVertex2f(headX, headY);
-            glColor4f(1f, 0.75f, 0.35f, 0f);
-            glVertex2f(headX - dx * length, headY - dy * length);
+            shapes.rectLine(headX, headY, headX - dirX(p.rotation) * length, headY - dirY(p.rotation) * length,
+                    TRAIL_WIDTH, TRAIL_HEAD, TRAIL_TAIL);
         }
-        glEnd();
-        glDisable(GL_LINE_SMOOTH);
-        glColor4f(1, 1, 1, 1);
-        glEnable(GL_TEXTURE_2D);
 
         float half = BULLET_SIZE / 2;
         for (Projectile p : WorldManager.projectiles) {
             if (isVisible(p.x, p.y)) {
-                drawSprite(tex(TextureId.BULLET), screenX(p.x) - half, screenY(p.y) - half,
+                Draw.sprite(TextureId.BULLET, screenX(p.x) - half, screenY(p.y) - half,
                         BULLET_SIZE, BULLET_SIZE, p.rotation);
             }
         }
@@ -70,8 +64,7 @@ final class EffectsRenderer {
      */
     static void drawMuzzleFlashes() {
         long now = GameClock.now();
-        glDisable(GL_TEXTURE_2D);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+        Draw.setAdditive(true);
         for (MuzzleFlash flash : WorldManager.muzzleFlashes) {
             float life = 1 - (now - flash.time()) / (float) MuzzleFlash.DURATION_MS;
             if (life <= 0) {
@@ -96,19 +89,18 @@ final class EffectsRenderer {
             float cy = y + dy * FLASH_FORWARD;
             float length = FLASH_LENGTH * (0.6f + 0.4f * life);
 
-            glBegin(GL_TRIANGLE_FAN);
-            glColor4f(1f, 1f, 0.85f, life);
-            glVertex2f(cx, cy);
-            glColor4f(1f, 0.6f, 0.1f, 0f);
-            glVertex2f(cx + dx * length, cy + dy * length);                   // punta
-            glVertex2f(cx - dy * FLASH_WIDTH, cy + dx * FLASH_WIDTH);         // lado
-            glVertex2f(cx - dx * FLASH_WIDTH * 0.6f, cy - dy * FLASH_WIDTH * 0.6f); // detrás
-            glVertex2f(cx + dy * FLASH_WIDTH, cy - dx * FLASH_WIDTH);         // otro lado
-            glVertex2f(cx + dx * length, cy + dy * length);                   // cierra en la punta
-            glEnd();
+            // Rombo: cuatro triángulos desde el centro (brillante) hasta los bordes (transparentes)
+            float tipX = cx + dx * length, tipY = cy + dy * length;
+            float side1X = cx - dy * FLASH_WIDTH, side1Y = cy + dx * FLASH_WIDTH;
+            float backX = cx - dx * FLASH_WIDTH * 0.6f, backY = cy - dy * FLASH_WIDTH * 0.6f;
+            float side2X = cx + dy * FLASH_WIDTH, side2Y = cy - dx * FLASH_WIDTH;
+            flashCenter.a = life;
+            ShapeRenderer shapes = Draw.shapes();
+            shapes.triangle(cx, cy, tipX, tipY, side1X, side1Y, flashCenter, FLASH_EDGE, FLASH_EDGE);
+            shapes.triangle(cx, cy, side1X, side1Y, backX, backY, flashCenter, FLASH_EDGE, FLASH_EDGE);
+            shapes.triangle(cx, cy, backX, backY, side2X, side2Y, flashCenter, FLASH_EDGE, FLASH_EDGE);
+            shapes.triangle(cx, cy, side2X, side2Y, tipX, tipY, flashCenter, FLASH_EDGE, FLASH_EDGE);
         }
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        glColor4f(1, 1, 1, 1);
-        glEnable(GL_TEXTURE_2D);
+        Draw.setAdditive(false);
     }
 }

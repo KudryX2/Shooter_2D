@@ -1,14 +1,13 @@
 package game;
 
-import java.util.List;
-
-import org.lwjgl.input.Keyboard;
+import com.badlogic.gdx.ApplicationAdapter;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
 
 import graphics.DisplayManager;
 import graphics.GraphicsManager;
 import graphics.HudRenderer;
 import graphics.PauseButton;
-import graphics.TexturesManager;
 import input.Input;
 import player.Player;
 import player.PlayerController;
@@ -16,89 +15,80 @@ import util.GameClock;
 import world.WorldManager;
 
 /**
- * Punto de entrada.
- *
- * <p>Argumentos:
- * <ul>
- *   <li>{@code --windowed}: jugar en ventana en lugar de pantalla completa.</li>
- *   <li>{@code --classic}: cargar el mapa de pruebas original ({@link DemoWorld}) en lugar de
- *       {@link OutpostWorld}.</li>
- * </ul>
+ * La partida: libGDX llama a {@link #create()} al abrir la ventana y a {@link #render()} en cada frame. El
+ * arranque (ventana, argumentos) está en {@link DesktopLauncher}.
  */
-public final class Game {
+public final class Game extends ApplicationAdapter {
     private final boolean classicWorld;
 
-    private Game(boolean classicWorld) {
+    /** @param classicWorld cargar el mapa de pruebas original ({@link DemoWorld}) en lugar de {@link OutpostWorld} */
+    public Game(boolean classicWorld) {
         this.classicWorld = classicWorld;
     }
 
-    public static void main(String[] args) {
-        NativeLibraries.configure();
-        List<String> options = List.of(args);
-        boolean fullScreen = !options.contains("--windowed");
-        new Game(options.contains("--classic")).run(fullScreen);
+    @Override
+    public void create() {
+        DisplayManager.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        GraphicsManager.init();
+        Input.init();
+        Player.create();
+        PlayerController.init();
+        if (classicWorld) {
+            DemoWorld.create();
+        } else {
+            OutpostWorld.create();
+        }
     }
 
-    private void run(boolean fullScreen) {
-        try {
-            DisplayManager.init(fullScreen);
-            Player.create();
-            PlayerController.init();
-            TexturesManager.init();
-            GraphicsManager.init();
-            if (classicWorld) {
-                DemoWorld.create();
-            } else {
-                OutpostWorld.create();
-            }
+    @Override
+    public void resize(int width, int height) {
+        GraphicsManager.resize(width, height);
+    }
 
-            loop();
-        } finally {
-            DisplayManager.destroy();
+    @Override
+    public void render() {
+        DisplayManager.tick();
+        Input.update();
+        PauseButton.update();
+        // En pausa el mundo queda congelado, pero se sigue dibujando
+        if (!GameClock.isPaused()) {
+            PlayerController.update(PauseButton.isHovered());
+            WorldManager.update();
         }
 
+        GraphicsManager.render();
+
+        if (!handleDebugKeys()) {
+            Gdx.app.exit();
+        }
+    }
+
+    @Override
+    public void dispose() {
+        GraphicsManager.dispose();
         System.out.println("//////////////////////////////////////////////////////////");
         System.out.println(" TE HAS CARGADO " + WorldManager.zombiesKilled + " ZOMBIES WOW SUCH SKILL VERY AIM ");
         System.out.println("//////////////////////////////////////////////////////////");
     }
 
-    private void loop() {
-        while (!DisplayManager.isCloseRequested()) {
-            Input.update();
-            PauseButton.update();
-            // En pausa el mundo queda congelado, pero se sigue dibujando
-            if (!GameClock.isPaused()) {
-                PlayerController.update(PauseButton.isHovered());
-                WorldManager.update();
-            }
-
-            GraphicsManager.render();
-            DisplayManager.update();
-
-            if (!handleDebugKeys()) {
-                return;
-            }
-        }
-    }
-
     /** Teclas de desarrollo. Devuelve {@code false} si hay que salir del juego. */
     private boolean handleDebugKeys() {
-        if (Input.wasKeyPressed(Keyboard.KEY_N)) HudRenderer.hudScale--;
-        if (Input.wasKeyPressed(Keyboard.KEY_M)) HudRenderer.hudScale++;
-        if (Input.wasKeyPressed(Keyboard.KEY_SPACE)) GameClock.togglePause();
+        if (Input.wasKeyPressed(Keys.N)) HudRenderer.hudScale--;
+        if (Input.wasKeyPressed(Keys.M)) HudRenderer.hudScale++;
+        if (Input.wasKeyPressed(Keys.SPACE)) GameClock.togglePause();
 
         // En pausa no se lanzan oleadas ni se vuelve al inicio
         if (!GameClock.isPaused()) {
-            if (Input.wasKeyPressed(Keyboard.KEY_P)) {
+            if (Input.wasKeyPressed(Keys.P)) {
                 if (classicWorld) {
                     DemoWorld.spawnWave(DisplayManager.WIDTH);
                 } else {
                     OutpostWorld.spawnWave();
                 }
             }
-            if (Input.isKeyDown(Keyboard.KEY_R)) Player.teleportToSpawn();
+            if (Input.isKeyDown(Keys.R)) Player.teleportToSpawn();
         }
 
-        return !Input.isKeyDown(Keyboard.KEY_ESCAPE);
+        return !Input.isKeyDown(Keys.ESCAPE);
     }
 }

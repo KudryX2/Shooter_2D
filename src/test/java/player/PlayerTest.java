@@ -154,6 +154,22 @@ class PlayerTest {
     }
 
     @Test
+    void carriesUpToTenItems() {
+        WorldManager.activeChunks.addAll(WorldManager.chunks);
+        for (int i = 0; i < 11; i++) {
+            WorldManager.dropItem(Consumable.medkit(), 0, 0);
+        }
+        for (int i = 0; i < 11; i++) {
+            Player.pickUpItem();
+        }
+        assertEquals(10, Player.inventory.size());
+        assertEquals(1, WorldManager.chunks.getFirst().droppedItems.size(), "el undécimo se queda en el suelo");
+
+        Player.inventory.select(9); // tecla 0
+        assertTrue(Player.selectedItem() instanceof Consumable);
+    }
+
+    @Test
     void dyingDropsEverythingAndRespawnsWithFullHealth() {
         Player.inventory.add(new Gun(GunType.PISTOL));
         Player.inventory.add(Consumable.medkit());
