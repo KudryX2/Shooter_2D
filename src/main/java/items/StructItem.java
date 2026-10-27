@@ -1,14 +1,13 @@
 package items;
 
-import assets.TextureId;
+import structs.StructKind;
 
-/** Objeto de inventario que permite construir una estructura (muro, medio muro o suelo). */
+/** Objeto de inventario que permite construir una estructura (muro, medio muro o suelo). No se gasta. */
 public final class StructItem extends Item {
+    public final StructKind kind;
 
-    public StructItem(String name, ItemKind itemKind, TextureId texture) {
-        super(name, itemKind, texture, texture);
-        if (!itemKind.isBuildable()) {
-            throw new IllegalArgumentException("No es una estructura: " + itemKind);
-        }
+    public StructItem(StructKind kind) {
+        super(kind.displayName, kind.texture, kind.texture);
+        this.kind = kind;
     }
 }

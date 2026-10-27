@@ -8,8 +8,7 @@ import graphics.DisplayManager;
 import graphics.GraphicsManager;
 import graphics.PauseButton;
 import graphics.TexturesManager;
-import items.ItemManager;
-import npc.NpcManager;
+import input.Input;
 import player.Player;
 import util.GameClock;
 import world.WorldManager;
@@ -26,7 +25,6 @@ import world.WorldManager;
  */
 public final class Game {
     private final boolean classicWorld;
-    private boolean wasP, wasN, wasM, wasSpace;
 
     private Game(boolean classicWorld) {
         this.classicWorld = classicWorld;
@@ -45,8 +43,6 @@ public final class Game {
             Player.create();
             TexturesManager.init();
             GraphicsManager.init();
-            ItemManager.init();
-            NpcManager.init();
             if (classicWorld) {
                 DemoWorld.create();
             } else {
@@ -65,6 +61,7 @@ public final class Game {
 
     private void loop() {
         while (!DisplayManager.isCloseRequested()) {
+            Input.update();
             PauseButton.update();
             // En pausa el mundo queda congelado, pero se sigue dibujando
             if (!GameClock.isPaused()) {
@@ -83,34 +80,22 @@ public final class Game {
 
     /** Teclas de desarrollo. Devuelve {@code false} si hay que salir del juego. */
     private boolean handleDebugKeys() {
-        boolean n = Keyboard.isKeyDown(Keyboard.KEY_N);
-        if (n && !wasN) GraphicsManager.hudScale--;
-        wasN = n;
+        if (Input.wasKeyPressed(Keyboard.KEY_N)) GraphicsManager.hudScale--;
+        if (Input.wasKeyPressed(Keyboard.KEY_M)) GraphicsManager.hudScale++;
+        if (Input.wasKeyPressed(Keyboard.KEY_SPACE)) GameClock.togglePause();
 
-        boolean m = Keyboard.isKeyDown(Keyboard.KEY_M);
-        if (m && !wasM) GraphicsManager.hudScale++;
-        wasM = m;
-
-        boolean space = Keyboard.isKeyDown(Keyboard.KEY_SPACE);
-        if (space && !wasSpace) GameClock.togglePause();
-        wasSpace = space;
-        if (GameClock.isPaused()) {
-            wasP = Keyboard.isKeyDown(Keyboard.KEY_P); // que no salte una oleada al quitar la pausa
-            return !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE);
-        }
-
-        boolean p = Keyboard.isKeyDown(Keyboard.KEY_P);
-        if (p && !wasP) {
-            if (classicWorld) {
-                DemoWorld.spawnWave(DisplayManager.WIDTH);
-            } else {
-                OutpostWorld.spawnWave();
+        // En pausa no se lanzan oleadas ni se vuelve al inicio
+        if (!GameClock.isPaused()) {
+            if (Input.wasKeyPressed(Keyboard.KEY_P)) {
+                if (classicWorld) {
+                    DemoWorld.spawnWave(DisplayManager.WIDTH);
+                } else {
+                    OutpostWorld.spawnWave();
+                }
             }
+            if (Input.isKeyDown(Keyboard.KEY_R)) Player.teleportToSpawn();
         }
-        wasP = p;
 
-        if (Keyboard.isKeyDown(Keyboard.KEY_R)) Player.teleportToSpawn();
-
-        return !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE);
+        return !Input.isKeyDown(Keyboard.KEY_ESCAPE);
     }
 }

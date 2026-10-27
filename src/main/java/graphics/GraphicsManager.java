@@ -226,7 +226,7 @@ public final class GraphicsManager {
     /** Vista previa en el mundo de lo que se va a construir: verde si se puede, rojo si no. */
     private static void drawBuildPreview() {
         Item selected = Player.selectedItem();
-        if (Player.buildPreview == null || selected == null || !selected.itemKind.isBuildable()) {
+        if (Player.buildPreview == null || !(selected instanceof StructItem)) {
             return;
         }
         if (Player.canBuild) {

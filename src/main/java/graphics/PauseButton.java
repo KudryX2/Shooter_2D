@@ -4,6 +4,7 @@ import static org.lwjgl.opengl.GL11.*;
 
 import org.lwjgl.input.Mouse;
 
+import input.Input;
 import util.GameClock;
 
 /** Botón de pausa en la esquina superior derecha: ⏸ mientras se juega y ▶ en pausa. */
@@ -11,7 +12,6 @@ public final class PauseButton {
     private static final float SIZE = 40;
     private static final float MARGIN = 16;
 
-    private static boolean wasPressed;
 
     private PauseButton() {
     }
@@ -36,11 +36,9 @@ public final class PauseButton {
 
     /** Llamar una vez por frame: alterna la pausa al hacer clic izquierdo sobre el botón. */
     public static void update() {
-        boolean pressed = Mouse.isButtonDown(0);
-        if (pressed && !wasPressed && isHovered()) {
+        if (Input.wasButtonPressed(0) && isHovered()) {
             GameClock.togglePause();
         }
-        wasPressed = pressed;
     }
 
     static void draw() {

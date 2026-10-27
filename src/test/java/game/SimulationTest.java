@@ -5,11 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import items.ItemManager;
 import items.Projectile;
 import npc.Npc;
 import npc.NpcKind;
-import npc.NpcManager;
 import player.Player;
 import util.GameClock;
 import world.WorldManager;
@@ -23,8 +21,6 @@ class SimulationTest {
         WorldManager.projectiles.clear();
         WorldManager.npcs.clear();
         Player.inventory.clear();
-        ItemManager.init();
-        NpcManager.init();
         DemoWorld.create();
         Player.x = Player.SPAWN_X;
         Player.y = Player.SPAWN_Y;

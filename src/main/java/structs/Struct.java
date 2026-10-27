@@ -1,7 +1,6 @@
 package structs;
 
 import assets.TextureId;
-import items.ItemKind;
 
 /**
  * Estructura construida en el mundo, centrada en (x, y).
@@ -11,42 +10,34 @@ import items.ItemKind;
  * los bordes entre casillas: horizontales ({@code vertical = false}) o verticales. Miden una casilla de largo
  * más su grosor, para que dos muros que se juntan en una esquina se solapen y no quede hueco.
  */
-public record Struct(float x, float y, ItemKind kind, TextureId texture, boolean vertical) {
+public record Struct(float x, float y, StructKind kind, TextureId texture, boolean vertical) {
     public static final float SIZE = 65;
-    public static final float WALL_THICKNESS = 16;      // un cuarto de casilla
-    public static final float HALF_WALL_THICKNESS = 13; // un quinto de casilla
     /** Mitad del lado más largo que puede tener una estructura (un muro con sus puntas). */
-    public static final float MAX_HALF_EXTENT = (SIZE + WALL_THICKNESS) / 2;
-
-    public Struct {
-        if (!kind.isBuildable()) {
-            throw new IllegalArgumentException("No es una estructura: " + kind);
-        }
-    }
+    public static final float MAX_HALF_EXTENT = (SIZE + StructKind.WALL.thickness) / 2;
 
     /** Suelo, o muro horizontal. */
-    public Struct(float x, float y, ItemKind kind, TextureId texture) {
+    public Struct(float x, float y, StructKind kind, TextureId texture) {
         this(x, y, kind, texture, false);
     }
 
     /** Muro horizontal en el borde norte de la casilla (tileX, tileY). */
-    public static Struct northWall(int tileX, int tileY, ItemKind kind, TextureId texture) {
-        return new Struct(tileX * SIZE, tileY * SIZE - SIZE / 2, kind, texture, false);
+    public static Struct northWall(int tileX, int tileY, StructKind kind) {
+        return new Struct(tileX * SIZE, tileY * SIZE - SIZE / 2, kind, kind.texture, false);
     }
 
     /** Muro vertical en el borde oeste de la casilla (tileX, tileY). */
-    public static Struct westWall(int tileX, int tileY, ItemKind kind, TextureId texture) {
-        return new Struct(tileX * SIZE - SIZE / 2, tileY * SIZE, kind, texture, true);
+    public static Struct westWall(int tileX, int tileY, StructKind kind) {
+        return new Struct(tileX * SIZE - SIZE / 2, tileY * SIZE, kind, kind.texture, true);
     }
 
     /**
      * La estructura que se construiría apuntando a (x, y): un suelo va a la casilla que hay debajo; un muro, al
      * borde más cercano, y su orientación sale de ese borde.
      */
-    public static Struct snapped(float x, float y, ItemKind kind, TextureId texture) {
+    public static Struct snapped(float x, float y, StructKind kind, TextureId texture) {
         float tileX = Math.round(x / SIZE) * SIZE;
         float tileY = Math.round(y / SIZE) * SIZE;
-        if (kind == ItemKind.FLOOR) {
+        if (kind == StructKind.FLOOR) {
             return new Struct(tileX, tileY, kind, texture);
         }
         // Los bordes están a media casilla de los centros
@@ -59,15 +50,11 @@ public record Struct(float x, float y, ItemKind kind, TextureId texture, boolean
     }
 
     public boolean isWall() {
-        return kind == ItemKind.WALL || kind == ItemKind.HALF_WALL;
+        return kind.isWall;
     }
 
     public float thickness() {
-        return switch (kind) {
-            case WALL -> WALL_THICKNESS;
-            case HALF_WALL -> HALF_WALL_THICKNESS;
-            default -> SIZE;
-        };
+        return kind.thickness;
     }
 
     /** Mitad del ancho (eje x) de su caja. */

@@ -7,12 +7,16 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import assets.TextureId;
+import items.Consumable;
+import items.Gun;
+import items.GunType;
 import items.Item;
-import items.ItemKind;
-import items.ItemManager;
+import items.StructItem;
 import npc.NpcManager;
+import npc.NpcType;
 import player.Player;
 import structs.Struct;
+import structs.StructKind;
 import world.Chunk;
 import world.WorldManager;
 
@@ -40,15 +44,6 @@ final class OutpostWorld {
     private static final int CHUNK_TILES = 10;
     private static final long SEED = 2026;
 
-
-    // Índices de ItemManager.guns / buildables
-    private static final int SHOTGUN = 1;
-    private static final int SNIPER = 2;
-    private static final int AK47 = 3;
-    private static final int WALL_ITEM = 0;
-    private static final int HALF_WALL_ITEM = 1;
-    private static final int FLOOR_ITEM = 2;
-
     /** Ningún zombi aparece al crear el mundo a menos de esta distancia (en casillas) del jugador. */
     private static final int SAFE_RADIUS_TILES = 20;
     /** Por debajo de 600 px (rango de persecución) para que la oleada vaya a por el jugador directamente. */
@@ -58,7 +53,7 @@ final class OutpostWorld {
     private final Random random = new Random(SEED);
     private final TextureId[][] ground = new TextureId[SIZE_TILES][SIZE_TILES];
     /** Muros por borde (ver {@link #edgeKey}). */
-    private final Map<Long, ItemKind> walls = new HashMap<>();
+    private final Map<Long, StructKind> walls = new HashMap<>();
     private final int spawnX = Math.round(Player.SPAWN_X / TILE);
     private final int spawnY = Math.round(Player.SPAWN_Y / TILE);
 
@@ -66,7 +61,7 @@ final class OutpostWorld {
     }
 
     static void create() {
-        Player.inventory.add(ItemManager.guns.getFirst().copy());
+        Player.inventory.add(new Gun(GunType.PISTOL));
 
         for (int i = 0; i < SIZE_TILES; i += CHUNK_TILES) {
             for (int j = 0; j < SIZE_TILES; j += CHUNK_TILES) {
@@ -90,7 +85,7 @@ final class OutpostWorld {
             float x = Player.x + (float) Math.cos(angle) * WAVE_RADIUS;
             float y = Player.y + (float) Math.sin(angle) * WAVE_RADIUS;
             if (!WorldManager.isSolidAt(x, y)) {
-                NpcManager.spawnNpc(random.nextBoolean() ? NpcManager.ZOMBIE : NpcManager.ZOMBIE_ALT,
+                NpcManager.spawn(random.nextBoolean() ? NpcType.ZOMBIE : NpcType.ZOMBIE_ALT,
                         x, y, random.nextInt(360));
             }
         }
@@ -128,20 +123,20 @@ final class OutpostWorld {
         int cx = spawnX, cy = spawnY;
 
         // Anillo de sacos terreros (medio muro: frena a los zombis pero deja pasar las balas)
-        room(cx - 7, cy - 7, cx + 7, cy + 7, ItemKind.HALF_WALL);
+        room(cx - 7, cy - 7, cx + 7, cy + 7, StructKind.HALF_WALL);
         northWalls(cx - 1, cx + 1, cy + 8, null); // salida sur
         westWalls(cx + 8, cy - 1, cy + 1, null);  // salida este
 
         // Casa
-        room(cx - 4, cy - 4, cx + 4, cy + 4, ItemKind.WALL);
+        room(cx - 4, cy - 4, cx + 4, cy + 4, StructKind.WALL);
         ground(cx - 4, cy - 4, cx + 4, cy + 4, TextureId.DIRT);
         northWalls(cx - 1, cx + 1, cy + 5, null); // puerta
         // Ventanas para disparar desde dentro
-        northWalls(cx - 1, cx + 1, cy - 4, ItemKind.HALF_WALL);
-        westWalls(cx - 4, cy - 1, cy + 1, ItemKind.HALF_WALL);
-        westWalls(cx + 5, cy - 1, cy + 1, ItemKind.HALF_WALL);
+        northWalls(cx - 1, cx + 1, cy - 4, StructKind.HALF_WALL);
+        westWalls(cx - 4, cy - 1, cy + 1, StructKind.HALF_WALL);
+        westWalls(cx + 5, cy - 1, cy + 1, StructKind.HALF_WALL);
         // Banco de trabajo (rincón de los materiales)
-        northWalls(cx + 2, cx + 3, cy + 2, ItemKind.HALF_WALL);
+        northWalls(cx + 2, cx + 3, cy + 2, StructKind.HALF_WALL);
     }
 
     private void village() {
@@ -152,7 +147,7 @@ final class OutpostWorld {
 
     /** Casa pequeña (casillas interiores) con suelo de tierra, puerta de 3 casillas y algún muro caído. */
     private void hut(int x0, int y0, int x1, int y1, char door) {
-        room(x0, y0, x1, y1, ItemKind.WALL);
+        room(x0, y0, x1, y1, StructKind.WALL);
         ground(x0, y0, x1, y1, TextureId.DIRT);
         ruin(x0, y0, x1, y1, 0.15);
         int mid = (x0 + x1) / 2;
@@ -162,44 +157,44 @@ final class OutpostWorld {
 
     private void fort() {
         int x0 = 26, y0 = 41, x1 = 44, y1 = 57;
-        room(x0, y0, x1, y1, ItemKind.WALL);
+        room(x0, y0, x1, y1, StructKind.WALL);
         ground(x0, y0, x1, y1, TextureId.DIRT);
 
         // Almenas: medio muro cada 3 casillas para que los soldados disparen hacia fuera
         for (int x = x0 + 1; x < x1; x += 3) {
-            northWalls(x, x, y0, ItemKind.HALF_WALL);
-            northWalls(x, x, y1 + 1, ItemKind.HALF_WALL);
+            northWalls(x, x, y0, StructKind.HALF_WALL);
+            northWalls(x, x, y1 + 1, StructKind.HALF_WALL);
         }
         for (int y = y0 + 1; y < y1; y += 3) {
-            westWalls(x1 + 1, y, y, ItemKind.HALF_WALL);
+            westWalls(x1 + 1, y, y, StructKind.HALF_WALL);
         }
 
         // Torres en las esquinas: un cuadrado de 2x2 casillas sobre cada esquina
-        room(x0 - 1, y0 - 1, x0, y0, ItemKind.WALL);
-        room(x1, y0 - 1, x1 + 1, y0, ItemKind.WALL);
-        room(x0 - 1, y1, x0, y1 + 1, ItemKind.WALL);
-        room(x1, y1, x1 + 1, y1 + 1, ItemKind.WALL);
+        room(x0 - 1, y0 - 1, x0, y0, StructKind.WALL);
+        room(x1, y0 - 1, x1 + 1, y0, StructKind.WALL);
+        room(x0 - 1, y1, x0, y1 + 1, StructKind.WALL);
+        room(x1, y1, x1 + 1, y1 + 1, StructKind.WALL);
 
         westWalls(x0, 48, 50, null); // puerta oeste, al final del camino
 
         // Barracón / armería
-        room(37, 44, 42, 48, ItemKind.WALL);
+        room(37, 44, 42, 48, StructKind.WALL);
         westWalls(37, 45, 47, null);
 
         // Coberturas en el patio
-        northWalls(29, 32, 45, ItemKind.HALF_WALL);
-        northWalls(29, 32, 53, ItemKind.HALF_WALL);
-        northWalls(38, 41, 53, ItemKind.HALF_WALL);
+        northWalls(29, 32, 45, StructKind.HALF_WALL);
+        northWalls(29, 32, 53, StructKind.HALF_WALL);
+        northWalls(38, 41, 53, StructKind.HALF_WALL);
     }
 
     private void cemetery() {
         int x0 = 81, y0 = 15, x1 = 99, y1 = 33;
-        room(x0, y0, x1, y1, ItemKind.HALF_WALL);
+        room(x0, y0, x1, y1, StructKind.HALF_WALL);
         ground(x0, y0, x1, y1, TextureId.DIRT);
         northWalls(89, 91, y0, null); // entrada norte, donde acaba el camino
 
         // Mausoleo
-        room(88, 22, 92, 26, ItemKind.WALL);
+        room(88, 22, 92, 26, StructKind.WALL);
         northWalls(89, 91, 27, null);
 
         // Tumbas en filas, dejando libre el pasillo central y el mausoleo
@@ -208,7 +203,7 @@ final class OutpostWorld {
                 boolean aisle = x >= 88 && x <= 92;
                 boolean nearMausoleum = x >= 86 && x <= 94 && y >= 20 && y <= 28;
                 if (!aisle && !nearMausoleum) {
-                    northWalls(x, x, y, ItemKind.HALF_WALL);
+                    northWalls(x, x, y, StructKind.HALF_WALL);
                 }
             }
         }
@@ -219,7 +214,7 @@ final class OutpostWorld {
         for (int i = 0; i < 20; i++) {
             int x = 70 + random.nextInt(31);
             int y = 65 + random.nextInt(36);
-            ItemKind kind = random.nextInt(10) < 7 ? ItemKind.WALL : ItemKind.HALF_WALL;
+            StructKind kind = random.nextInt(10) < 7 ? StructKind.WALL : StructKind.HALF_WALL;
             int length = 3 + random.nextInt(4);
             boolean horizontal = random.nextBoolean();
             if (horizontal) {
@@ -239,7 +234,7 @@ final class OutpostWorld {
     }
 
     private void teemoShrine() {
-        room(110, 110, 114, 114, ItemKind.HALF_WALL);
+        room(110, 110, 114, 114, StructKind.HALF_WALL);
         northWalls(111, 113, 110, null);
         ground(111, 111, 113, 113, TextureId.TEEMO);
     }
@@ -251,15 +246,14 @@ final class OutpostWorld {
     private void build() {
         for (int x = 0; x < SIZE_TILES; x++) {
             for (int y = 0; y < SIZE_TILES; y++) {
-                WorldManager.build(new Struct(px(x), px(y), ItemKind.FLOOR, ground[x][y]));
+                WorldManager.build(new Struct(px(x), px(y), StructKind.FLOOR, ground[x][y]));
             }
         }
         walls.forEach((key, kind) -> {
-            TextureId texture = kind == ItemKind.WALL ? TextureId.WALL : TextureId.HALF_WALL;
             int x = edgeX(key), y = edgeY(key);
             WorldManager.build(isVertical(key)
-                    ? Struct.westWall(x, y, kind, texture)
-                    : Struct.northWall(x, y, kind, texture));
+                    ? Struct.westWall(x, y, kind)
+                    : Struct.northWall(x, y, kind));
         });
     }
 
@@ -267,65 +261,65 @@ final class OutpostWorld {
         int cx = spawnX, cy = spawnY;
 
         // Casa inicial: armero al norte y materiales junto al banco de trabajo
-        item(ItemManager.guns.get(SHOTGUN).copy(), cx - 3, cy - 3);
-        item(ItemManager.guns.get(SNIPER).copy(), cx + 3, cy - 3);
-        item(ItemManager.buildables.get(WALL_ITEM), cx + 2, cy + 3);
-        item(ItemManager.buildables.get(HALF_WALL_ITEM), cx + 3, cy + 3);
-        item(ItemManager.buildables.get(FLOOR_ITEM), cx + 4, cy + 3);
-        item(ItemManager.medkit(), cx - 3, cy + 3);
-        item(ItemManager.medkit(), cx - 2, cy + 3);
+        item(new Gun(GunType.SHOTGUN), cx - 3, cy - 3);
+        item(new Gun(GunType.SNIPER), cx + 3, cy - 3);
+        item(new StructItem(StructKind.WALL), cx + 2, cy + 3);
+        item(new StructItem(StructKind.HALF_WALL), cx + 3, cy + 3);
+        item(new StructItem(StructKind.FLOOR), cx + 4, cy + 3);
+        item(Consumable.medkit(), cx - 3, cy + 3);
+        item(Consumable.medkit(), cx - 2, cy + 3);
         // Guardias aliados entre la casa y los sacos terreros (solo disparan a zombis)
-        human(NpcManager.HUMAN_REACTIVE, cx - 3, cy + 7);
-        human(NpcManager.HUMAN_REACTIVE, cx + 3, cy + 7);
-        human(NpcManager.HUMAN_REACTIVE, cx + 7, cy - 3);
-        human(NpcManager.HUMAN_REACTIVE, cx + 7, cy + 3);
+        human(NpcType.GUARD, cx - 3, cy + 7);
+        human(NpcType.GUARD, cx + 3, cy + 7);
+        human(NpcType.GUARD, cx + 7, cy - 3);
+        human(NpcType.GUARD, cx + 7, cy + 3);
 
         // Aldea: civiles que huyen, un guardia en el camino y botín aleatorio
-        item(ItemManager.randomGun().copy(), 35, 3);
-        item(ItemManager.randomGun().copy(), 45, 3);
-        item(ItemManager.randomGun().copy(), 39, 15);
-        item(ItemManager.buildables.get(HALF_WALL_ITEM), 47, 2);
-        item(ItemManager.medkit(), 33, 5);
-        item(ItemManager.medkit(), 41, 14);
-        human(NpcManager.HUMAN_PASSIVE, 33, 3);
-        human(NpcManager.HUMAN_PASSIVE, 37, 4);
-        human(NpcManager.HUMAN_PASSIVE, 43, 4);
-        human(NpcManager.HUMAN_PASSIVE, 47, 4);
-        human(NpcManager.HUMAN_PASSIVE, 37, 14);
-        human(NpcManager.HUMAN_PASSIVE, 41, 15);
-        human(NpcManager.HUMAN_REACTIVE, 40, spawnY);
+        item(new Gun(GunType.random()), 35, 3);
+        item(new Gun(GunType.random()), 45, 3);
+        item(new Gun(GunType.random()), 39, 15);
+        item(new StructItem(StructKind.HALF_WALL), 47, 2);
+        item(Consumable.medkit(), 33, 5);
+        item(Consumable.medkit(), 41, 14);
+        human(NpcType.CIVILIAN, 33, 3);
+        human(NpcType.CIVILIAN, 37, 4);
+        human(NpcType.CIVILIAN, 43, 4);
+        human(NpcType.CIVILIAN, 47, 4);
+        human(NpcType.CIVILIAN, 37, 14);
+        human(NpcType.CIVILIAN, 41, 15);
+        human(NpcType.GUARD, 40, spawnY);
         zombies(6, 60, 0, 70, 20);
 
         // Fuerte: soldados agresivos (también disparan al jugador) y la armería
-        item(ItemManager.guns.get(AK47).copy(), 39, 45);
-        item(ItemManager.guns.get(AK47).copy(), 41, 45);
-        item(ItemManager.guns.get(SNIPER).copy(), 40, 47);
-        item(ItemManager.buildables.get(WALL_ITEM), 42, 47);
-        item(ItemManager.medkit(), 38, 47);
-        item(ItemManager.medkit(), 42, 44);
-        human(NpcManager.HUMAN_AGGRESSIVE, 30, 43);
-        human(NpcManager.HUMAN_AGGRESSIVE, 34, 49);
-        human(NpcManager.HUMAN_AGGRESSIVE, 28, 49);
-        human(NpcManager.HUMAN_AGGRESSIVE, 30, 55);
-        human(NpcManager.HUMAN_AGGRESSIVE, 40, 55);
+        item(new Gun(GunType.ASSAULT_RIFLE), 39, 45);
+        item(new Gun(GunType.ASSAULT_RIFLE), 41, 45);
+        item(new Gun(GunType.SNIPER), 40, 47);
+        item(new StructItem(StructKind.WALL), 42, 47);
+        item(Consumable.medkit(), 38, 47);
+        item(Consumable.medkit(), 42, 44);
+        human(NpcType.SOLDIER, 30, 43);
+        human(NpcType.SOLDIER, 34, 49);
+        human(NpcType.SOLDIER, 28, 49);
+        human(NpcType.SOLDIER, 30, 55);
+        human(NpcType.SOLDIER, 40, 55);
         zombies(10, 25, 70, 45, 78);
 
         // Cementerio: la horda, y un premio dentro del mausoleo
-        item(ItemManager.guns.get(SNIPER).copy(), 90, 24);
-        item(ItemManager.randomGun().copy(), 89, 23);
-        item(ItemManager.medkit(), 91, 23);
-        item(ItemManager.medkit(), 91, 25);
+        item(new Gun(GunType.SNIPER), 90, 24);
+        item(new Gun(GunType.random()), 89, 23);
+        item(Consumable.medkit(), 91, 23);
+        item(Consumable.medkit(), 91, 25);
         zombies(25, 81, 15, 99, 33);
 
         // Ruinas
-        item(ItemManager.randomGun().copy(), 75, 80);
-        item(ItemManager.randomGun().copy(), 95, 95);
+        item(new Gun(GunType.random()), 75, 80);
+        item(new Gun(GunType.random()), 95, 95);
         zombies(15, 70, 65, 105, 105);
 
         // Secreto
-        item(ItemManager.guns.get(AK47).copy(), 112, 112);
-        item(ItemManager.medkit(), 111, 113);
-        item(ItemManager.medkit(), 113, 113);
+        item(new Gun(GunType.ASSAULT_RIFLE), 112, 112);
+        item(Consumable.medkit(), 111, 113);
+        item(Consumable.medkit(), 113, 113);
 
         // Zombis sueltos por todo el mapa
         zombies(30, 0, 0, SIZE_TILES - 1, SIZE_TILES - 1);
@@ -335,9 +329,9 @@ final class OutpostWorld {
         WorldManager.dropItem(item, px(x), px(y));
     }
 
-    private void human(int type, int x, int y) {
+    private void human(NpcType type, int x, int y) {
         if (inWorld(x, y)) {
-            NpcManager.spawnNpc(type, px(x), px(y), random.nextInt(360));
+            NpcManager.spawn(type, px(x), px(y), random.nextInt(360));
         }
     }
 
@@ -349,8 +343,8 @@ final class OutpostWorld {
             int y = y0 + random.nextInt(y1 - y0 + 1);
             int dx = x - spawnX, dy = y - spawnY;
             if (inWorld(x, y) && dx * dx + dy * dy > SAFE_RADIUS_TILES * SAFE_RADIUS_TILES) {
-                int type = random.nextBoolean() ? NpcManager.ZOMBIE : NpcManager.ZOMBIE_ALT;
-                NpcManager.spawnNpc(type, px(x), px(y), random.nextInt(360));
+                NpcType type = random.nextBoolean() ? NpcType.ZOMBIE : NpcType.ZOMBIE_ALT;
+                NpcManager.spawn(type, px(x), px(y), random.nextInt(360));
                 placed++;
             }
         }
@@ -386,7 +380,7 @@ final class OutpostWorld {
     }
 
     /** Pone ({@code kind}) o quita ({@code null}) el muro de un borde. */
-    private void wall(int x, int y, boolean vertical, ItemKind kind) {
+    private void wall(int x, int y, boolean vertical, StructKind kind) {
         if (x < 0 || y < 0 || x > SIZE_TILES || y > SIZE_TILES) {
             return;
         }
@@ -398,21 +392,21 @@ final class OutpostWorld {
     }
 
     /** Línea horizontal en los bordes norte de las casillas x0..x1 de la fila y ({@code null} = quitarla). */
-    private void northWalls(int x0, int x1, int y, ItemKind kind) {
+    private void northWalls(int x0, int x1, int y, StructKind kind) {
         for (int x = x0; x <= x1; x++) {
             wall(x, y, false, kind);
         }
     }
 
     /** Línea vertical en los bordes oeste de las casillas y0..y1 de la columna x ({@code null} = quitarla). */
-    private void westWalls(int x, int y0, int y1, ItemKind kind) {
+    private void westWalls(int x, int y0, int y1, StructKind kind) {
         for (int y = y0; y <= y1; y++) {
             wall(x, y, true, kind);
         }
     }
 
     /** Muros alrededor de las casillas x0..x1, y0..y1. */
-    private void room(int x0, int y0, int x1, int y1, ItemKind kind) {
+    private void room(int x0, int y0, int x1, int y1, StructKind kind) {
         northWalls(x0, x1, y0, kind);
         northWalls(x0, x1, y1 + 1, kind);
         westWalls(x0, y0, y1, kind);

@@ -2,17 +2,16 @@ package items;
 
 import assets.TextureId;
 
+/** Objeto de inventario. Qué es cada uno lo dice su clase: {@link Gun}, {@link StructItem} o {@link Consumable}. */
 public abstract sealed class Item permits Gun, StructItem, Consumable {
     public final String name;
-    public final ItemKind itemKind;
     /** Textura en el inventario y en el suelo. */
     public final TextureId icon;
     /** Textura en la mano del jugador. */
     public final TextureId heldTexture;
 
-    protected Item(String name, ItemKind itemKind, TextureId icon, TextureId heldTexture) {
+    protected Item(String name, TextureId icon, TextureId heldTexture) {
         this.name = name;
-        this.itemKind = itemKind;
         this.icon = icon;
         this.heldTexture = heldTexture;
     }

@@ -13,9 +13,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import assets.TextureId;
-import items.ItemKind;
-import items.ItemManager;
+import items.Consumable;
+import items.Gun;
+import items.GunType;
 import structs.Struct;
+import structs.StructKind;
 import world.Chunk;
 import world.WorldManager;
 
@@ -23,7 +25,6 @@ class PlayerTest {
 
     @BeforeEach
     void setUp() {
-        ItemManager.init();
         Player.inventory.clear();
         Player.selectedCell = 0;
     }
@@ -52,11 +53,11 @@ class PlayerTest {
         List<Struct> solids = new ArrayList<>();
         // Cuadrícula (como los mapas) y posiciones sueltas (como lo que construye el jugador)
         for (int i = 0; i < 150; i++) {
-            ItemKind kind = random.nextBoolean() ? ItemKind.WALL : ItemKind.HALF_WALL;
+            StructKind kind = random.nextBoolean() ? StructKind.WALL : StructKind.HALF_WALL;
             int tx = random.nextInt(15), ty = random.nextInt(15);
             Struct wall = switch (i % 3) {
-                case 0 -> Struct.northWall(tx, ty, kind, TextureId.WALL);
-                case 1 -> Struct.westWall(tx, ty, kind, TextureId.WALL);
+                case 0 -> Struct.northWall(tx, ty, kind);
+                case 1 -> Struct.westWall(tx, ty, kind);
                 default -> new Struct(random.nextFloat() * 1000 - 100, random.nextFloat() * 1000 - 100, kind,
                         TextureId.WALL, random.nextBoolean());
             };
@@ -81,7 +82,7 @@ class PlayerTest {
     void thinWallsBlockThePlayer() {
         WorldManager.reset();
         WorldManager.chunks.add(new Chunk(0, 0));
-        Struct wall = Struct.westWall(1, 0, ItemKind.WALL, TextureId.WALL); // vertical en x = 32.5
+        Struct wall = Struct.westWall(1, 0, StructKind.WALL); // vertical en x = 32.5
         WorldManager.build(wall);
 
         Player.y = 0;
@@ -102,14 +103,14 @@ class PlayerTest {
         WorldManager.chunks.add(new Chunk(0, 0));
         Player.x = 0;
         Player.y = -30; // casi sobre el borde norte de la casilla (0, 0), en y = -32.5
-        WorldManager.build(Struct.northWall(2, 2, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(Struct.northWall(2, 2, StructKind.WALL));
 
-        assertFalse(Player.canBuild(Struct.northWall(2, 2, ItemKind.HALF_WALL, TextureId.HALF_WALL)), "ocupado");
-        assertTrue(Player.canBuild(Struct.westWall(2, 2, ItemKind.WALL, TextureId.WALL)), "esquina con el otro");
-        assertTrue(Player.canBuild(Struct.northWall(3, 2, ItemKind.WALL, TextureId.WALL)), "a continuación");
-        assertFalse(Player.canBuild(Struct.northWall(0, 0, ItemKind.WALL, TextureId.WALL)), "encima del jugador");
-        assertFalse(Player.canBuild(Struct.northWall(10, 0, ItemKind.WALL, TextureId.WALL)), "fuera de alcance");
-        assertTrue(Player.canBuild(new Struct(0, 0, ItemKind.FLOOR, TextureId.GRASS)), "suelo bajo el jugador");
+        assertFalse(Player.canBuild(Struct.northWall(2, 2, StructKind.HALF_WALL)), "ocupado");
+        assertTrue(Player.canBuild(Struct.westWall(2, 2, StructKind.WALL)), "esquina con el otro");
+        assertTrue(Player.canBuild(Struct.northWall(3, 2, StructKind.WALL)), "a continuación");
+        assertFalse(Player.canBuild(Struct.northWall(0, 0, StructKind.WALL)), "encima del jugador");
+        assertFalse(Player.canBuild(Struct.northWall(10, 0, StructKind.WALL)), "fuera de alcance");
+        assertTrue(Player.canBuild(new Struct(0, 0, StructKind.FLOOR, TextureId.GRASS)), "suelo bajo el jugador");
     }
 
     @Test
@@ -119,9 +120,9 @@ class PlayerTest {
         WorldManager.chunks.add(new Chunk(650, 0));
         Player.x = 0;
         Player.y = 0;
-        Struct wall = Struct.northWall(2, 2, ItemKind.WALL, TextureId.WALL);
-        Struct next = Struct.northWall(3, 2, ItemKind.HALF_WALL, TextureId.HALF_WALL);
-        Struct far = Struct.westWall(12, 0, ItemKind.WALL, TextureId.WALL);
+        Struct wall = Struct.northWall(2, 2, StructKind.WALL);
+        Struct next = Struct.northWall(3, 2, StructKind.HALF_WALL);
+        Struct far = Struct.westWall(12, 0, StructKind.WALL);
         WorldManager.build(wall);
         WorldManager.build(next);
         WorldManager.build(far);
@@ -145,8 +146,8 @@ class PlayerTest {
         WorldManager.chunks.add(new Chunk(0, 0));
         Player.x = 0;
         Player.y = 0;
-        WorldManager.build(new Struct(65, 0, ItemKind.FLOOR, TextureId.GRASS)); // suelo del mapa
-        WorldManager.build(new Struct(65, 0, ItemKind.FLOOR, TextureId.DIRT));  // construido encima
+        WorldManager.build(new Struct(65, 0, StructKind.FLOOR, TextureId.GRASS)); // suelo del mapa
+        WorldManager.build(new Struct(65, 0, StructKind.FLOOR, TextureId.DIRT));  // construido encima
 
         assertTrue(Player.demolish(70, 5));
         assertEquals(1, WorldManager.chunks.getFirst().floors.size());
@@ -157,17 +158,17 @@ class PlayerTest {
     @Test
     void medkitHealsAndIsConsumed() {
         Player.hp = 30;
-        Player.inventory.add(ItemManager.medkit());
+        Player.inventory.add(Consumable.medkit());
 
         assertTrue(Player.useSelectedConsumable());
-        assertEquals(30 + ItemManager.MEDKIT_HEAL, Player.hp);
+        assertEquals(30 + Consumable.MEDKIT_HEAL, Player.hp);
         assertTrue(Player.inventory.isEmpty());
     }
 
     @Test
     void medkitNeverHealsAboveMaxHp() {
         Player.hp = 90;
-        Player.inventory.add(ItemManager.medkit());
+        Player.inventory.add(Consumable.medkit());
 
         Player.useSelectedConsumable();
         assertEquals(Player.MAX_HP, Player.hp);
@@ -176,7 +177,7 @@ class PlayerTest {
     @Test
     void medkitIsNotWastedAtFullHealth() {
         Player.hp = Player.MAX_HP;
-        Player.inventory.add(ItemManager.medkit());
+        Player.inventory.add(Consumable.medkit());
 
         assertFalse(Player.useSelectedConsumable());
         assertEquals(1, Player.inventory.size());
@@ -185,8 +186,8 @@ class PlayerTest {
     @Test
     void onlyTheSelectedSlotIsUsed() {
         Player.hp = 50;
-        Player.inventory.add(ItemManager.guns.getFirst().copy());
-        Player.inventory.add(ItemManager.medkit());
+        Player.inventory.add(new Gun(GunType.PISTOL));
+        Player.inventory.add(Consumable.medkit());
 
         assertFalse(Player.useSelectedConsumable(), "la casilla 0 es una pistola");
         Player.selectedCell = 1;

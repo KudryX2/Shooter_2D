@@ -21,7 +21,6 @@ public class Npc {
     private static final int BITE_DAMAGE = 10;
     private static final long BITE_COOLDOWN_MS = 800;
     private static final float WANDER_RADIUS = 200;
-    private static final float CHASE_SPEED = 0.25f;
     private static final float AGGRESSIVE_ZOMBIE_RANGE = 800;
     private static final float AGGRESSIVE_PLAYER_RANGE = 400;
     private static final float REACTIVE_RANGE = 800;
@@ -52,16 +51,11 @@ public class Npc {
 
     public final List<Item> inventory = new ArrayList<>();
 
-    public Npc(float speed, TextureId texture, NpcKind kind, NpcBehaviour behaviour) {
-        this.speed = speed;
-        this.texture = texture;
-        this.kind = kind;
-        this.behaviour = behaviour;
-    }
-
-    /** Crea un NPC nuevo a partir de una plantilla. */
-    public Npc(Npc template) {
-        this(template.speed, template.texture, template.kind, template.behaviour);
+    public Npc(NpcType type) {
+        this.speed = NpcType.SPEED;
+        this.texture = type.texture;
+        this.kind = type.kind;
+        this.behaviour = type.behaviour;
     }
 
     public void setPosition(float x, float y, float rotation) {
@@ -103,7 +97,7 @@ public class Npc {
         float playerDistance = distance(x, y, Player.x, Player.y);
         if (playerDistance < CHASE_RANGE) {
             wandering = false;
-            speed = CHASE_SPEED;
+            speed = NpcType.SPEED;
             lookAt(Player.x, Player.y);
             if (playerDistance < BITE_RANGE) {
                 bite();

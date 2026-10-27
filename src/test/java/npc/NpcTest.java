@@ -8,7 +8,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import assets.TextureId;
-import items.ItemManager;
 import items.Projectile;
 import player.Player;
 import util.GameClock;
@@ -23,8 +22,6 @@ class NpcTest {
         WorldManager.chunks.add(new Chunk(0, 0)); // al morir sueltan su arma
         WorldManager.npcs.clear();
         WorldManager.projectiles.clear();
-        ItemManager.init();
-        NpcManager.init();
         Player.x = 0;
         Player.y = 0;
         Player.hp = 100;
@@ -36,7 +33,7 @@ class NpcTest {
 
     @Test
     void zombieNextToThePlayerBitesWithCooldown() {
-        Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 60, 0, 0);
+        Npc zombie = NpcManager.spawn(NpcType.ZOMBIE, 60, 0, 0);
 
         zombie.update();
         assertTrue(Player.hp < 100, "el zombi debería morder");
@@ -48,14 +45,14 @@ class NpcTest {
 
     @Test
     void farZombieDoesNotBite() {
-        Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 400, 0, 0);
+        Npc zombie = NpcManager.spawn(NpcType.ZOMBIE, 400, 0, 0);
         zombie.update();
         assertEquals(100, Player.hp);
     }
 
     @Test
     void convertedHumanRisesAfterTwoToFiveSeconds() {
-        Npc human = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 400, 0, 0);
+        Npc human = NpcManager.spawn(NpcType.CIVILIAN, 400, 0, 0);
         long start = GameClock.now();
         human.die(false);
         while (human.isRising() && GameClock.since(start) < 6_000) {
@@ -72,8 +69,8 @@ class NpcTest {
     @Test
     void hostileHumansIgnoreZombiesThatAreStillRising() {
         Player.x = 5_000; // lejos, para que el hostil no dispare al jugador
-        Npc soldier = NpcManager.spawnNpc(NpcManager.HUMAN_AGGRESSIVE, 0, 0, 0);
-        Npc victim = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 300, 0, 0);
+        Npc soldier = NpcManager.spawn(NpcType.SOLDIER, 0, 0, 0);
+        Npc victim = NpcManager.spawn(NpcType.CIVILIAN, 300, 0, 0);
         victim.die(false);
 
         soldier.update();
@@ -83,8 +80,8 @@ class NpcTest {
     @Test
     void hostileHumansShootStandingZombies() {
         Player.x = 5_000;
-        Npc soldier = NpcManager.spawnNpc(NpcManager.HUMAN_AGGRESSIVE, 0, 0, 0);
-        NpcManager.spawnNpc(NpcManager.ZOMBIE, 300, 0, 0);
+        Npc soldier = NpcManager.spawn(NpcType.SOLDIER, 0, 0, 0);
+        NpcManager.spawn(NpcType.ZOMBIE, 300, 0, 0);
 
         soldier.update();
         assertFalse(WorldManager.projectiles.isEmpty());
@@ -93,7 +90,7 @@ class NpcTest {
     @Test
     void bulletsCanFinishOffRisingZombies() {
         Player.x = 5_000;
-        Npc victim = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
+        Npc victim = NpcManager.spawn(NpcType.CIVILIAN, 100, 0, 0);
         victim.die(false);
         WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, false));
 
@@ -105,7 +102,7 @@ class NpcTest {
     @Test
     void onlyPlayerBulletsCanHeadshot() {
         Player.x = 5_000;
-        Npc target = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
+        Npc target = NpcManager.spawn(NpcType.CIVILIAN, 100, 0, 0);
         Player.aimX = 100; // el jugador apunta justo al objetivo
         Player.aimY = 0;
 
@@ -117,7 +114,7 @@ class NpcTest {
         assertTrue(target.isRising());
 
         // Bala del jugador apuntando al objetivo: headshot, muere del todo
-        Npc second = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 300, 0, 0);
+        Npc second = NpcManager.spawn(NpcType.CIVILIAN, 300, 0, 0);
         Player.aimX = 300;
         WorldManager.projectiles.add(new Projectile(300, 0, 0, 0, 600, 1, true));
         WorldManager.update();
@@ -127,7 +124,7 @@ class NpcTest {
     @Test
     void playerBulletWithoutAimingAtTargetIsANormalHit() {
         Player.x = 5_000;
-        Npc target = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 0, 0);
+        Npc target = NpcManager.spawn(NpcType.CIVILIAN, 100, 0, 0);
         Player.aimX = 900; // apunta a otro sitio
         Player.aimY = 0;
 
@@ -140,8 +137,8 @@ class NpcTest {
     @Test
     void pauseFreezesNpcsAndTimers() {
         Player.x = 0;
-        Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 300, 0, 0);
-        Npc human = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 2_000, 0, 0);
+        Npc zombie = NpcManager.spawn(NpcType.ZOMBIE, 300, 0, 0);
+        Npc human = NpcManager.spawn(NpcType.CIVILIAN, 2_000, 0, 0);
         human.die(false);
 
         GameClock.togglePause();
@@ -164,7 +161,7 @@ class NpcTest {
     @Test
     void bulletHitIsRememberedForTheHitFlash() {
         Player.x = 5_000;
-        Npc zombie = NpcManager.spawnNpc(NpcManager.ZOMBIE, 100, 0, 0);
+        Npc zombie = NpcManager.spawn(NpcType.ZOMBIE, 100, 0, 0);
         assertFalse(zombie.wasHitWithin(100));
 
         WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 10, false));
@@ -175,7 +172,7 @@ class NpcTest {
 
     @Test
     void zombieStillGettingUpDoesNotBite() {
-        Npc human = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 60, 0, 0);
+        Npc human = NpcManager.spawn(NpcType.CIVILIAN, 60, 0, 0);
         human.die(false); // se convierte en zombi, pero tarda en levantarse
         human.update();
         assertEquals(100, Player.hp);

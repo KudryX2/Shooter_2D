@@ -10,12 +10,14 @@ import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
 import graphics.DisplayManager;
+import input.Input;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
 import items.Item;
-import items.ItemKind;
+import items.StructItem;
 import structs.Struct;
+import structs.StructKind;
 import util.GameClock;
 import world.Chunk;
 import world.WorldManager;
@@ -53,7 +55,7 @@ public final class Player {
     private static final float COLLISION_RANGE = SIZE / 2 + WALL_MARGIN;
 
     static boolean collUp, collDown, collLeft, collRight; // visibles para los tests del paquete
-    private static boolean wasButton0, wasButton1, wasQ, wasE;
+
     private static boolean clickStartedOnUi;
 
     private Player() {
@@ -74,10 +76,10 @@ public final class Player {
      */
     public static void update(boolean mouseOnUi) {
         float step = speed * GameClock.delta();
-        if (Keyboard.isKeyDown(Keyboard.KEY_W) && !collUp) y -= step;
-        if (Keyboard.isKeyDown(Keyboard.KEY_S) && !collDown) y += step;
-        if (Keyboard.isKeyDown(Keyboard.KEY_A) && !collLeft) x -= step;
-        if (Keyboard.isKeyDown(Keyboard.KEY_D) && !collRight) x += step;
+        if (Input.isKeyDown(Keyboard.KEY_W) && !collUp) y -= step;
+        if (Input.isKeyDown(Keyboard.KEY_S) && !collDown) y += step;
+        if (Input.isKeyDown(Keyboard.KEY_A) && !collLeft) x -= step;
+        if (Input.isKeyDown(Keyboard.KEY_D) && !collRight) x += step;
         aimX = cursorWorldX();
         aimY = cursorWorldY();
 
@@ -88,22 +90,11 @@ public final class Player {
         updateBuildPosition(); // antes de los clics, con el objeto que hay ahora en la mano
 
         // Acciones
-        boolean button0 = Mouse.isButtonDown(0);
-        if (button0 && !wasButton0) clickStartedOnUi = mouseOnUi;
-        if (button0 && !clickStartedOnUi) primaryAction(!wasButton0);
-        wasButton0 = button0;
-
-        boolean button1 = Mouse.isButtonDown(1);
-        if (button1 && !wasButton1) secondaryAction();
-        wasButton1 = button1;
-
-        boolean q = Keyboard.isKeyDown(Keyboard.KEY_Q);
-        if (q && !wasQ) dropSelectedItem();
-        wasQ = q;
-
-        boolean e = Keyboard.isKeyDown(Keyboard.KEY_E);
-        if (e && !wasE) pickUpItem();
-        wasE = e;
+        if (Input.wasButtonPressed(0)) clickStartedOnUi = mouseOnUi;
+        if (Input.isButtonDown(0) && !clickStartedOnUi) primaryAction(Input.wasButtonPressed(0));
+        if (Input.wasButtonPressed(1)) secondaryAction();
+        if (Input.wasKeyPressed(Keyboard.KEY_Q)) dropSelectedItem();
+        if (Input.wasKeyPressed(Keyboard.KEY_E)) pickUpItem();
 
         checkCollisions();
 
@@ -114,10 +105,10 @@ public final class Player {
     }
 
     private static void updateSelectedCell() {
-        if (Keyboard.isKeyDown(Keyboard.KEY_1)) selectedCell = 0;
-        if (Keyboard.isKeyDown(Keyboard.KEY_2)) selectedCell = 1;
-        if (Keyboard.isKeyDown(Keyboard.KEY_3)) selectedCell = 2;
-        if (Keyboard.isKeyDown(Keyboard.KEY_4)) selectedCell = 3;
+        if (Input.isKeyDown(Keyboard.KEY_1)) selectedCell = 0;
+        if (Input.isKeyDown(Keyboard.KEY_2)) selectedCell = 1;
+        if (Input.isKeyDown(Keyboard.KEY_3)) selectedCell = 2;
+        if (Input.isKeyDown(Keyboard.KEY_4)) selectedCell = 3;
 
         int wheel = Mouse.getDWheel();
         if (wheel < 0) {
@@ -177,7 +168,7 @@ public final class Player {
      */
     private static void secondaryAction() {
         Item item = selectedItem();
-        if (item != null && item.itemKind.isBuildable()) {
+        if (item instanceof StructItem) {
             demolish(cursorWorldX(), cursorWorldY());
         } else {
             useSelectedConsumable();
@@ -191,11 +182,11 @@ public final class Player {
      * @return {@code true} si ha derribado algo
      */
     static boolean demolish(float wx, float wy) {
-        Struct edge = Struct.snapped(wx, wy, ItemKind.WALL, null);
+        Struct edge = Struct.snapped(wx, wy, StructKind.WALL, null);
         if (distance(edge.x(), edge.y(), x, y) <= BUILD_RANGE && WorldManager.removeWallAt(edge)) {
             return true;
         }
-        Struct tile = Struct.snapped(wx, wy, ItemKind.FLOOR, null);
+        Struct tile = Struct.snapped(wx, wy, StructKind.FLOOR, null);
         return distance(tile.x(), tile.y(), x, y) <= BUILD_RANGE
                 && WorldManager.removeBuiltFloorAt(tile.x(), tile.y());
     }
@@ -216,13 +207,12 @@ public final class Player {
     }
 
     private static void updateBuildPosition() {
-        Item item = selectedItem();
-        if (item == null || !item.itemKind.isBuildable()) {
+        if (!(selectedItem() instanceof StructItem item)) {
             buildPreview = null;
             canBuild = false;
             return;
         }
-        buildPreview = Struct.snapped(cursorWorldX(), cursorWorldY(), item.itemKind, item.icon);
+        buildPreview = Struct.snapped(cursorWorldX(), cursorWorldY(), item.kind, item.icon);
         canBuild = canBuild(buildPreview);
     }
 

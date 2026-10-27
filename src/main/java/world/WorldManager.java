@@ -1,7 +1,7 @@
 package world;
 
-import static util.Geometry.distance;
 import static util.Geometry.NO_HIT;
+import static util.Geometry.distance;
 import static util.Geometry.segmentEntersBox;
 
 import java.util.ArrayList;
@@ -11,11 +11,11 @@ import java.util.function.Consumer;
 import graphics.DisplayManager;
 import items.DroppedItem;
 import items.Item;
-import items.ItemKind;
 import items.Projectile;
 import npc.Npc;
 import player.Player;
 import structs.Struct;
+import structs.StructKind;
 import util.GameClock;
 
 public final class WorldManager {
@@ -165,7 +165,7 @@ public final class WorldManager {
     /** Única forma de añadir estructuras al mundo: así la rejilla de colisiones queda sincronizada. */
     public static void build(Struct struct) {
         closestChunk(struct.x(), struct.y()).add(struct);
-        if (struct.kind() == ItemKind.WALL) {
+        if (struct.kind().blocksBullets) {
             bulletWalls.add(struct);
         }
         if (struct.isWall()) {
@@ -197,7 +197,7 @@ public final class WorldManager {
      * @return {@code true} si se ha quitado alguno
      */
     public static boolean removeBuiltFloorAt(float x, float y) {
-        Struct tile = new Struct(x, y, ItemKind.FLOOR, null);
+        Struct tile = new Struct(x, y, StructKind.FLOOR, null);
         Chunk top = null;
         int count = 0;
         for (Chunk chunk : chunks) {
