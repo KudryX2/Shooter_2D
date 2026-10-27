@@ -1,19 +1,18 @@
 package world;
 
-import static util.Geometry.overlaps;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 import structs.Struct;
 
 /**
  * Rejilla espacial de estructuras: cada una se guarda en la celda (de {@link Struct#SIZE} px) donde está su
- * centro. Una consulta de radio r solo mira las celdas que cubre la caja [x-r, x+r], así que el coste depende
- * de lo que hay cerca y no del número total de estructuras del mundo.
+ * centro. Una consulta solo mira las celdas que cubre la caja buscada, ampliada con el tamaño máximo de una
+ * estructura, así que el coste depende de lo que hay cerca y no del número total de estructuras del mundo.
  */
 final class StructGrid {
     private static final float CELL = Struct.SIZE;
@@ -28,33 +27,41 @@ final class StructGrid {
         cells.clear();
     }
 
-    /** {@code true} si alguna estructura tiene su centro a menos de {@code halfSize} de (x, y) en ambos ejes. */
-    boolean anyOverlapping(float x, float y, float halfSize) {
-        int x0 = cell(x - halfSize), x1 = cell(x + halfSize);
-        int y0 = cell(y - halfSize), y1 = cell(y + halfSize);
+    /** Quita las estructuras cercanas a (x, y) que cumplan {@code filter}. Devuelve {@code true} si quitó alguna. */
+    boolean removeIf(float x, float y, Predicate<Struct> filter) {
+        boolean removed = false;
+        int x0 = cell(x - Struct.MAX_HALF_EXTENT), x1 = cell(x + Struct.MAX_HALF_EXTENT);
+        int y0 = cell(y - Struct.MAX_HALF_EXTENT), y1 = cell(y + Struct.MAX_HALF_EXTENT);
         for (int cx = x0; cx <= x1; cx++) {
             for (int cy = y0; cy <= y1; cy++) {
                 List<Struct> structs = cells.get(key(cx, cy));
-                if (structs == null) {
-                    continue;
-                }
-                for (Struct s : structs) {
-                    if (overlaps(x, y, s.x(), s.y(), halfSize)) {
-                        return true;
-                    }
+                if (structs != null) {
+                    removed |= structs.removeIf(filter);
                 }
             }
         }
-        return false;
+        return removed;
+    }
+
+    /** {@code true} si alguna estructura se solapa con la caja centrada en (x, y) de medio ancho/alto dados. */
+    boolean anyOverlapping(float x, float y, float halfW, float halfH) {
+        boolean[] found = {false};
+        forEachNear(x, y, Math.max(halfW, halfH), s -> {
+            if (!found[0] && s.overlaps(x, y, halfW, halfH)) {
+                found[0] = true;
+            }
+        });
+        return found[0];
     }
 
     /**
-     * Pasa a {@code action} las estructuras de las celdas que cubre la caja [x-range, x+range]. Puede incluir
-     * alguna algo más lejana (las celdas son enteras): {@code action} debe hacer su propia comprobación.
+     * Pasa a {@code action} todas las estructuras que tocan la caja [x-range, x+range] × [y-range, y+range], y
+     * quizá alguna algo más lejana (las celdas son enteras): {@code action} debe hacer su propia comprobación.
      */
     void forEachNear(float x, float y, float range, Consumer<Struct> action) {
-        int x0 = cell(x - range), x1 = cell(x + range);
-        int y0 = cell(y - range), y1 = cell(y + range);
+        float reach = range + Struct.MAX_HALF_EXTENT;
+        int x0 = cell(x - reach), x1 = cell(x + reach);
+        int y0 = cell(y - reach), y1 = cell(y + reach);
         for (int cx = x0; cx <= x1; cx++) {
             for (int cy = y0; cy <= y1; cy++) {
                 List<Struct> structs = cells.get(key(cx, cy));

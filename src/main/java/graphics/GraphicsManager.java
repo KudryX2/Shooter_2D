@@ -1,6 +1,7 @@
 package graphics;
 
 import static graphics.Sprite.drawSprite;
+import static graphics.Sprite.drawSpriteCropped;
 import static org.lwjgl.opengl.GL11.*;
 import static util.Geometry.distance;
 
@@ -100,6 +101,7 @@ public final class GraphicsManager {
         glColor3f(0.85f, 0.72f, 0.5f);
         for (Chunk chunk : WorldManager.activeChunks) drawStructs(chunk.halfWalls);
         glColor3f(1f, 1f, 1f);
+        drawBuildPreview();
     }
 
     /** Bala con una estela fina que se desvanece hacia atrás (nunca más larga que lo que lleva recorrido). */
@@ -207,29 +209,49 @@ public final class GraphicsManager {
     }
 
     private static void drawStructs(List<Struct> structs) {
-        float half = Struct.SIZE / 2;
         for (Struct s : structs) {
             if (inRenderDistance(s.x(), s.y())) {
-                drawSprite(tex(s.texture()),
-                        screenX(s.x()) - half, screenY(s.y()) - half, Struct.SIZE, Struct.SIZE);
+                drawStruct(s);
             }
         }
     }
 
+    /** Un muro fino usa una tira de su textura a escala real, en vez de aplastar la imagen entera. */
+    private static void drawStruct(Struct s) {
+        float w = s.halfWidth() * 2, h = s.halfHeight() * 2;
+        drawSpriteCropped(tex(s.texture()), screenX(s.x()) - w / 2, screenY(s.y()) - h / 2, w, h,
+                Math.min(1, w / Struct.SIZE), Math.min(1, h / Struct.SIZE));
+    }
+
+    /** Vista previa en el mundo de lo que se va a construir: verde si se puede, rojo si no. */
+    private static void drawBuildPreview() {
+        Item selected = Player.selectedItem();
+        if (Player.buildPreview == null || selected == null || !selected.itemKind.isBuildable()) {
+            return;
+        }
+        if (Player.canBuild) {
+            glColor4f(0.6f, 1f, 0.6f, 0.7f);
+        } else {
+            glColor4f(1f, 0.4f, 0.4f, 0.7f);
+        }
+        drawStruct(Player.buildPreview);
+        glColor4f(1, 1, 1, 1);
+    }
+
     /** Sombra proyectada hacia abajo a la derecha; como todas tienen el mismo desplazamiento, encajan entre sí. */
     private static void drawWallShadows(List<Struct> structs, float offset) {
-        float half = Struct.SIZE / 2;
         glDisable(GL_TEXTURE_2D);
         glColor4f(0, 0, 0, SHADOW_ALPHA);
         glBegin(GL_QUADS);
         for (Struct s : structs) {
             if (inRenderDistance(s.x(), s.y())) {
-                float x = screenX(s.x()) - half + offset;
-                float y = screenY(s.y()) - half + offset;
+                float w = s.halfWidth() * 2, h = s.halfHeight() * 2;
+                float x = screenX(s.x()) - w / 2 + offset;
+                float y = screenY(s.y()) - h / 2 + offset;
                 glVertex2f(x, y);
-                glVertex2f(x + Struct.SIZE, y);
-                glVertex2f(x + Struct.SIZE, y + Struct.SIZE);
-                glVertex2f(x, y + Struct.SIZE);
+                glVertex2f(x + w, y);
+                glVertex2f(x + w, y + h);
+                glVertex2f(x, y + h);
             }
         }
         glEnd();
@@ -362,12 +384,8 @@ public final class GraphicsManager {
                     handX - 16, handY - 16, 32, 32, Player.rotation);
             case Consumable consumable -> drawSprite(tex(consumable.heldTexture),
                     handX - 12, handY - 12, 24, 24, Player.rotation);
-            case StructItem struct -> {
-                if (Player.buildMode) {
-                    drawSprite(tex(struct.heldTexture),
-                            handX - 20, handY - 20, 40, 40, Player.rotation);
-                }
-            }
+            case StructItem struct -> drawSprite(tex(struct.heldTexture),
+                    handX - 20, handY - 20, 40, 40, Player.rotation);
         }
     }
 
@@ -403,15 +421,10 @@ public final class GraphicsManager {
 
         PauseButton.draw();
 
-        // Cursor (siempre lo último, por encima de todo el HUD)
-        Item selected = Player.selectedItem();
-        if (Player.buildMode && selected != null && selected.itemKind.isBuildable()) {
-            TextureId texture = Player.canBuild ? TextureId.BUILD_POINTER_OK : TextureId.BUILD_POINTER_BLOCKED;
-            drawSprite(tex(texture), Mouse.getX() - 32, height - Mouse.getY() - 32, 64, 64);
-        } else {
-            drawSprite(tex(TextureId.POINTER), Mouse.getX() - 20 - hudScale / 2,
-                    height - hudScale / 2 - Mouse.getY() - 20, 40 + hudScale, 40 + hudScale);
-        }
+        // Cursor (siempre lo último, por encima de todo el HUD). Con un objeto construible, la vista previa en el
+        // mundo ya indica si se puede construir.
+        drawSprite(tex(TextureId.POINTER), Mouse.getX() - 20 - hudScale / 2,
+                height - hudScale / 2 - Mouse.getY() - 20, 40 + hudScale, 40 + hudScale);
     }
 
     private static void drawDroppedItems() {

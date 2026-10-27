@@ -20,6 +20,20 @@ public final class Sprite {
     }
 
     public static void drawSprite(Texture texture, float x, float y, float width, float height, float rotation) {
+        drawSprite(texture, x, y, width, height, rotation, 1, 1);
+    }
+
+    /**
+     * Dibuja solo un recorte de la imagen: la fracción {@code cropU} de su ancho y {@code cropV} de su alto,
+     * desde la esquina superior izquierda (p.ej. una tira para un muro fino, sin aplastar la textura).
+     */
+    public static void drawSpriteCropped(Texture texture, float x, float y, float width, float height,
+                                         float cropU, float cropV) {
+        drawSprite(texture, x, y, width, height, 0, cropU, cropV);
+    }
+
+    private static void drawSprite(Texture texture, float x, float y, float width, float height, float rotation,
+                                   float cropU, float cropV) {
         texture.bind();
 
         glTranslatef(x + width / 2, y + height / 2, 0);
@@ -30,8 +44,8 @@ public final class Sprite {
 
         // slick-util amplía las imágenes a potencias de 2 con relleno transparente (p.ej. 20x20 -> 32x32);
         // getWidth()/getHeight() dan la fracción de la textura que ocupa la imagen real
-        float u = texture.getWidth();
-        float v = texture.getHeight();
+        float u = texture.getWidth() * cropU;
+        float v = texture.getHeight() * cropV;
 
         glBegin(GL_QUADS);
         glTexCoord2f(0, 0);

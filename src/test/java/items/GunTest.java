@@ -113,4 +113,22 @@ class GunTest {
         b.shoot(0, 0, 0, true, true);
         assertEquals(2, WorldManager.projectiles.size());
     }
+
+    @Test
+    void shootingPointBlankAtAWallDoesNotPutBulletsBehindIt() {
+        WorldManager.chunks.add(new world.Chunk(0, 0));
+        // Muro vertical en x = 32.5; el tirador está en x = 0 y la boca del arma, a 40 px, ya al otro lado
+        WorldManager.build(structs.Struct.westWall(1, 0, ItemKind.WALL, assets.TextureId.WALL));
+        Gun shotgun = ItemManager.guns.get(1).copy();
+        shotgun.shoot(0, 0, 40, 0, 0, true, true);
+        assertTrue(WorldManager.projectiles.isEmpty());
+    }
+
+    @Test
+    void halfWallsDoNotStopPointBlankShots() {
+        WorldManager.chunks.add(new world.Chunk(0, 0));
+        WorldManager.build(structs.Struct.westWall(1, 0, ItemKind.HALF_WALL, assets.TextureId.HALF_WALL));
+        ItemManager.guns.getFirst().copy().shoot(0, 0, 40, 0, 0, true, true);
+        assertEquals(1, WorldManager.projectiles.size());
+    }
 }

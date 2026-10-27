@@ -30,15 +30,16 @@ class PlayerTest {
 
     /** Cálculo de referencia: el algoritmo original, recorriendo todas las estructuras. */
     private static boolean[] bruteForceCollisions(List<Struct> structs, float x, float y) {
-        float half = Player.SIZE / 2, s = Struct.SIZE / 2, m = 10;
+        float half = Player.SIZE / 2, m = 10;
         boolean up = false, down = false, left = false, right = false;
         for (Struct w : structs) {
-            boolean overlapX = w.x() + s > x - half && w.x() - s < x + half;
-            boolean overlapY = w.y() + s > y - half && w.y() - s < y + half;
-            if (overlapX && w.y() + s + m > y - half && w.y() - s + m < y - half) up = true;
-            if (overlapX && w.y() + s - m > y + half && w.y() - s - m < y + half) down = true;
-            if (overlapY && w.x() + s + m > x - half && w.x() - s + m < x - half) left = true;
-            if (overlapY && w.x() + s - m > x + half && w.x() - s - m < x + half) right = true;
+            float sw = w.halfWidth(), sh = w.halfHeight();
+            boolean overlapX = w.x() + sw > x - half && w.x() - sw < x + half;
+            boolean overlapY = w.y() + sh > y - half && w.y() - sh < y + half;
+            if (overlapX && w.y() + sh + m > y - half && w.y() - sh + m < y - half) up = true;
+            if (overlapX && w.y() + sh - m > y + half && w.y() - sh - m < y + half) down = true;
+            if (overlapY && w.x() + sw + m > x - half && w.x() - sw + m < x - half) left = true;
+            if (overlapY && w.x() + sw - m > x + half && w.x() - sw - m < x + half) right = true;
         }
         return new boolean[] {up, down, left, right};
     }
@@ -52,9 +53,13 @@ class PlayerTest {
         // Cuadrícula (como los mapas) y posiciones sueltas (como lo que construye el jugador)
         for (int i = 0; i < 150; i++) {
             ItemKind kind = random.nextBoolean() ? ItemKind.WALL : ItemKind.HALF_WALL;
-            float wx = i % 2 == 0 ? random.nextInt(15) * Struct.SIZE : random.nextFloat() * 1000 - 100;
-            float wy = i % 2 == 0 ? random.nextInt(15) * Struct.SIZE : random.nextFloat() * 1000 - 100;
-            Struct wall = new Struct(wx, wy, kind, TextureId.WALL);
+            int tx = random.nextInt(15), ty = random.nextInt(15);
+            Struct wall = switch (i % 3) {
+                case 0 -> Struct.northWall(tx, ty, kind, TextureId.WALL);
+                case 1 -> Struct.westWall(tx, ty, kind, TextureId.WALL);
+                default -> new Struct(random.nextFloat() * 1000 - 100, random.nextFloat() * 1000 - 100, kind,
+                        TextureId.WALL, random.nextBoolean());
+            };
             solids.add(wall);
             WorldManager.build(wall);
         }
@@ -70,6 +75,83 @@ class PlayerTest {
             if (actual[0] || actual[1] || actual[2] || actual[3]) blockedSomewhere++;
         }
         assertTrue(blockedSomewhere > 500, "el test debería probar muchas posiciones pegadas a muros");
+    }
+
+    @Test
+    void thinWallsBlockThePlayer() {
+        WorldManager.reset();
+        WorldManager.chunks.add(new Chunk(0, 0));
+        Struct wall = Struct.westWall(1, 0, ItemKind.WALL, TextureId.WALL); // vertical en x = 32.5
+        WorldManager.build(wall);
+
+        Player.y = 0;
+        Player.x = wall.x() - wall.halfWidth() - Player.SIZE / 2 - 2; // pegado por la izquierda
+        Player.checkCollisions();
+        assertTrue(Player.collRight);
+        assertFalse(Player.collLeft);
+
+        Player.x = wall.x() + wall.halfWidth() + Player.SIZE / 2 + 2; // pegado por la derecha
+        Player.checkCollisions();
+        assertTrue(Player.collLeft);
+        assertFalse(Player.collRight);
+    }
+
+    @Test
+    void wallsCanOnlyBeBuiltOnFreeEdgesInRangeAndNotOnThePlayer() {
+        WorldManager.reset();
+        WorldManager.chunks.add(new Chunk(0, 0));
+        Player.x = 0;
+        Player.y = -30; // casi sobre el borde norte de la casilla (0, 0), en y = -32.5
+        WorldManager.build(Struct.northWall(2, 2, ItemKind.WALL, TextureId.WALL));
+
+        assertFalse(Player.canBuild(Struct.northWall(2, 2, ItemKind.HALF_WALL, TextureId.HALF_WALL)), "ocupado");
+        assertTrue(Player.canBuild(Struct.westWall(2, 2, ItemKind.WALL, TextureId.WALL)), "esquina con el otro");
+        assertTrue(Player.canBuild(Struct.northWall(3, 2, ItemKind.WALL, TextureId.WALL)), "a continuación");
+        assertFalse(Player.canBuild(Struct.northWall(0, 0, ItemKind.WALL, TextureId.WALL)), "encima del jugador");
+        assertFalse(Player.canBuild(Struct.northWall(10, 0, ItemKind.WALL, TextureId.WALL)), "fuera de alcance");
+        assertTrue(Player.canBuild(new Struct(0, 0, ItemKind.FLOOR, TextureId.GRASS)), "suelo bajo el jugador");
+    }
+
+    @Test
+    void demolishRemovesTheAimedWallWithinRange() {
+        WorldManager.reset();
+        WorldManager.chunks.add(new Chunk(0, 0));
+        WorldManager.chunks.add(new Chunk(650, 0));
+        Player.x = 0;
+        Player.y = 0;
+        Struct wall = Struct.northWall(2, 2, ItemKind.WALL, TextureId.WALL);
+        Struct next = Struct.northWall(3, 2, ItemKind.HALF_WALL, TextureId.HALF_WALL);
+        Struct far = Struct.westWall(12, 0, ItemKind.WALL, TextureId.WALL);
+        WorldManager.build(wall);
+        WorldManager.build(next);
+        WorldManager.build(far);
+
+        assertTrue(Player.demolish(wall.x() + 5, wall.y() - 3)); // apuntando cerca del muro
+        assertFalse(WorldManager.hasWallAt(wall));
+        assertFalse(WorldManager.isBlocked(wall.x(), wall.y(), 1, 1), "ya no bloquea el paso");
+        assertTrue(WorldManager.hasWallAt(next), "el de al lado sigue en pie");
+        assertTrue(WorldManager.chunks.stream().noneMatch(c -> c.walls.contains(wall)), "ya no se dibuja");
+
+        assertFalse(Player.demolish(far.x(), far.y()), "fuera de alcance");
+        assertTrue(WorldManager.hasWallAt(far));
+
+        assertTrue(Player.demolish(next.x(), next.y()), "también medios muros");
+        assertFalse(WorldManager.hasWallAt(next));
+    }
+
+    @Test
+    void demolishOnlyRemovesBuiltFloorsAndNeverTheMapGround() {
+        WorldManager.reset();
+        WorldManager.chunks.add(new Chunk(0, 0));
+        Player.x = 0;
+        Player.y = 0;
+        WorldManager.build(new Struct(65, 0, ItemKind.FLOOR, TextureId.GRASS)); // suelo del mapa
+        WorldManager.build(new Struct(65, 0, ItemKind.FLOOR, TextureId.DIRT));  // construido encima
+
+        assertTrue(Player.demolish(70, 5));
+        assertEquals(1, WorldManager.chunks.getFirst().floors.size());
+        assertEquals(TextureId.GRASS, WorldManager.chunks.getFirst().floors.getFirst().texture());
+        assertFalse(Player.demolish(70, 5), "el suelo del mapa no se quita");
     }
 
     @Test

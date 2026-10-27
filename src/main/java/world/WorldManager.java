@@ -20,7 +20,8 @@ import util.GameClock;
 
 public final class WorldManager {
     private static final float PROJECTILE_HITBOX = 20;
-    private static final float WALL_HITBOX = 30;
+    /** Medio lado de la caja con la que chocan los NPC contra los muros (su cuerpo visible mide ~22 px de radio). */
+    public static final float CHARACTER_HALF = 20;
 
     public static final List<Chunk> chunks = new ArrayList<>();
     public static final List<Chunk> activeChunks = new ArrayList<>();
@@ -101,13 +102,18 @@ public final class WorldManager {
         return t != NO_HIT && (best == NO_HIT || t < best);
     }
 
+    /** {@code true} si un muro (no medio muro) corta el tramo (x0, y0) → (x1, y1): las balas no pasarían. */
+    public static boolean isWallBetween(float x0, float y0, float x1, float y1) {
+        return firstWallHit(x0, y0, x1, y1) != NO_HIT;
+    }
+
     /** Primer muro (no medio muro) que cruza el tramo (x0, y0) → (x1, y1), como fracción del tramo, o NO_HIT. */
     private static float firstWallHit(float x0, float y0, float x1, float y1) {
         float midX = (x0 + x1) / 2, midY = (y0 + y1) / 2;
-        float range = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / 2 + WALL_HITBOX;
+        float range = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / 2;
         float[] first = {NO_HIT};
         bulletWalls.forEachNear(midX, midY, range, wall -> {
-            float t = segmentEntersBox(x0, y0, x1, y1, wall.x(), wall.y(), WALL_HITBOX, WALL_HITBOX);
+            float t = segmentEntersBox(x0, y0, x1, y1, wall.x(), wall.y(), wall.halfWidth(), wall.halfHeight());
             if (isCloser(t, first[0])) {
                 first[0] = t;
             }
@@ -131,14 +137,26 @@ public final class WorldManager {
         }
     }
 
-    /** {@code true} si hay un muro o medio muro bloqueando el punto (x, y). */
+    /** {@code true} si un personaje (NPC) en (x, y) chocaría con un muro o medio muro. */
     public static boolean isSolidAt(float x, float y) {
-        return solids.anyOverlapping(x, y, Struct.SIZE);
+        return isBlocked(x, y, CHARACTER_HALF, CHARACTER_HALF);
+    }
+
+    /** {@code true} si la caja centrada en (x, y) con medio ancho y alto dados choca con un muro o medio muro. */
+    public static boolean isBlocked(float x, float y, float halfW, float halfH) {
+        return solids.anyOverlapping(x, y, halfW, halfH);
+    }
+
+    /** {@code true} si ya hay un muro o medio muro en ese mismo borde. */
+    public static boolean hasWallAt(Struct wall) {
+        boolean[] found = {false};
+        solids.forEachNear(wall.x(), wall.y(), 0, s -> found[0] |= s.samePlaceAs(wall));
+        return found[0];
     }
 
     /**
-     * Pasa a {@code action} los muros y medios muros a unos {@code range} px de (x, y), y quizá alguno algo más
-     * lejano: {@code action} debe hacer su propia comprobación de distancia.
+     * Pasa a {@code action} los muros y medios muros que tocan la caja de medio lado {@code range} alrededor de
+     * (x, y), y quizá alguno algo más lejano: {@code action} debe hacer su propia comprobación.
      */
     public static void forEachSolidNear(float x, float y, float range, Consumer<Struct> action) {
         solids.forEachNear(x, y, range, action);
@@ -150,9 +168,57 @@ public final class WorldManager {
         if (struct.kind() == ItemKind.WALL) {
             bulletWalls.add(struct);
         }
-        if (struct.kind() == ItemKind.WALL || struct.kind() == ItemKind.HALF_WALL) {
+        if (struct.isWall()) {
             solids.add(struct);
         }
+    }
+
+    /**
+     * Derriba el muro o medio muro que haya en el mismo borde que {@code edge}.
+     *
+     * @return {@code true} si había alguno
+     */
+    public static boolean removeWallAt(Struct edge) {
+        if (!solids.removeIf(edge.x(), edge.y(), s -> s.samePlaceAs(edge))) {
+            return false;
+        }
+        bulletWalls.removeIf(edge.x(), edge.y(), s -> s.samePlaceAs(edge));
+        for (Chunk chunk : chunks) {
+            chunk.walls.removeIf(s -> s.samePlaceAs(edge));
+            chunk.halfWalls.removeIf(s -> s.samePlaceAs(edge));
+        }
+        return true;
+    }
+
+    /**
+     * Quita el suelo de más arriba en la casilla centrada en (x, y), pero solo si debajo queda otro: así se
+     * puede quitar un suelo construido sin dejar un agujero en el del mapa.
+     *
+     * @return {@code true} si se ha quitado alguno
+     */
+    public static boolean removeBuiltFloorAt(float x, float y) {
+        Struct tile = new Struct(x, y, ItemKind.FLOOR, null);
+        Chunk top = null;
+        int count = 0;
+        for (Chunk chunk : chunks) {
+            for (Struct floor : chunk.floors) {
+                if (floor.samePlaceAs(tile)) {
+                    count++;
+                    top = chunk;
+                }
+            }
+        }
+        if (count < 2) {
+            return false;
+        }
+        List<Struct> floors = top.floors;
+        for (int i = floors.size() - 1; i >= 0; i--) {
+            if (floors.get(i).samePlaceAs(tile)) {
+                floors.remove(i);
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Vacía el mundo por completo (chunks, NPCs, proyectiles, efectos, rejilla de colisiones y contador). */

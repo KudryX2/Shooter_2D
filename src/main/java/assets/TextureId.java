@@ -22,8 +22,6 @@ public enum TextureId {
 
     // HUD
     POINTER("2-pointer"),
-    BUILD_POINTER_OK("2-buildModePointer"),
-    BUILD_POINTER_BLOCKED("2-buildModePointer1"),
     NORMAL_CELL("2-normalCell"),
     SELECTED_CELL("2-selectedCell"),
     HP_HIGH("2-hp"),

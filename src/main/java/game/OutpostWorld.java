@@ -30,7 +30,9 @@ import world.WorldManager;
  * </ul>
  *
  * <p>Todo se diseña en casillas ({@link Struct#SIZE} píxeles); la casilla (x, y) está centrada en
- * (x * SIZE, y * SIZE). El mapa usa una semilla fija, así que siempre sale igual.
+ * (x * SIZE, y * SIZE). Los muros van sobre los bordes de las casillas: cada casilla tiene un borde norte y uno
+ * oeste. Los edificios se definen por sus casillas interiores. El mapa usa una semilla fija, así que siempre
+ * sale igual.
  */
 final class OutpostWorld {
     private static final int TILE = (int) Struct.SIZE;
@@ -55,7 +57,8 @@ final class OutpostWorld {
 
     private final Random random = new Random(SEED);
     private final TextureId[][] ground = new TextureId[SIZE_TILES][SIZE_TILES];
-    private final Map<Long, ItemKind> solids = new HashMap<>();
+    /** Muros por borde (ver {@link #edgeKey}). */
+    private final Map<Long, ItemKind> walls = new HashMap<>();
     private final int spawnX = Math.round(Player.SPAWN_X / TILE);
     private final int spawnY = Math.round(Player.SPAWN_Y / TILE);
 
@@ -76,7 +79,7 @@ final class OutpostWorld {
         world.build();
         world.populate();
         System.out.println("Puesto avanzado: " + WorldManager.chunks.size() + " chunks, "
-                + world.solids.size() + " muros, " + WorldManager.npcs.size() + " NPCs");
+                + world.walls.size() + " muros, " + WorldManager.npcs.size() + " NPCs");
     }
 
     /** Oleada de zombis en círculo alrededor del jugador. Tecla P. */
@@ -94,7 +97,7 @@ final class OutpostWorld {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Diseño del mapa (solo rellena `ground` y `solids`)
+    // Diseño del mapa (solo rellena `ground` y `walls`)
     // ---------------------------------------------------------------------------------------------
 
     private void layout() {
@@ -125,87 +128,87 @@ final class OutpostWorld {
         int cx = spawnX, cy = spawnY;
 
         // Anillo de sacos terreros (medio muro: frena a los zombis pero deja pasar las balas)
-        outline(cx - 8, cy - 8, cx + 8, cy + 8, ItemKind.HALF_WALL);
-        open(cx - 1, cy + 8, cx + 1, cy + 8); // salida sur
-        open(cx + 8, cy - 1, cx + 8, cy + 1); // salida este
+        room(cx - 7, cy - 7, cx + 7, cy + 7, ItemKind.HALF_WALL);
+        northWalls(cx - 1, cx + 1, cy + 8, null); // salida sur
+        westWalls(cx + 8, cy - 1, cy + 1, null);  // salida este
 
         // Casa
-        outline(cx - 5, cy - 5, cx + 5, cy + 5, ItemKind.WALL);
+        room(cx - 4, cy - 4, cx + 4, cy + 4, ItemKind.WALL);
         ground(cx - 4, cy - 4, cx + 4, cy + 4, TextureId.DIRT);
-        open(cx - 1, cy + 5, cx + 1, cy + 5); // puerta
+        northWalls(cx - 1, cx + 1, cy + 5, null); // puerta
         // Ventanas para disparar desde dentro
-        fill(cx - 1, cy - 5, cx + 1, cy - 5, ItemKind.HALF_WALL);
-        fill(cx - 5, cy - 1, cx - 5, cy + 1, ItemKind.HALF_WALL);
-        fill(cx + 5, cy - 1, cx + 5, cy + 1, ItemKind.HALF_WALL);
+        northWalls(cx - 1, cx + 1, cy - 4, ItemKind.HALF_WALL);
+        westWalls(cx - 4, cy - 1, cy + 1, ItemKind.HALF_WALL);
+        westWalls(cx + 5, cy - 1, cy + 1, ItemKind.HALF_WALL);
         // Banco de trabajo (rincón de los materiales)
-        fill(cx + 2, cy + 2, cx + 3, cy + 2, ItemKind.HALF_WALL);
+        northWalls(cx + 2, cx + 3, cy + 2, ItemKind.HALF_WALL);
     }
 
     private void village() {
-        hut(32, 1, 38, 6, 'S');
-        hut(42, 1, 48, 6, 'S');
-        hut(35, 12, 43, 17, 'N');
+        hut(33, 2, 37, 5, 'S');
+        hut(43, 2, 47, 5, 'S');
+        hut(36, 13, 42, 16, 'N');
     }
 
-    /** Casa pequeña con suelo de tierra, puerta de 3 casillas en el lado indicado y algún muro caído. */
+    /** Casa pequeña (casillas interiores) con suelo de tierra, puerta de 3 casillas y algún muro caído. */
     private void hut(int x0, int y0, int x1, int y1, char door) {
-        outline(x0, y0, x1, y1, ItemKind.WALL);
-        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TextureId.DIRT);
+        room(x0, y0, x1, y1, ItemKind.WALL);
+        ground(x0, y0, x1, y1, TextureId.DIRT);
         ruin(x0, y0, x1, y1, 0.15);
         int mid = (x0 + x1) / 2;
-        int doorY = door == 'S' ? y1 : y0;
-        open(mid - 1, doorY, mid + 1, doorY);
+        int doorY = door == 'S' ? y1 + 1 : y0;
+        northWalls(mid - 1, mid + 1, doorY, null);
     }
 
     private void fort() {
-        int x0 = 25, y0 = 40, x1 = 45, y1 = 58;
-        outline(x0, y0, x1, y1, ItemKind.WALL);
-        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TextureId.DIRT);
+        int x0 = 26, y0 = 41, x1 = 44, y1 = 57;
+        room(x0, y0, x1, y1, ItemKind.WALL);
+        ground(x0, y0, x1, y1, TextureId.DIRT);
 
         // Almenas: medio muro cada 3 casillas para que los soldados disparen hacia fuera
-        for (int x = x0 + 2; x < x1 - 1; x += 3) {
-            solid(x, y0, ItemKind.HALF_WALL);
-            solid(x, y1, ItemKind.HALF_WALL);
+        for (int x = x0 + 1; x < x1; x += 3) {
+            northWalls(x, x, y0, ItemKind.HALF_WALL);
+            northWalls(x, x, y1 + 1, ItemKind.HALF_WALL);
         }
-        for (int y = y0 + 2; y < y1 - 1; y += 3) {
-            solid(x1, y, ItemKind.HALF_WALL);
+        for (int y = y0 + 1; y < y1; y += 3) {
+            westWalls(x1 + 1, y, y, ItemKind.HALF_WALL);
         }
 
-        // Torres en las esquinas
-        fill(x0 - 1, y0 - 1, x0 + 1, y0 + 1, ItemKind.WALL);
-        fill(x1 - 1, y0 - 1, x1 + 1, y0 + 1, ItemKind.WALL);
-        fill(x0 - 1, y1 - 1, x0 + 1, y1 + 1, ItemKind.WALL);
-        fill(x1 - 1, y1 - 1, x1 + 1, y1 + 1, ItemKind.WALL);
+        // Torres en las esquinas: un cuadrado de 2x2 casillas sobre cada esquina
+        room(x0 - 1, y0 - 1, x0, y0, ItemKind.WALL);
+        room(x1, y0 - 1, x1 + 1, y0, ItemKind.WALL);
+        room(x0 - 1, y1, x0, y1 + 1, ItemKind.WALL);
+        room(x1, y1, x1 + 1, y1 + 1, ItemKind.WALL);
 
-        open(x0, 48, x0, 50); // puerta oeste, al final del camino
+        westWalls(x0, 48, 50, null); // puerta oeste, al final del camino
 
         // Barracón / armería
-        outline(36, 43, 43, 49, ItemKind.WALL);
-        open(36, 45, 36, 47);
+        room(37, 44, 42, 48, ItemKind.WALL);
+        westWalls(37, 45, 47, null);
 
         // Coberturas en el patio
-        fill(29, 45, 32, 45, ItemKind.HALF_WALL);
-        fill(29, 53, 32, 53, ItemKind.HALF_WALL);
-        fill(38, 53, 41, 53, ItemKind.HALF_WALL);
+        northWalls(29, 32, 45, ItemKind.HALF_WALL);
+        northWalls(29, 32, 53, ItemKind.HALF_WALL);
+        northWalls(38, 41, 53, ItemKind.HALF_WALL);
     }
 
     private void cemetery() {
-        int x0 = 80, y0 = 14, x1 = 100, y1 = 34;
-        outline(x0, y0, x1, y1, ItemKind.HALF_WALL);
-        ground(x0 + 1, y0 + 1, x1 - 1, y1 - 1, TextureId.DIRT);
-        open(89, y0, 91, y0); // entrada norte, donde acaba el camino
+        int x0 = 81, y0 = 15, x1 = 99, y1 = 33;
+        room(x0, y0, x1, y1, ItemKind.HALF_WALL);
+        ground(x0, y0, x1, y1, TextureId.DIRT);
+        northWalls(89, 91, y0, null); // entrada norte, donde acaba el camino
 
         // Mausoleo
-        outline(87, 21, 93, 27, ItemKind.WALL);
-        open(89, 27, 91, 27);
+        room(88, 22, 92, 26, ItemKind.WALL);
+        northWalls(89, 91, 27, null);
 
         // Tumbas en filas, dejando libre el pasillo central y el mausoleo
-        for (int x = 83; x < x1; x += 3) {
-            for (int y = 17; y < y1; y += 3) {
+        for (int x = 83; x <= x1; x += 3) {
+            for (int y = 17; y <= y1; y += 3) {
                 boolean aisle = x >= 88 && x <= 92;
                 boolean nearMausoleum = x >= 86 && x <= 94 && y >= 20 && y <= 28;
                 if (!aisle && !nearMausoleum) {
-                    solid(x, y, ItemKind.HALF_WALL);
+                    northWalls(x, x, y, ItemKind.HALF_WALL);
                 }
             }
         }
@@ -220,24 +223,24 @@ final class OutpostWorld {
             int length = 3 + random.nextInt(4);
             boolean horizontal = random.nextBoolean();
             if (horizontal) {
-                fill(x, y, x + length - 1, y, kind);
+                northWalls(x, x + length - 1, y, kind);
             } else {
-                fill(x, y, x, y + length - 1, kind);
+                westWalls(x, y, y + length - 1, kind);
             }
-            if (random.nextBoolean()) { // segundo tramo en L
+            if (random.nextBoolean()) { // segundo tramo en L, desde la misma esquina
                 int leg = 2 + random.nextInt(3);
                 if (horizontal) {
-                    fill(x, y + 1, x, y + leg, kind);
+                    westWalls(x, y, y + leg - 1, kind);
                 } else {
-                    fill(x + 1, y, x + leg, y, kind);
+                    northWalls(x, x + leg - 1, y, kind);
                 }
             }
         }
     }
 
     private void teemoShrine() {
-        outline(109, 109, 115, 115, ItemKind.HALF_WALL);
-        open(111, 109, 113, 109);
+        room(110, 110, 114, 114, ItemKind.HALF_WALL);
+        northWalls(111, 113, 110, null);
         ground(111, 111, 113, 113, TextureId.TEEMO);
     }
 
@@ -251,9 +254,12 @@ final class OutpostWorld {
                 WorldManager.build(new Struct(px(x), px(y), ItemKind.FLOOR, ground[x][y]));
             }
         }
-        solids.forEach((key, kind) -> {
+        walls.forEach((key, kind) -> {
             TextureId texture = kind == ItemKind.WALL ? TextureId.WALL : TextureId.HALF_WALL;
-            WorldManager.build(new Struct(px(tileX(key)), px(tileY(key)), kind, texture));
+            int x = edgeX(key), y = edgeY(key);
+            WorldManager.build(isVertical(key)
+                    ? Struct.westWall(x, y, kind, texture)
+                    : Struct.northWall(x, y, kind, texture));
         });
     }
 
@@ -330,19 +336,19 @@ final class OutpostWorld {
     }
 
     private void human(int type, int x, int y) {
-        if (isFree(x, y)) {
+        if (inWorld(x, y)) {
             NpcManager.spawnNpc(type, px(x), px(y), random.nextInt(360));
         }
     }
 
-    /** Hasta {@code count} zombis en casillas libres del rectángulo, lejos del punto de aparición. */
+    /** Hasta {@code count} zombis en casillas del rectángulo, lejos del punto de aparición. */
     private void zombies(int count, int x0, int y0, int x1, int y1) {
         int placed = 0;
         for (int attempt = 0; attempt < count * 20 && placed < count; attempt++) {
             int x = x0 + random.nextInt(x1 - x0 + 1);
             int y = y0 + random.nextInt(y1 - y0 + 1);
             int dx = x - spawnX, dy = y - spawnY;
-            if (isFree(x, y) && dx * dx + dy * dy > SAFE_RADIUS_TILES * SAFE_RADIUS_TILES) {
+            if (inWorld(x, y) && dx * dx + dy * dy > SAFE_RADIUS_TILES * SAFE_RADIUS_TILES) {
                 int type = random.nextBoolean() ? NpcManager.ZOMBIE : NpcManager.ZOMBIE_ALT;
                 NpcManager.spawnNpc(type, px(x), px(y), random.nextInt(360));
                 placed++;
@@ -351,7 +357,7 @@ final class OutpostWorld {
     }
 
     // ---------------------------------------------------------------------------------------------
-    // Utilidades de casillas
+    // Utilidades de casillas y bordes
     // ---------------------------------------------------------------------------------------------
 
     private static float px(int tile) {
@@ -362,60 +368,66 @@ final class OutpostWorld {
         return x >= 0 && y >= 0 && x < SIZE_TILES && y < SIZE_TILES;
     }
 
-    private static long key(int x, int y) {
-        return (long) x * SIZE_TILES + y;
+    /** Borde norte (o oeste, si {@code vertical}) de la casilla (x, y). Incluye los bordes del final del mapa. */
+    private static long edgeKey(int x, int y, boolean vertical) {
+        return ((long) x * (SIZE_TILES + 1) + y) * 2 + (vertical ? 1 : 0);
     }
 
-    private static int tileX(long key) {
-        return (int) (key / SIZE_TILES);
+    private static int edgeX(long key) {
+        return (int) (key / 2 / (SIZE_TILES + 1));
     }
 
-    private static int tileY(long key) {
-        return (int) (key % SIZE_TILES);
+    private static int edgeY(long key) {
+        return (int) (key / 2 % (SIZE_TILES + 1));
     }
 
-    private boolean isFree(int x, int y) {
-        return inWorld(x, y) && !solids.containsKey(key(x, y));
+    private static boolean isVertical(long key) {
+        return key % 2 == 1;
     }
 
-    private void solid(int x, int y, ItemKind kind) {
-        if (inWorld(x, y)) {
-            solids.put(key(x, y), kind);
+    /** Pone ({@code kind}) o quita ({@code null}) el muro de un borde. */
+    private void wall(int x, int y, boolean vertical, ItemKind kind) {
+        if (x < 0 || y < 0 || x > SIZE_TILES || y > SIZE_TILES) {
+            return;
+        }
+        if (kind == null) {
+            walls.remove(edgeKey(x, y, vertical));
+        } else {
+            walls.put(edgeKey(x, y, vertical), kind);
         }
     }
 
-    private void fill(int x0, int y0, int x1, int y1, ItemKind kind) {
+    /** Línea horizontal en los bordes norte de las casillas x0..x1 de la fila y ({@code null} = quitarla). */
+    private void northWalls(int x0, int x1, int y, ItemKind kind) {
         for (int x = x0; x <= x1; x++) {
-            for (int y = y0; y <= y1; y++) {
-                solid(x, y, kind);
-            }
+            wall(x, y, false, kind);
         }
     }
 
-    private void outline(int x0, int y0, int x1, int y1, ItemKind kind) {
-        fill(x0, y0, x1, y0, kind);
-        fill(x0, y1, x1, y1, kind);
-        fill(x0, y0, x0, y1, kind);
-        fill(x1, y0, x1, y1, kind);
-    }
-
-    private void open(int x0, int y0, int x1, int y1) {
-        for (int x = x0; x <= x1; x++) {
-            for (int y = y0; y <= y1; y++) {
-                solids.remove(key(x, y));
-            }
+    /** Línea vertical en los bordes oeste de las casillas y0..y1 de la columna x ({@code null} = quitarla). */
+    private void westWalls(int x, int y0, int y1, ItemKind kind) {
+        for (int y = y0; y <= y1; y++) {
+            wall(x, y, true, kind);
         }
     }
 
-    /** Quita al azar algunas casillas del contorno para que parezca derruido. */
+    /** Muros alrededor de las casillas x0..x1, y0..y1. */
+    private void room(int x0, int y0, int x1, int y1, ItemKind kind) {
+        northWalls(x0, x1, y0, kind);
+        northWalls(x0, x1, y1 + 1, kind);
+        westWalls(x0, y0, y1, kind);
+        westWalls(x1 + 1, y0, y1, kind);
+    }
+
+    /** Quita al azar algunos tramos de los muros alrededor de las casillas x0..x1, y0..y1. */
     private void ruin(int x0, int y0, int x1, int y1, double chance) {
         for (int x = x0; x <= x1; x++) {
-            for (int y = y0; y <= y1; y++) {
-                boolean border = x == x0 || x == x1 || y == y0 || y == y1;
-                if (border && random.nextDouble() < chance) {
-                    solids.remove(key(x, y));
-                }
-            }
+            if (random.nextDouble() < chance) wall(x, y0, false, null);
+            if (random.nextDouble() < chance) wall(x, y1 + 1, false, null);
+        }
+        for (int y = y0; y <= y1; y++) {
+            if (random.nextDouble() < chance) wall(x0, y, true, null);
+            if (random.nextDouble() < chance) wall(x1 + 1, y, true, null);
         }
     }
 

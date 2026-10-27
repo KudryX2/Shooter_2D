@@ -45,6 +45,15 @@ public final class Gun extends Item {
      * @param triggerJustPressed el gatillo se acaba de pulsar; las armas semiautomáticas solo disparan entonces
      */
     public void shoot(float x, float y, float rotation, boolean shotByPlayer, boolean triggerJustPressed) {
+        shoot(x, y, x, y, rotation, shotByPlayer, triggerJustPressed);
+    }
+
+    /**
+     * Intenta disparar desde la boca del arma (x, y), sostenida por alguien en (fromX, fromY). Si hay un muro
+     * entre los dos (p.ej. disparando pegado a él) las balas chocan ahí y no aparecen al otro lado.
+     */
+    public void shoot(float fromX, float fromY, float x, float y, float rotation, boolean shotByPlayer,
+                      boolean triggerJustPressed) {
         long now = GameClock.now();
         long cooldown = shotByPlayer ? rate : rate * 2L;
         if (now - lastShot <= cooldown) {
@@ -55,13 +64,16 @@ public final class Gun extends Item {
             return;
         }
 
-        switch (gunKind) {
-            case SHOTGUN -> {
-                for (int angle : SHOTGUN_PATTERN) {
-                    fire(x, y, rotation + angle, shotByPlayer);
+        boolean blocked = WorldManager.isWallBetween(fromX, fromY, x, y);
+        if (!blocked) {
+            switch (gunKind) {
+                case SHOTGUN -> {
+                    for (int angle : SHOTGUN_PATTERN) {
+                        fire(x, y, rotation + angle, shotByPlayer);
+                    }
                 }
+                case PISTOL, SNIPER, ASSAULT_RIFLE -> fire(x, y, rotation, shotByPlayer);
             }
-            case PISTOL, SNIPER, ASSAULT_RIFLE -> fire(x, y, rotation, shotByPlayer);
         }
         WorldManager.muzzleFlashes.add(new MuzzleFlash(x, y, rotation, now, shotByPlayer)); // uno por disparo, también en la escopeta
         lastShot = now;

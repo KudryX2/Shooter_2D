@@ -192,7 +192,7 @@ public class Npc {
                 double angle = Math.toRadians(-rotation);
                 float shotX = x - (float) Math.sin(angle) * GUN_OFFSET;
                 float shotY = y - (float) Math.cos(angle) * GUN_OFFSET;
-                gun.shoot(shotX, shotY, rotation - 90, false, true);
+                gun.shoot(x, y, shotX, shotY, rotation - 90, false, true);
                 return;
             }
         }

@@ -48,18 +48,18 @@ final class DemoWorld {
         }
 
         // Muros
-        for (int i = 0; i < 1200; i += TILE) {
-            wall(i, TILE * 13);
+        for (int i = 0; i < 1200 / TILE; i++) {
+            WorldManager.build(Struct.northWall(i, 13, ItemKind.WALL, TextureId.WALL));
         }
-        wall(1000, 1000);
-        wall(TILE * 10, TILE * 5);
-        wall(TILE * 7, TILE * 6);
-        wall(TILE * 7, TILE * 7);
-        wall(TILE * 9, TILE * 7);
+        WorldManager.build(Struct.northWall(15, 15, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(Struct.northWall(10, 5, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(Struct.westWall(7, 6, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(Struct.westWall(7, 7, ItemKind.WALL, TextureId.WALL));
+        WorldManager.build(Struct.northWall(9, 7, ItemKind.WALL, TextureId.WALL));
 
-        WorldManager.build(new Struct(TILE * 20, TILE * 5, ItemKind.HALF_WALL, TextureId.HALF_WALL));
-        WorldManager.build(new Struct(TILE * 20, TILE * 6, ItemKind.HALF_WALL, TextureId.HALF_WALL));
-        WorldManager.build(new Struct(TILE * 20, TILE * 7, ItemKind.HALF_WALL, TextureId.HALF_WALL));
+        for (int j = 5; j <= 7; j++) {
+            WorldManager.build(Struct.westWall(20, j, ItemKind.HALF_WALL, TextureId.HALF_WALL));
+        }
 
         // NPCs
         var random = ThreadLocalRandom.current();
@@ -78,9 +78,5 @@ final class DemoWorld {
             NpcManager.spawnNpc(random.nextBoolean() ? NpcManager.ZOMBIE : NpcManager.ZOMBIE_ALT, x, 100, 0);
             NpcManager.spawnNpc(NpcManager.HUMAN_AGGRESSIVE, x, 1000, 0);
         }
-    }
-
-    private static void wall(float x, float y) {
-        WorldManager.build(new Struct(x, y, ItemKind.WALL, TextureId.WALL));
     }
 }
