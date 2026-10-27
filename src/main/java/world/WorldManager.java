@@ -1,7 +1,8 @@
 package world;
 
 import static util.Geometry.distance;
-import static util.Geometry.overlaps;
+import static util.Geometry.NO_HIT;
+import static util.Geometry.segmentEntersBox;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,31 +46,73 @@ public final class WorldManager {
         updateChunks();
     }
 
-    /** Mueve el proyectil y resuelve sus impactos. Devuelve {@code true} si hay que eliminarlo. */
+    /**
+     * Mueve el proyectil y resuelve sus impactos. Devuelve {@code true} si hay que eliminarlo.
+     *
+     * <p>Una bala avanza decenas de píxeles por frame, así que no basta con mirar dónde acaba: se comprueba todo
+     * el tramo recorrido y gana el primer obstáculo (muro, NPC o jugador). Así no atraviesa muros finos ni se
+     * salta objetivos, y un muro protege de verdad a quien está detrás.
+     */
     private static boolean updateProjectile(Projectile p) {
+        float x0 = p.x, y0 = p.y;
         p.move();
-        if (p.isOutOfRange()) {
-            return true;
-        }
+        float x1 = p.x, y1 = p.y;
 
-        if (overlaps(p.x, p.y, Player.x, Player.y, PROJECTILE_HITBOX)) {
-            Player.hp -= p.damage / 10;
-            return true;
-        }
+        float first = firstWallHit(x0, y0, x1, y1);
+        boolean hitsPlayer = false;
+        Npc hitNpc = null;
 
+        float t = segmentEntersBox(x0, y0, x1, y1, Player.x, Player.y, PROJECTILE_HITBOX, PROJECTILE_HITBOX);
+        if (isCloser(t, first)) {
+            first = t;
+            hitsPlayer = true;
+        }
         for (Npc npc : npcs) {
-            if (npc.alive && overlaps(p.x, p.y, npc.x, npc.y, PROJECTILE_HITBOX)) {
-                // Headshot: solo balas del jugador, y solo si estaba apuntando justo al objetivo
-                if (p.byPlayer && overlaps(p.x, p.y, Player.aimX, Player.aimY, PROJECTILE_HITBOX)) {
-                    npc.die(true);
-                } else {
-                    npc.takeDamage(p.damage);
-                }
-                return true;
+            if (!npc.alive) {
+                continue;
+            }
+            t = segmentEntersBox(x0, y0, x1, y1, npc.x, npc.y, PROJECTILE_HITBOX, PROJECTILE_HITBOX);
+            if (isCloser(t, first)) {
+                first = t;
+                hitsPlayer = false;
+                hitNpc = npc;
             }
         }
 
-        return bulletWalls.anyOverlapping(p.x, p.y, WALL_HITBOX);
+        if (hitNpc != null) {
+            // Headshot: solo balas del jugador, y solo si pasan justo por donde apuntaba
+            boolean throughAim = segmentEntersBox(x0, y0, x1, y1, Player.aimX, Player.aimY,
+                    PROJECTILE_HITBOX, PROJECTILE_HITBOX) != NO_HIT;
+            if (p.byPlayer && throughAim) {
+                hitNpc.die(true);
+            } else {
+                hitNpc.takeDamage(p.damage);
+            }
+            return true;
+        }
+        if (hitsPlayer) {
+            Player.hp -= p.damage / 10;
+            return true;
+        }
+        return first != NO_HIT || p.isOutOfRange();
+    }
+
+    private static boolean isCloser(float t, float best) {
+        return t != NO_HIT && (best == NO_HIT || t < best);
+    }
+
+    /** Primer muro (no medio muro) que cruza el tramo (x0, y0) → (x1, y1), como fracción del tramo, o NO_HIT. */
+    private static float firstWallHit(float x0, float y0, float x1, float y1) {
+        float midX = (x0 + x1) / 2, midY = (y0 + y1) / 2;
+        float range = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) / 2 + WALL_HITBOX;
+        float[] first = {NO_HIT};
+        bulletWalls.forEachNear(midX, midY, range, wall -> {
+            float t = segmentEntersBox(x0, y0, x1, y1, wall.x(), wall.y(), WALL_HITBOX, WALL_HITBOX);
+            if (isCloser(t, first[0])) {
+                first[0] = t;
+            }
+        });
+        return first[0];
     }
 
     private static void updateNpcs() {

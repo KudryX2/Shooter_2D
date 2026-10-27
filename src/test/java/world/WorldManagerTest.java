@@ -12,14 +12,18 @@ import assets.TextureId;
 import items.ItemKind;
 import items.ItemManager;
 import items.Projectile;
+import npc.Npc;
+import npc.NpcManager;
 import player.Player;
 import structs.Struct;
+import util.GameClock;
 
 class WorldManagerTest {
 
     @BeforeEach
     void setUp() {
         ItemManager.init();
+        GameClock.reset();
         WorldManager.reset();
         WorldManager.chunks.add(new Chunk(0, 0));
         WorldManager.chunks.add(new Chunk(650, 0));
@@ -70,6 +74,58 @@ class WorldManagerTest {
         assertFalse(bulletStoppedAt(131, 100));
         assertFalse(bulletStoppedAt(400, 100));
         assertFalse(bulletStoppedAt(700, 100));
+    }
+
+    /** Dispara una bala hacia +x desde (x, y) y avanza un frame en el que recorre {@code step} píxeles. */
+    private static Projectile fireRight(float x, float y, float step) {
+        Player.x = 100_000;
+        Player.y = 100_000;
+        WorldManager.projectiles.clear();
+        Projectile p = new Projectile(x, y, 0, 1, 600, 50, false); // rotación 0 = hacia +x, 1 px/ms
+        WorldManager.projectiles.add(p);
+        GameClock.tick(step);
+        WorldManager.update();
+        return p;
+    }
+
+    @Test
+    void fastBulletsCannotJumpOverWalls() {
+        WorldManager.build(new Struct(100, 100, ItemKind.WALL, TextureId.WALL));
+        fireRight(0, 100, 300); // empieza antes del muro y acabaría muy detrás
+        assertTrue(WorldManager.projectiles.isEmpty());
+    }
+
+    @Test
+    void fastBulletsHitTheNpcTheyFlyThrough() {
+        Npc target = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 100, 0);
+        fireRight(0, 100, 300);
+        assertTrue(WorldManager.projectiles.isEmpty());
+        assertTrue(target.hp < 100);
+    }
+
+    @Test
+    void wallsProtectNpcsBehindThem() {
+        WorldManager.build(new Struct(100, 100, ItemKind.WALL, TextureId.WALL));
+        Npc behind = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 200, 100, 0);
+        fireRight(0, 100, 300); // el tramo cruza el muro y luego el NPC: gana el muro
+        assertTrue(WorldManager.projectiles.isEmpty());
+        assertEquals(100, behind.hp);
+    }
+
+    @Test
+    void bulletsHitTheFirstNpcInTheirPath() {
+        Npc near = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 100, 100, 0);
+        Npc far = NpcManager.spawnNpc(NpcManager.HUMAN_PASSIVE, 200, 100, 0);
+        fireRight(0, 100, 300);
+        assertTrue(near.hp < 100);
+        assertEquals(100, far.hp);
+    }
+
+    @Test
+    void bulletsMissWallsBesideTheirPath() {
+        WorldManager.build(new Struct(100, 100, ItemKind.WALL, TextureId.WALL));
+        fireRight(0, 140, 300); // pasa 40 px por debajo del centro: fuera de la caja de 30
+        assertEquals(1, WorldManager.projectiles.size());
     }
 
     @Test

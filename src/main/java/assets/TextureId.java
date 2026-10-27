@@ -34,7 +34,7 @@ public enum TextureId {
     // Entorno (suelos y muros)
     GRASS("3-grass"),
     /** Tierra original. Hay una alternativa en "3-dirt2". */
-    DIRT("3-dirt"),
+    DIRT("3-dirt2"),
     WALL("3-wall"),
     HALF_WALL("3-halfWall"),
     /** Imagen, no textura repetible: no se gira al usarla de suelo. */
