@@ -130,16 +130,17 @@ final class Draw {
 
     /** Sprite con la esquina superior izquierda en (x, y), girado {@code rotation} grados sobre su centro. */
     static void sprite(TextureId id, float x, float y, float width, float height, float rotation) {
-        TextureRegion region = TexturesManager.region(id);
-        sprites().draw(region, x, y, width / 2, height / 2, width, height, 1, 1, rotation);
+        region(TexturesManager.region(id), x, y, width, height, rotation);
     }
 
-    /**
-     * Dibuja solo un recorte de la imagen: la fracción {@code cropU} de su ancho y {@code cropV} de su alto,
-     * desde la esquina superior izquierda (p.ej. una tira para un muro fino, sin aplastar la textura).
-     */
-    static void spriteCropped(TextureId id, float x, float y, float width, float height, float cropU, float cropV) {
-        sprites().draw(TexturesManager.region(id).getTexture(), x, y, width, height, 0, 0, cropU, cropV);
+    /** Como {@link #sprite(TextureId, float, float, float, float, float)}, con el frame de animación de {@code timeMs}. */
+    static void animated(TextureId id, float timeMs, float x, float y, float width, float height, float rotation) {
+        region(TexturesManager.frame(id, timeMs), x, y, width, height, rotation);
+    }
+
+    /** Una región concreta del atlas (p.ej. una variante de {@link TexturesManager#variant}). */
+    static void region(TextureRegion region, float x, float y, float width, float height, float rotation) {
+        sprites().draw(region, x, y, width / 2, height / 2, width, height, 1, 1, rotation);
     }
 
     private static SpriteBatch sprites() {

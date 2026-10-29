@@ -4,6 +4,7 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
 
+import assets.Assets;
 import graphics.DisplayManager;
 import graphics.GraphicsManager;
 import graphics.HudRenderer;
@@ -26,11 +27,20 @@ public final class Game extends ApplicationAdapter {
         this.classicWorld = classicWorld;
     }
 
+    /** Mientras se cargan las texturas solo se dibuja la barra de progreso. */
+    private boolean loading = true;
+
     @Override
     public void create() {
         DisplayManager.resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         GraphicsManager.init();
         Input.init();
+        Assets.startLoading();
+    }
+
+    /** Cuando ya está todo cargado: crea la partida. */
+    private void start() {
+        GraphicsManager.onAssetsLoaded();
         Player.create();
         PlayerController.init();
         if (classicWorld) {
@@ -47,6 +57,16 @@ public final class Game extends ApplicationAdapter {
 
     @Override
     public void render() {
+        if (loading) {
+            if (Assets.update()) {
+                loading = false;
+                start();
+            } else {
+                GraphicsManager.renderLoading(Assets.progress());
+                return;
+            }
+        }
+
         DisplayManager.tick();
         Input.update();
         PauseButton.update();

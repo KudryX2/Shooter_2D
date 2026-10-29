@@ -12,14 +12,14 @@ class StructTest {
     private static final float S = Struct.SIZE;
 
     @Test
-    void wallsAreAQuarterAndHalfWallsAFifthOfATile() {
+    void wallsAreAQuarterAndHalfWallsThreeSixteenthsOfATile() {
         Struct wall = Struct.northWall(0, 0, StructKind.WALL);
         assertEquals(16, wall.halfHeight() * 2);
         assertEquals(S + 16, wall.halfWidth() * 2);
 
         Struct half = Struct.westWall(0, 0, StructKind.HALF_WALL);
-        assertEquals(13, half.halfWidth() * 2);
-        assertEquals(S + 13, half.halfHeight() * 2);
+        assertEquals(12, half.halfWidth() * 2);
+        assertEquals(S + 12, half.halfHeight() * 2);
 
         Struct floor = new Struct(0, 0, StructKind.FLOOR, TextureId.GRASS);
         assertEquals(S, floor.halfWidth() * 2);

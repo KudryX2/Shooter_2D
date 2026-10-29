@@ -1,11 +1,13 @@
 package assets;
 
 /**
- * Todas las texturas del juego, cada una con su archivo en {@code res/}. El modelo (estructuras, objetos, NPC)
- * guarda un {@code TextureId}; solo {@code graphics.TexturesManager} sabe convertirlo en una textura de OpenGL.
+ * Todas las texturas del juego, cada una con su imagen en {@code assets-raw/textures/}. Al compilar se juntan
+ * todas en un atlas ({@link Assets#ATLAS}). El modelo (estructuras, objetos, NPC) guarda un {@code TextureId}; solo
+ * {@code graphics.TexturesManager} sabe convertirlo en una textura de OpenGL.
  *
- * <p>Para añadir una textura basta con añadir una constante aquí: se carga sola al iniciar.
- * Varias constantes pueden compartir archivo (se carga una sola vez).
+ * <p>Para añadir una textura basta con dejar su imagen en esa carpeta y añadir una constante aquí. Varias
+ * constantes pueden compartir imagen. Para animarla, en vez de {@code nombre.png} se ponen sus frames como
+ * {@code nombre_0.png}, {@code nombre_1.png}...
  */
 public enum TextureId {
     // Efectos
@@ -29,12 +31,20 @@ public enum TextureId {
     HP_LOW("2-hp2"),
     HP_BACKGROUND("2-hpFont"),
 
-    // Entorno (suelos y muros)
+    // Entorno, en pixel art (assets-raw/textures/pixel, generados con la tarea generateArt). En los suelos, las
+    // imágenes numeradas no son una animación sino variantes: cada casilla elige una según su posición.
     GRASS("3-grass"),
-    /** Tierra original. Hay una alternativa en "3-dirt2". */
-    DIRT("3-dirt2"),
+    DIRT("3-dirt"),
+    /** Icono del muro (inventario, suelo y mano). En el mundo se dibuja con {@link #WALL_H} / {@link #WALL_V}. */
     WALL("3-wall"),
+    /** Muro visto en 3/4 de este a oeste: remate arriba y cara frontal debajo. */
+    WALL_H("3-wall-h"),
+    /** Muro visto en 3/4 de norte a sur: remate largo y estrecho, con la cara frontal en su extremo sur. */
+    WALL_V("3-wall-v"),
+    /** Icono del saco terrero. En el mundo se dibuja con {@link #HALF_WALL_H} / {@link #HALF_WALL_V}. */
     HALF_WALL("3-halfWall"),
+    HALF_WALL_H("3-halfWall-h"),
+    HALF_WALL_V("3-halfWall-v"),
     /** Imagen, no textura repetible: no se gira al usarla de suelo. */
     TEEMO("3-Teemo"),
 
@@ -52,7 +62,7 @@ public enum TextureId {
     // Consumibles
     MEDKIT("7-medkit");
 
-    /** Nombre del archivo en {@code res/}, sin la extensión {@code .png}. */
+    /** Nombre de la imagen en {@code assets-raw/textures/} (y de su región en el atlas), sin {@code .png}. */
     public final String file;
 
     TextureId(String file) {

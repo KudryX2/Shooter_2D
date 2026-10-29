@@ -6,8 +6,8 @@ import assets.TextureId;
 public enum StructKind {
     /** Bloquea el paso y las balas. Un cuarto de casilla de grosor. */
     WALL("Wall", TextureId.WALL, 16, true, true),
-    /** Saco terrero: bloquea el paso pero deja pasar las balas. Un quinto de casilla de grosor. */
-    HALF_WALL("Half wall", TextureId.HALF_WALL, 13, true, false),
+    /** Saco terrero: bloquea el paso pero deja pasar las balas. Tres dieciseisavos de casilla de grosor. */
+    HALF_WALL("Half wall", TextureId.HALF_WALL, 12, true, false),
     /** Ocupa una casilla entera y no bloquea nada. */
     FLOOR("Floor", TextureId.GRASS, Struct.SIZE, false, false);
 

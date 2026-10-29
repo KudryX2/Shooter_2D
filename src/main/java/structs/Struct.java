@@ -11,7 +11,7 @@ import assets.TextureId;
  * más su grosor, para que dos muros que se juntan en una esquina se solapen y no quede hueco.
  */
 public record Struct(float x, float y, StructKind kind, TextureId texture, boolean vertical) {
-    public static final float SIZE = 65;
+    public static final float SIZE = 64;
     /** Mitad del lado más largo que puede tener una estructura (un muro con sus puntas). */
     public static final float MAX_HALF_EXTENT = (SIZE + StructKind.WALL.thickness) / 2;
 

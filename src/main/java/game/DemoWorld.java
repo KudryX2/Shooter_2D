@@ -19,7 +19,7 @@ import world.WorldManager;
 /** Mapa de pruebas. */
 final class DemoWorld {
     private static final int WORLD_SIZE = 10_000;
-    private static final int CHUNK_SIZE = 650;
+    private static final int CHUNK_SIZE = 10 * (int) Struct.SIZE;
     private static final int TILE = (int) Struct.SIZE;
 
     private DemoWorld() {

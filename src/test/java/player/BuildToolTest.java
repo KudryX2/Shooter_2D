@@ -109,8 +109,8 @@ class BuildToolTest {
 
     @Test
     void demolishOnlyRemovesBuiltFloorsAndNeverTheMapGround() {
-        Structures.build(new Struct(65, 0, StructKind.FLOOR, TextureId.GRASS)); // suelo del mapa
-        Structures.build(new Struct(65, 0, StructKind.FLOOR, TextureId.DIRT));  // construido encima
+        Structures.build(new Struct(Struct.SIZE, 0, StructKind.FLOOR, TextureId.GRASS)); // suelo del mapa
+        Structures.build(new Struct(Struct.SIZE, 0, StructKind.FLOOR, TextureId.DIRT));  // construido encima
 
         assertTrue(BuildTool.demolish(70, 5));
         assertEquals(1, WorldManager.chunks.getFirst().floors.size());

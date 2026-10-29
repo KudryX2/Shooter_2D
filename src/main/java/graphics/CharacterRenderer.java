@@ -17,6 +17,7 @@ import items.StructItem;
 import npc.Npc;
 import npc.NpcKind;
 import player.Player;
+import util.GameClock;
 import world.WorldManager;
 
 /** NPC (cadáveres, levantándose y en pie), el jugador con lo que lleva en la mano, sus sombras y barras de vida. */
@@ -43,18 +44,18 @@ final class CharacterRenderer {
     }
 
     /**
-     * Los NPC se dibujan por capas, sin depender del orden de la lista: así nada del suelo (cadáveres, charcos,
-     * sombras) puede quedar encima de un NPC en pie.
+     * Lo que está tumbado en el suelo, bajo todo lo que tiene altura: cadáveres, charcos y cuerpos de los que se
+     * están levantando, y las sombras de los NPC en pie y del jugador. Los cuerpos en pie los dibuja
+     * {@link DepthRenderer} (con {@link #drawNpc} y {@link #drawPlayer}).
      */
-    static void drawNpcs() {
-        // 1. Suelo: cadáveres, charcos de los que se están levantando y sombras
+    static void drawGround() {
         float puddleHalf = BLOOD_PUDDLE_SIZE / 2;
         for (Npc npc : WorldManager.npcs) {
             if (!isVisible(npc.x, npc.y)) {
                 continue;
             }
             if (!npc.isAlive()) {
-                drawNpcBody(npc); // cadáver: sprite de sangre
+                drawNpc(npc); // cadáver: sprite de sangre
             } else if (npc.isRising()) {
                 // Giro fijo por NPC para que no todos los charcos sean iguales
                 float rotation = Math.floorMod(System.identityHashCode(npc), 360);
@@ -64,32 +65,31 @@ final class CharacterRenderer {
                 drawShadow(screenX(npc.x), screenY(npc.y));
             }
         }
+        drawShadow(centerX(), centerY());
 
-        // 2. Abatidos que se están levantando (tumbados en el suelo)
+        // Abatidos que se están levantando, encima de los charcos
         for (Npc npc : WorldManager.npcs) {
             if (npc.isRising() && isVisible(npc.x, npc.y)) {
-                drawNpcBody(npc);
+                drawNpc(npc);
             }
         }
+    }
 
-        // 3. NPC en pie, encima de todo lo anterior
-        for (Npc npc : WorldManager.npcs) {
-            if (npc.isActive() && isVisible(npc.x, npc.y)) {
-                drawNpcBody(npc);
-            }
-        }
-
-        // 4. Barras de vida, por encima de todos los cuerpos
+    /** Barras de vida de los NPC heridos y del jugador, por encima de todo el mundo. */
+    static void drawHealthBars() {
         for (Npc npc : WorldManager.npcs) {
             if (npc.hp > 0 && npc.hp < 100 && isVisible(npc.x, npc.y)) {
                 drawHealthBar(npc.hp, screenX(npc.x) - HEALTH_BAR_WIDTH / 2,
                         screenY(npc.y) - spriteSize(npc) / 2 + 5);
             }
         }
+        if (Player.hp > 0) {
+            drawHealthBar(Player.hp, centerX() - Player.SIZE / 2, centerY() - Player.SIZE - 5);
+        }
     }
 
     /** Sprite del NPC (con tinte según su tipo y parpadeo si acaba de recibir un balazo). */
-    private static void drawNpcBody(Npc npc) {
+    static void drawNpc(Npc npc) {
         if (npc.kind == NpcKind.HUMAN) {
             // Tinte según el tipo para distinguir aliados, civiles y hostiles
             switch (npc.type) {
@@ -104,33 +104,37 @@ final class CharacterRenderer {
         float rotation = humanSprite ? npc.rotation - 90 : npc.rotation + 90;
         float size = spriteSize(npc);
         float half = size / 2;
-        Draw.sprite(npc.texture, screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
+        float time = animationTime(npc);
+        Draw.animated(npc.texture, time, screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
         Draw.tint(1, 1, 1, 1);
         if (npc.wasHitWithin(HIT_FLASH_MS)) {
             // Parpadeo al recibir un balazo: se vuelve a dibujar el sprite con mezcla aditiva para aclararlo
             Draw.setAdditive(true);
             Draw.tint(1f, 0.75f, 0.75f, 0.85f);
-            Draw.sprite(npc.texture, screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
+            Draw.animated(npc.texture, time, screenX(npc.x) - half, screenY(npc.y) - half, size, size, rotation);
             Draw.setAdditive(false);
             Draw.tint(1, 1, 1, 1);
         }
+    }
+
+    /** Reloj de animación del NPC: el del juego con un desfase fijo por NPC, para que no vayan todos a la vez. */
+    private static float animationTime(Npc npc) {
+        return GameClock.now() + Math.floorMod(System.identityHashCode(npc), 10_000);
     }
 
     private static float spriteSize(Npc npc) {
         return npc.texture == TextureId.HUMAN ? CHARACTER_SIZE : ZOMBIE_SIZE;
     }
 
+    /** El jugador con lo que lleva en la mano (su sombra va en {@link #drawGround}). */
     static void drawPlayer() {
         float cx = centerX();
         float cy = centerY();
 
         // El sprite del jugador mira hacia abajo (sur)
         float half = CHARACTER_SIZE / 2;
-        drawShadow(cx, cy);
-        Draw.sprite(TextureId.PLAYER, cx - half, cy - half, CHARACTER_SIZE, CHARACTER_SIZE, Player.rotation - 90);
-        if (Player.hp > 0) {
-            drawHealthBar(Player.hp, cx - Player.SIZE / 2, cy - Player.SIZE - 5);
-        }
+        Draw.animated(TextureId.PLAYER, GameClock.now(), cx - half, cy - half, CHARACTER_SIZE, CHARACTER_SIZE,
+                Player.rotation - 90);
 
         // Objeto en la mano
         float handX = handX();

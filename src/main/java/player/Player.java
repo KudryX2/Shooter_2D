@@ -13,6 +13,7 @@ import items.Gun;
 import items.Inventory;
 import items.Item;
 import items.StructItem;
+import structs.Struct;
 import util.GameClock;
 import world.Chunk;
 import world.Movement;
@@ -24,8 +25,9 @@ import world.WorldManager;
  */
 public final class Player {
     public static final float SIZE = 35;
-    public static final float SPAWN_X = 600;
-    public static final float SPAWN_Y = 600;
+    /** En el centro de una casilla (la 9, 9), que es donde se construye la casa inicial del Puesto avanzado. */
+    public static final float SPAWN_X = 9 * Struct.SIZE;
+    public static final float SPAWN_Y = 9 * Struct.SIZE;
     /** Casillas del inventario; se seleccionan con 1-9, 0 y la rueda. */
     public static final int INVENTORY_SLOTS = 10;
     public static final int MAX_HP = 100;

@@ -43,9 +43,9 @@ class ProjectilesTest {
         Structures.build(new Struct(400, 100, StructKind.HALF_WALL, TextureId.HALF_WALL));
         Structures.build(new Struct(700, 100, StructKind.FLOOR, TextureId.GRASS));
 
-        // Muro horizontal fino: 81 x 16 px (una casilla más el grosor, para cerrar las esquinas)
+        // Muro horizontal fino: 80 x 16 px (una casilla más el grosor, para cerrar las esquinas)
         assertTrue(bulletStoppedAt(100, 100));
-        assertTrue(bulletStoppedAt(140, 107));
+        assertTrue(bulletStoppedAt(139, 107));
         assertFalse(bulletStoppedAt(100, 109));
         assertFalse(bulletStoppedAt(141, 100));
         assertFalse(bulletStoppedAt(400, 100));

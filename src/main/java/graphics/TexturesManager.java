@@ -1,50 +1,73 @@
 package graphics;
 
+import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas.AtlasRegion;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.utils.Array;
 
+import assets.Assets;
 import assets.TextureId;
 
-/** Carga las texturas de {@link TextureId} (archivos de {@code res/}) y las sirve listas para dibujar. */
+/**
+ * Saca del atlas ({@link Assets#atlas()}) las regiones de cada {@link TextureId} y las sirve listas para dibujar.
+ *
+ * <p>Si en {@code assets-raw/textures} hay frames numerados ({@code 4-zombie_0.png}, {@code 4-zombie_1.png}...)
+ * la textura se anima sola, a {@link #FRAME_MS} por frame. Con una sola imagen se ve siempre igual. Los suelos
+ * usan esas imágenes numeradas como variantes ({@link #variant}) en lugar de como animación.
+ */
 public final class TexturesManager {
-    private static final Map<TextureId, TextureRegion> regions = new EnumMap<>(TextureId.class);
-    private static final Map<String, Texture> textures = new HashMap<>();
+    /** Duración de cada frame de las animaciones. */
+    static final float FRAME_MS = 100;
+
+    private static final Map<TextureId, Animation<TextureRegion>> animations = new EnumMap<>(TextureId.class);
 
     private TexturesManager() {
     }
 
-    /** Requiere la ventana creada. Cada archivo se carga una sola vez aunque lo usen varias constantes. */
-    public static void init() {
+    /** Requiere el atlas cargado. */
+    static void init() {
+        TextureAtlas atlas = Assets.atlas();
         for (TextureId id : TextureId.values()) {
-            Texture texture = textures.computeIfAbsent(id.file, TexturesManager::load);
-            TextureRegion region = new TextureRegion(texture);
-            region.flip(false, true); // la cámara tiene la y hacia abajo
-            regions.put(id, region);
+            Array<AtlasRegion> frames = atlas.findRegions(id.file);
+            if (frames.isEmpty()) {
+                throw new IllegalStateException("Falta la textura " + id + " en el atlas: " + id.file + ".png");
+            }
+            frames.sort(Comparator.comparingInt(region -> region.index));
+            animations.put(id, new Animation<>(FRAME_MS, frames, Animation.PlayMode.LOOP));
         }
     }
 
-    private static Texture load(String file) {
-        Texture texture = new Texture(Gdx.files.classpath("res/" + file + ".png"));
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        return texture;
+    /** Primer frame (el único si no está animada). */
+    static TextureRegion region(TextureId id) {
+        return frame(id, 0);
     }
 
-    static TextureRegion region(TextureId id) {
-        TextureRegion region = regions.get(id);
-        if (region == null) {
+    /** Variante número {@code n} (cualquier entero: da la vuelta) de una textura con imágenes numeradas. */
+    static TextureRegion variant(TextureId id, int n) {
+        TextureRegion[] variants = animation(id).getKeyFrames();
+        return variants[Math.floorMod(n, variants.length)];
+    }
+
+    /** Frame que toca a los {@code timeMs} ms de animación. */
+    static TextureRegion frame(TextureId id, float timeMs) {
+        return animation(id).getKeyFrame(timeMs);
+    }
+
+    private static Animation<TextureRegion> animation(TextureId id) {
+        Animation<TextureRegion> animation = animations.get(id);
+        if (animation == null) {
             throw new IllegalStateException("Textura no cargada (¿falta TexturesManager.init()?): " + id);
         }
-        return region;
+        return animation;
     }
 
-    public static void dispose() {
-        textures.values().forEach(Texture::dispose);
-        textures.clear();
-        regions.clear();
+    /** Las texturas son del atlas: las libera {@link Assets#dispose()}. */
+    static void dispose() {
+        animations.clear();
     }
 }

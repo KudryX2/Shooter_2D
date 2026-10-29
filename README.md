@@ -26,3 +26,14 @@ Mundos:
 Por defecto se carga el "Puesto avanzado" (`OutpostWorld`): casa inicial con armas y materiales,
 aldea, fuerte militar, cementerio con horda, ruinas y algún secreto. Con `--classic` se carga el
 mapa de pruebas original (`DemoWorld`). Ejemplo: `./gradlew run --args="--classic"`
+
+Texturas:
+
+Las imágenes están en `assets-raw/textures/`. Al compilar, la tarea `packTextures` las junta en un atlas
+(`atlas/game.atlas`) que se carga al arrancar. Para añadir una, deja el PNG en esa carpeta y añade su constante
+en `TextureId`. Para animarla, pon sus frames como `nombre_0.png`, `nombre_1.png`... (100 ms por frame).
+
+Los suelos y las estructuras están en pixel art (16 px por casilla) en `assets-raw/textures/pixel/`, que se
+empaqueta sin suavizado. Son provisionales y los dibuja la tarea `./gradlew generateArt`
+(`src/tools/java/tools/PixelArtGenerator.java`); se pueden sustituir por otros PNG con las mismas medidas. En los
+suelos, las imágenes numeradas (`3-grass_0.png`, `3-grass_1.png`...) son variantes que se reparten por el mapa.
