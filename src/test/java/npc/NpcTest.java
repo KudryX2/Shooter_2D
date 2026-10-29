@@ -198,9 +198,10 @@ class NpcTest {
         NpcManager.spawn(NpcType.ZOMBIE, 0, 300, 0); // al sur
         soldier.update();
         var bullet = WorldManager.projectiles.getFirst();
-        assertTrue(bullet.y > 40 && Math.abs(bullet.x) < 15, "sale hacia el sur: " + bullet.x + "," + bullet.y);
+        float muzzle = Npc.GUN_OFFSET - 1; // sale de la mano, a GUN_OFFSET del centro
+        assertTrue(bullet.y > muzzle && Math.abs(bullet.x) < 15, "sale hacia el sur: " + bullet.x + "," + bullet.y);
         bullet.move();
-        assertTrue(bullet.y > 40 + bullet.speed * GameClock.delta() - 1, "y sigue hacia el sur");
+        assertTrue(bullet.y > muzzle + bullet.speed * GameClock.delta() - 1, "y sigue hacia el sur");
     }
 
     @Test

@@ -138,6 +138,15 @@ final class Draw {
         sprites().draw(region, x, y, width / 2, height / 2, width, height, 1, 1, rotation);
     }
 
+    /**
+     * Como {@link #sprite(TextureId, float, float, float, float, float)}, pero volteado de arriba abajo antes de
+     * girarlo si {@code flipped} (p.ej. un arma apuntando a la izquierda, para que no quede boca abajo).
+     */
+    static void sprite(TextureId id, float x, float y, float width, float height, float rotation, boolean flipped) {
+        sprites().draw(TexturesManager.region(id), x, y, width / 2, height / 2, width, height, 1, flipped ? -1 : 1,
+                rotation);
+    }
+
     private static SpriteBatch sprites() {
         if (shapes.isDrawing()) shapes.end();
         if (!batch.isDrawing()) batch.begin();

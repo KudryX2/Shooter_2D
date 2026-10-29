@@ -26,8 +26,8 @@ public class Npc {
     private static final long RISE_MIN_MS = 2000;
     private static final long RISE_MAX_MS = 5000;
     private static final long CORPSE_TIME_MS = 4000;
-    /** Distancia del centro a la boca del arma. */
-    private static final float GUN_OFFSET = 50;
+    /** Distancia del centro a la mano que sujeta el arma, de donde salen las balas (igual que el jugador). */
+    public static final float GUN_OFFSET = 40;
     private static final int INVENTORY_SLOTS = 4;
     /** Medio lado de la caja con la que choca contra los muros (su cuerpo visible mide ~22 px de radio). */
     public static final float BODY_HALF = 20;

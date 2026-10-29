@@ -39,6 +39,8 @@ final class CharacterRenderer {
     static final float BODY_HALF_WIDTH = 20;
     /** Altura de las manos sobre la posición del personaje: donde lleva el arma y por donde salen las balas. */
     private static final float HAND_HEIGHT = Projectile.FLIGHT_HEIGHT;
+    /** Arma en la mano: la imagen solo ocupa 20 de sus 32 px (el resto es relleno). */
+    private static final float GUN_SIZE = 32;
     /** Tumbado (20x12 px). */
     private static final float LYING_WIDTH = 80;
     private static final float LYING_HEIGHT = 48;
@@ -103,8 +105,14 @@ final class CharacterRenderer {
         }
     }
 
-    /** NPC en pie (con tinte según su tipo y parpadeo si acaba de recibir un balazo). */
+    /** NPC en pie con su arma, si lleva (tinte según su tipo y parpadeo si acaba de recibir un balazo). */
     static void drawNpc(Npc npc) {
+        Gun gun = npc.inventory.firstGun(); // la misma con la que dispara
+        boolean gunBehind = gun != null && isBehindBody(npc.rotation);
+        if (gunBehind) {
+            drawNpcGun(npc, gun);
+        }
+
         TextureRegion frame = standing(npc.texture, npc.rotation, npc.walkCycle);
         float x = screenX(npc.x) - SPRITE_WIDTH / 2;
         float y = screenY(spriteTop(npc.y));
@@ -114,6 +122,33 @@ final class CharacterRenderer {
         if (npc.wasHitWithin(HIT_FLASH_MS)) {
             flash(frame, x, y, SPRITE_WIDTH, SPRITE_HEIGHT);
         }
+
+        if (gun != null && !gunBehind) {
+            drawNpcGun(npc, gun);
+        }
+    }
+
+    private static void drawNpcGun(Npc npc, Gun gun) {
+        float handX = screenX(npc.x) + dirX(npc.rotation) * Npc.GUN_OFFSET;
+        float handY = screenY(npc.y) - HAND_HEIGHT + dirY(npc.rotation) * Npc.GUN_OFFSET;
+        drawHeld(gun.heldTexture, handX, handY, GUN_SIZE, npc.rotation);
+    }
+
+    /** De espaldas (mirando hacia arriba) lo que lleva en la mano queda detrás del cuerpo. */
+    private static boolean isBehindBody(float rotation) {
+        return Facing.of(rotation) == Facing.UP;
+    }
+
+    /**
+     * Objeto en la mano centrado en (handX, handY) de pantalla, girado hacia donde apunta. Si apunta a la izquierda
+     * se voltea para que no quede boca abajo.
+     */
+    private static void drawHeld(TextureId texture, float handX, float handY, float size, float rotation) {
+        Draw.sprite(texture, handX - size / 2, handY - size / 2, size, size, rotation, pointsLeft(rotation));
+    }
+
+    static boolean pointsLeft(float rotation) {
+        return dirX(rotation) < 0;
     }
 
     private static TextureRegion standing(TextureId texture, float rotation, WalkCycle walk) {
@@ -173,20 +208,24 @@ final class CharacterRenderer {
 
     /** El jugador con lo que lleva en la mano (su sombra va en {@link #drawGround}). */
     static void drawPlayer() {
+        boolean heldBehind = isBehindBody(Player.rotation);
+        if (heldBehind) {
+            drawPlayerHeld();
+        }
         TextureRegion frame = standing(TextureId.PLAYER, Player.rotation, Player.walkCycle);
         Draw.region(frame, centerX() - SPRITE_WIDTH / 2, screenY(spriteTop(Player.y)), SPRITE_WIDTH, SPRITE_HEIGHT, 0);
+        if (!heldBehind) {
+            drawPlayerHeld();
+        }
+    }
 
-        // Objeto en la mano
-        float handX = handX();
-        float handY = handY();
+    private static void drawPlayerHeld() {
+        float rotation = Player.rotation;
         switch (Player.selectedItem()) {
             case null -> { }
-            // 32 px: antes se dibujaba a 50 pero la imagen solo ocupaba 20/32 del cuadro (relleno)
-            case Gun gun -> Draw.sprite(gun.heldTexture, handX - 16, handY - 16, 32, 32, Player.rotation);
-            case Consumable consumable -> Draw.sprite(consumable.heldTexture,
-                    handX - 12, handY - 12, 24, 24, Player.rotation);
-            case StructItem struct -> Draw.sprite(struct.heldTexture,
-                    handX - 20, handY - 20, 40, 40, Player.rotation);
+            case Gun gun -> drawHeld(gun.heldTexture, handX(), handY(), GUN_SIZE, rotation);
+            case Consumable consumable -> drawHeld(consumable.heldTexture, handX(), handY(), 24, rotation);
+            case StructItem struct -> drawHeld(struct.heldTexture, handX(), handY(), 40, rotation);
         }
     }
 

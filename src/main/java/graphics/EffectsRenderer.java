@@ -63,7 +63,8 @@ final class EffectsRenderer {
 
     /**
      * Destello en forma de rombo alargado hacia delante, con mezcla aditiva y que se apaga en
-     * {@link MuzzleFlash#DURATION_MS}. El del jugador va pegado a su mano aunque se mueva.
+     * {@link MuzzleFlash#DURATION_MS}. El del jugador va pegado a su mano aunque se mueva; el de los NPC, en la boca
+     * de su arma, a la altura de las balas.
      */
     static void drawMuzzleFlashes() {
         long now = GameClock.now();
@@ -84,7 +85,7 @@ final class EffectsRenderer {
                 }
                 rotation = flash.rotation();
                 x = screenX(flash.x());
-                y = screenY(flash.y());
+                y = screenY(flash.y()) - Projectile.FLIGHT_HEIGHT; // a la altura del arma
             }
             float dx = dirX(rotation);
             float dy = dirY(rotation);
