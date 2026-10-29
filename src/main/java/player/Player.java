@@ -33,7 +33,7 @@ public final class Player {
     /** Casillas del inventario; se seleccionan con 1-9, 0 y la rueda. */
     public static final int INVENTORY_SLOTS = 10;
     public static final int MAX_HP = 100;
-    /** Distancia del centro a la mano (donde se dibuja el arma y salen las balas). */
+    /** Distancia del centro a la boca del arma, de donde salen las balas (el arma se dibuja para que encaje). */
     public static final float HAND_OFFSET = 40;
     /** Velocidad en px/ms. */
     private static final float SPEED = 0.5f;

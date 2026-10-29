@@ -39,8 +39,8 @@ final class CharacterRenderer {
     static final float BODY_HALF_WIDTH = 20;
     /** Altura de las manos sobre la posición del personaje: donde lleva el arma y por donde salen las balas. */
     private static final float HAND_HEIGHT = Projectile.FLIGHT_HEIGHT;
-    /** Arma en la mano: la imagen solo ocupa 20 de sus 32 px (el resto es relleno). */
-    private static final float GUN_SIZE = 32;
+    /** Unidades del mundo por píxel del pixel art (las armas en la mano se dibujan a su tamaño real). */
+    private static final float ART_PIXEL = 4;
     /** Tumbado (20x12 px). */
     private static final float LYING_WIDTH = 80;
     private static final float LYING_HEIGHT = 48;
@@ -129,9 +129,9 @@ final class CharacterRenderer {
     }
 
     private static void drawNpcGun(Npc npc, Gun gun) {
-        float handX = screenX(npc.x) + dirX(npc.rotation) * Npc.GUN_OFFSET;
-        float handY = screenY(npc.y) - HAND_HEIGHT + dirY(npc.rotation) * Npc.GUN_OFFSET;
-        drawHeld(gun.heldTexture, handX, handY, GUN_SIZE, npc.rotation);
+        float muzzleX = screenX(npc.x) + dirX(npc.rotation) * Npc.GUN_OFFSET;
+        float muzzleY = screenY(npc.y) - HAND_HEIGHT + dirY(npc.rotation) * Npc.GUN_OFFSET;
+        drawGun(gun, muzzleX, muzzleY, npc.rotation);
     }
 
     /** De espaldas (mirando hacia arriba) lo que lleva en la mano queda detrás del cuerpo. */
@@ -144,7 +144,26 @@ final class CharacterRenderer {
      * se voltea para que no quede boca abajo.
      */
     private static void drawHeld(TextureId texture, float handX, float handY, float size, float rotation) {
-        Draw.sprite(texture, handX - size / 2, handY - size / 2, size, size, rotation, pointsLeft(rotation));
+        drawHeld(texture, handX, handY, size, size, rotation);
+    }
+
+    private static void drawHeld(TextureId texture, float handX, float handY, float width, float height,
+                                 float rotation) {
+        Draw.sprite(texture, handX - width / 2, handY - height / 2, width, height, rotation, pointsLeft(rotation));
+    }
+
+    /**
+     * Arma a su tamaño real en píxeles, con la boca del cañón en (muzzleX, muzzleY) de pantalla: ahí salen las balas y
+     * el fogonazo, sea cual sea el arma. Su imagen tiene la empuñadura en el centro y el cañón (el lado largo) hacia
+     * la derecha, así que una pistola queda junto al cuerpo y un fusil, delante del pecho.
+     */
+    private static void drawGun(Gun gun, float muzzleX, float muzzleY, float rotation) {
+        TextureRegion region = TexturesManager.region(gun.heldTexture);
+        int width = region.getRegionWidth();
+        float reach = ((width - 1) / 2 - 1) * ART_PIXEL; // de la empuñadura a la boca (sin el contorno)
+        float gripX = muzzleX - dirX(rotation) * reach;
+        float gripY = muzzleY - dirY(rotation) * reach;
+        drawHeld(gun.heldTexture, gripX, gripY, width * ART_PIXEL, region.getRegionHeight() * ART_PIXEL, rotation);
     }
 
     static boolean pointsLeft(float rotation) {
@@ -223,13 +242,16 @@ final class CharacterRenderer {
         float rotation = Player.rotation;
         switch (Player.selectedItem()) {
             case null -> { }
-            case Gun gun -> drawHeld(gun.heldTexture, handX(), handY(), GUN_SIZE, rotation);
+            case Gun gun -> drawGun(gun, handX(), handY(), rotation);
             case Consumable consumable -> drawHeld(consumable.heldTexture, handX(), handY(), 24, rotation);
             case StructItem struct -> drawHeld(struct.heldTexture, handX(), handY(), 40, rotation);
         }
     }
 
-    /** Posición en pantalla de la mano del jugador (donde se dibuja el arma y su fogonazo), a la altura del pecho. */
+    /**
+     * Posición en pantalla de la boca del arma del jugador, a la altura del pecho: de ahí salen las balas y el
+     * fogonazo, y ahí se sujetan los objetos que no son armas.
+     */
     static float handX() {
         return centerX() + dirX(Player.rotation) * Player.HAND_OFFSET;
     }

@@ -70,6 +70,10 @@ public final class PixelArtGenerator {
         save("3-halfWall", sandbagIcon());
 
         save("2-pointer", crosshair());
+        for (GunArt.Gun gun : GunArt.Gun.values()) {
+            save("5-" + gun.file, GunArt.icon(gun));
+            save("6-" + gun.file, GunArt.held(gun));
+        }
 
         characters("1-player", CharacterArt.PLAYER, false);
         characters("4-human", CharacterArt.HUMAN, true);

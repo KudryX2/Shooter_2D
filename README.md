@@ -37,3 +37,7 @@ Los suelos y las estructuras están en pixel art (16 px por casilla) en `assets-
 empaqueta sin suavizado. Son provisionales y los dibuja la tarea `./gradlew generateArt`
 (`src/tools/java/tools/PixelArtGenerator.java`); se pueden sustituir por otros PNG con las mismas medidas. En los
 suelos, las imágenes numeradas (`3-grass_0.png`, `3-grass_1.png`...) son variantes que se reparten por el mapa.
+
+En `assets-raw/original/` se guardan de recuerdo las imágenes originales que ya se han sustituido (personajes, armas,
+suelos, muros y cruceta). No se usan en el
+juego ni entran en el atlas.

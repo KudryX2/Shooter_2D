@@ -46,7 +46,7 @@ public enum TextureId {
     HALF_WALL_H("3-halfWall-h"),
     HALF_WALL_V("3-halfWall-v"),
 
-    // Armas: icono (inventario y suelo) y sprite en la mano
+    // Armas en pixel art: icono (inventario y suelo) y en la mano (con la empuñadura en el centro de la imagen)
     PISTOL_ICON("5-pistol"),
     SHOTGUN_ICON("5-shootgun"),
     SNIPER_ICON("5-sniper"),
@@ -54,8 +54,7 @@ public enum TextureId {
     PISTOL_HELD("6-pistol"),
     SHOTGUN_HELD("6-shootgun"),
     SNIPER_HELD("6-sniper"),
-    /** No hay sprite "en la mano" para la AK-47: se reutiliza el del sniper. */
-    AK47_HELD("6-sniper"),
+    AK47_HELD("6-ak47"),
 
     // Consumibles
     MEDKIT("7-medkit");
