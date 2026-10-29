@@ -22,8 +22,8 @@ class SimulationTest {
         WorldManager.npcs.clear();
         Player.inventory.removeAll();
         DemoWorld.create();
-        Player.x = Player.SPAWN_X;
-        Player.y = Player.SPAWN_Y;
+        Player.x = Player.spawnX();
+        Player.y = Player.spawnY();
         Player.hp = 100;
         Player.aimX = Float.NaN; // no apunta a nada: sin headshots salvo que el test lo pida
         Player.aimY = Float.NaN;

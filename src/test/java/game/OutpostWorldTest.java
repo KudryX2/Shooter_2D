@@ -30,8 +30,8 @@ class OutpostWorldTest {
         WorldManager.npcs.clear();
         Player.inventory.removeAll();
         OutpostWorld.create();
-        Player.x = Player.SPAWN_X;
-        Player.y = Player.SPAWN_Y;
+        Player.x = Player.spawnX();
+        Player.y = Player.spawnY();
         Player.hp = 100;
         GameClock.reset();
         GameClock.tick(8);
@@ -39,20 +39,20 @@ class OutpostWorldTest {
 
     @Test
     void playerStartsFreeWithAPistolAndGunsInTheHouse() {
-        assertFalse(Structures.isSolidAt(Player.SPAWN_X, Player.SPAWN_Y));
+        assertFalse(Structures.isSolidAt(Player.spawnX(), Player.spawnY()));
         assertTrue(Player.inventory.get(0) instanceof Gun);
 
         long gunsInHouse = WorldManager.chunks.stream()
                 .flatMap(chunk -> chunk.droppedItems.stream())
                 .filter(d -> d.item() instanceof Gun)
-                .filter(d -> distance(d.x(), d.y(), Player.SPAWN_X, Player.SPAWN_Y) < 300)
+                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < 300)
                 .count();
         assertTrue(gunsInHouse >= 2, "la casa inicial debería tener armas");
 
         long medkitsInHouse = WorldManager.chunks.stream()
                 .flatMap(chunk -> chunk.droppedItems.stream())
                 .filter(d -> d.item() instanceof Consumable)
-                .filter(d -> distance(d.x(), d.y(), Player.SPAWN_X, Player.SPAWN_Y) < 300)
+                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < 300)
                 .count();
         assertTrue(medkitsInHouse >= 1, "la casa inicial debería tener botiquines");
     }
@@ -63,7 +63,7 @@ class OutpostWorldTest {
         for (Npc npc : WorldManager.npcs) {
             assertFalse(Structures.isSolidAt(npc.x, npc.y), "NPC dentro de un muro en " + npc.x + "," + npc.y);
             if (npc.kind == NpcKind.ZOMBIE) {
-                assertTrue(distance(npc.x, npc.y, Player.SPAWN_X, Player.SPAWN_Y) > 1000, "zombi demasiado cerca");
+                assertTrue(distance(npc.x, npc.y, Player.spawnX(), Player.spawnY()) > 1000, "zombi demasiado cerca");
             }
         }
     }

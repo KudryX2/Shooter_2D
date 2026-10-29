@@ -179,6 +179,6 @@ class PlayerTest {
         assertTrue(Player.inventory.isEmpty());
         assertEquals(2, WorldManager.chunks.getFirst().droppedItems.size());
         assertEquals(Player.MAX_HP, Player.hp);
-        assertEquals(Player.SPAWN_X, Player.x);
+        assertEquals(Player.spawnX(), Player.x);
     }
 }

@@ -27,9 +27,9 @@ import world.WorldManager;
  */
 public final class Player {
     public static final float SIZE = 35;
-    /** En el centro de una casilla (la 9, 9), que es donde se construye la casa inicial del Puesto avanzado. */
-    public static final float SPAWN_X = 9 * Struct.SIZE;
-    public static final float SPAWN_Y = 9 * Struct.SIZE;
+    /** Punto de inicio si el mundo no pone otro ({@link #setSpawn}): el centro de la casilla (9, 9). */
+    public static final float DEFAULT_SPAWN_X = 9 * Struct.SIZE;
+    public static final float DEFAULT_SPAWN_Y = 9 * Struct.SIZE;
     /** Casillas del inventario; se seleccionan con 1-9, 0 y la rueda. */
     public static final int INVENTORY_SLOTS = 10;
     public static final int MAX_HP = 100;
@@ -48,6 +48,7 @@ public final class Player {
     public static final Inventory inventory = new Inventory(INVENTORY_SLOTS);
     /** Para la animación de andar. */
     public static final WalkCycle walkCycle = new WalkCycle();
+    private static float spawnX = DEFAULT_SPAWN_X, spawnY = DEFAULT_SPAWN_Y;
 
     /**
      * Punto del mundo al que apunta, actualizado en cada frame. Lo usa el mundo para los headshots.
@@ -208,7 +209,21 @@ public final class Player {
     }
 
     public static void teleportToSpawn() {
-        x = SPAWN_X;
-        y = SPAWN_Y;
+        x = spawnX;
+        y = spawnY;
+    }
+
+    /** Cada mundo pone su punto de inicio al crearse (donde aparece, reaparece y vuelve con la R). */
+    public static void setSpawn(float x, float y) {
+        spawnX = x;
+        spawnY = y;
+    }
+
+    public static float spawnX() {
+        return spawnX;
+    }
+
+    public static float spawnY() {
+        return spawnY;
     }
 }

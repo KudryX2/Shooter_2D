@@ -26,6 +26,8 @@ final class DemoWorld {
     }
 
     static void create() {
+        Player.setSpawn(Player.DEFAULT_SPAWN_X, Player.DEFAULT_SPAWN_Y);
+        Player.teleportToSpawn();
         Player.inventory.add(new Gun(GunType.PISTOL));
 
         for (int i = 0; i < WORLD_SIZE; i += CHUNK_SIZE) {
