@@ -39,8 +39,6 @@ final class CharacterRenderer {
     static final float BODY_HALF_WIDTH = 20;
     /** Altura de las manos sobre la posición del personaje: donde lleva el arma y por donde salen las balas. */
     private static final float HAND_HEIGHT = Projectile.FLIGHT_HEIGHT;
-    /** Unidades del mundo por píxel del pixel art (las armas en la mano se dibujan a su tamaño real). */
-    private static final float ART_PIXEL = 4;
     /** Tumbado (20x12 px). */
     private static final float LYING_WIDTH = 80;
     private static final float LYING_HEIGHT = 48;
@@ -52,8 +50,9 @@ final class CharacterRenderer {
     private static final int SHADOW_SEGMENTS = 16;
     /** Duración del parpadeo al recibir un balazo. */
     private static final long HIT_FLASH_MS = 100;
-    private static final float HEALTH_BAR_WIDTH = 50;
-    private static final float HEALTH_BAR_HEIGHT = 5;
+    /** 12x1 píxeles del pixel art (medidas que no sean múltiplo de un píxel salen irregulares). */
+    private static final float HEALTH_BAR_WIDTH = 48;
+    private static final float HEALTH_BAR_HEIGHT = 4;
 
     private CharacterRenderer() {
     }
@@ -160,10 +159,11 @@ final class CharacterRenderer {
     private static void drawGun(Gun gun, float muzzleX, float muzzleY, float rotation) {
         TextureRegion region = TexturesManager.region(gun.heldTexture);
         int width = region.getRegionWidth();
-        float reach = ((width - 1) / 2 - 1) * ART_PIXEL; // de la empuñadura a la boca (sin el contorno)
+        float art = DisplayManager.ART_PIXEL;
+        float reach = ((width - 1) / 2 - 1) * art; // de la empuñadura a la boca (sin el contorno)
         float gripX = muzzleX - dirX(rotation) * reach;
         float gripY = muzzleY - dirY(rotation) * reach;
-        drawHeld(gun.heldTexture, gripX, gripY, width * ART_PIXEL, region.getRegionHeight() * ART_PIXEL, rotation);
+        drawHeld(gun.heldTexture, gripX, gripY, width * art, region.getRegionHeight() * art, rotation);
     }
 
     static boolean pointsLeft(float rotation) {

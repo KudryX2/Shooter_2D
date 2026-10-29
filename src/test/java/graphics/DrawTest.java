@@ -40,7 +40,7 @@ class DrawTest {
         Draw.setUpWorldCamera(camera, W, H);
         // 100 unidades a la derecha y abajo del jugador se ven a 100 / zoom píxeles
         Vector3 p = onScreen(camera, W / 2f + 100, H / 2f + 100);
-        assertEquals(W / 2f + 100 / DisplayManager.WORLD_ZOOM, p.x, 0.01f);
-        assertEquals(H / 2f + 100 / DisplayManager.WORLD_ZOOM, p.y, 0.01f, "y hacia abajo");
+        assertEquals(W / 2f + 100 / DisplayManager.worldZoom(), p.x, 0.01f);
+        assertEquals(H / 2f + 100 / DisplayManager.worldZoom(), p.y, 0.01f, "y hacia abajo");
     }
 }

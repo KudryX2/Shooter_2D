@@ -21,7 +21,8 @@ import world.WorldManager;
 final class EffectsRenderer {
     private static final float BULLET_SIZE = 4;
     private static final float TRAIL_LENGTH = 22;
-    private static final float TRAIL_WIDTH = 1.5f;
+    /** Un píxel del pixel art: más fino parpadearía. */
+    private static final float TRAIL_WIDTH = 4;
     private static final Color TRAIL_HEAD = new Color(1f, 0.95f, 0.75f, 0.9f);
     private static final Color TRAIL_TAIL = new Color(1f, 0.75f, 0.35f, 0f);
     /** El fogonazo empieza un poco por delante de la boca del arma. */

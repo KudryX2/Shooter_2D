@@ -17,7 +17,7 @@ import structs.StructKind;
 
 class DepthRendererTest {
     /** Unidades del mundo por píxel del dibujo (una casilla de 64 son 16 px). */
-    private static final float ART_SCALE = 4;
+    private static final float ART_SCALE = DisplayManager.ART_PIXEL;
     private static final float S = Struct.SIZE;
     private static final float PLAYER_HALF = Player.SIZE / 2;
 

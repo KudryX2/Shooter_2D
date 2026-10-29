@@ -59,10 +59,10 @@ public final class PlayerController {
 
     /** Punto del mundo bajo el cursor (el jugador siempre está en el centro de la pantalla; el mundo, con zoom). */
     private static float cursorWorldX() {
-        return Player.x + (Input.mouseX() - DisplayManager.WIDTH / 2f) * DisplayManager.WORLD_ZOOM;
+        return Player.x + (Input.mouseX() - DisplayManager.WIDTH / 2f) * DisplayManager.worldZoom();
     }
 
     private static float cursorWorldY() {
-        return Player.y + (Input.mouseY() - DisplayManager.HEIGHT / 2f) * DisplayManager.WORLD_ZOOM;
+        return Player.y + (Input.mouseY() - DisplayManager.HEIGHT / 2f) * DisplayManager.worldZoom();
     }
 }
