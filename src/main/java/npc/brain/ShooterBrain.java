@@ -1,11 +1,12 @@
-package npc;
+package npc.brain;
 
 import static util.Geometry.distance;
 
+import npc.Npc;
 import player.Player;
 
 /** Humano armado que se queda en su sitio y dispara a los zombis y, si es hostil, también al jugador. */
-final class ShooterBrain implements NpcBrain {
+public final class ShooterBrain implements NpcBrain {
     private final float zombieRange;
     /** 0 = nunca dispara al jugador. */
     private final float playerRange;
@@ -16,12 +17,12 @@ final class ShooterBrain implements NpcBrain {
     }
 
     /** Dispara a zombis y, si no hay, al jugador. */
-    static ShooterBrain soldier() {
+    public static ShooterBrain soldier() {
         return new ShooterBrain(800, 400);
     }
 
     /** Aliado: solo dispara a zombis. */
-    static ShooterBrain guard() {
+    public static ShooterBrain guard() {
         return new ShooterBrain(800, 0);
     }
 

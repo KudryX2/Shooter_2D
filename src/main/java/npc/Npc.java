@@ -10,6 +10,8 @@ import assets.TextureId;
 import items.Gun;
 import items.Inventory;
 import items.Item;
+import npc.brain.NpcBrain;
+import npc.brain.ZombieBrain;
 import util.GameClock;
 import world.Movement;
 import world.WorldManager;
@@ -84,7 +86,7 @@ public class Npc {
     // Acciones que usan los cerebros
     // ---------------------------------------------------------------------------------------------
 
-    void lookAt(float targetX, float targetY) {
+    public void lookAt(float targetX, float targetY) {
         if (targetX != x || targetY != y) {
             rotation = angleTo(x, y, targetX, targetY);
         }
@@ -94,7 +96,7 @@ public class Npc {
      * Avanza hacia donde mira a {@code speedFactor} de su velocidad; si hay un muro va girando hasta encontrar
      * una dirección libre.
      */
-    void walk(float speedFactor) {
+    public void walk(float speedFactor) {
         float step = NpcType.SPEED * speedFactor * GameClock.delta();
         for (int attempt = 0; attempt < 360; attempt++) {
             float nextX = x + dirX(rotation) * step;
@@ -109,7 +111,7 @@ public class Npc {
     }
 
     /** Dispara hacia donde mira con la primera arma que lleve. */
-    void shoot() {
+    public void shoot() {
         Gun gun = inventory.firstGun();
         if (gun != null) {
             float muzzleX = x + dirX(rotation) * GUN_OFFSET;

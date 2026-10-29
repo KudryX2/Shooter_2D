@@ -1,14 +1,15 @@
-package npc;
+package npc.brain;
 
 import static util.Geometry.distance;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+import npc.Npc;
 import player.Player;
 import util.GameClock;
 
 /** Persigue y muerde al jugador si está cerca; si no, deambula alrededor de donde empezó. */
-final class ZombieBrain implements NpcBrain {
+public final class ZombieBrain implements NpcBrain {
     private static final float CHASE_RANGE = 600;
     /** Se para a esta distancia del jugador para no meterse encima. */
     private static final float ATTACK_DISTANCE = 75;

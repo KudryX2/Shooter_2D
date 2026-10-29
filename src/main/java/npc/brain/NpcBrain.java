@@ -1,7 +1,9 @@
-package npc;
+package npc.brain;
 
 import static util.Geometry.distance;
 
+import npc.Npc;
+import npc.NpcKind;
 import world.WorldManager;
 
 /** Lo que decide qué hace un NPC en pie cada frame. Cada NPC tiene el suyo (puede guardar estado). */

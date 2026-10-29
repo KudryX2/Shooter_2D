@@ -1,7 +1,9 @@
-package npc;
+package npc.brain;
+
+import npc.Npc;
 
 /** Huye de los zombis cercanos; si no hay ninguno, se queda quieto. */
-final class CivilianBrain implements NpcBrain {
+public final class CivilianBrain implements NpcBrain {
     private static final float FLEE_RANGE = 500;
 
     @Override

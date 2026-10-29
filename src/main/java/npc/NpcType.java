@@ -3,6 +3,10 @@ package npc;
 import java.util.function.Supplier;
 
 import assets.TextureId;
+import npc.brain.CivilianBrain;
+import npc.brain.NpcBrain;
+import npc.brain.ShooterBrain;
+import npc.brain.ZombieBrain;
 
 /** Tipos de NPC que se pueden crear con {@link NpcManager#spawn}. */
 public enum NpcType {
