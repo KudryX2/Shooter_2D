@@ -69,10 +69,27 @@ public final class PixelArtGenerator {
         save("3-halfWall-v", sandbags(SANDBAG_THICKNESS, bagLength, true));
         save("3-halfWall", sandbagIcon());
 
+        save("2-pointer", crosshair());
+
         characters("1-player", CharacterArt.PLAYER, false);
         characters("4-human", CharacterArt.HUMAN, true);
         characters("4-zombie", CharacterArt.ZOMBIE, false);
         characters("4-zombieAlt", CharacterArt.ZOMBIE_ALT, false);
+    }
+
+    /**
+     * Cruceta de 13x13: cuatro brazos blancos con un hueco y un punto en el centro exacto (adonde se apunta), con
+     * contorno oscuro para que se vea sobre cualquier fondo. Se dibuja a 2 px de pantalla por píxel.
+     */
+    private static BufferedImage crosshair() {
+        Canvas c = new Canvas(13, 13);
+        int white = 0xf4f4ee, center = 6;
+        c.rect(1, center, 3, 1, white);
+        c.rect(9, center, 3, 1, white);
+        c.rect(center, 1, 1, 3, white);
+        c.rect(center, 9, 1, 3, white);
+        c.set(center, center, white);
+        return c.outlined();
     }
 
     /** {@code nombre-idle-dir.png} y {@code nombre-walk-dir_0..3.png} por dirección; tumbado si {@code lying}. */

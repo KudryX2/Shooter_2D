@@ -7,6 +7,7 @@ import player.Player;
 /** Inventario, botón de pausa y cursor, en coordenadas de pantalla. */
 public final class HudRenderer {
     private static final int CELL_SPACING = 50;
+    private static final float CURSOR_SIZE = 26;
 
     /** Escala del HUD (teclas N/M). */
     public static float hudScale;
@@ -45,8 +46,9 @@ public final class HudRenderer {
 
         // Cursor (siempre lo último, por encima de todo el HUD). Con un objeto construible, la vista previa en el
         // mundo ya indica si se puede construir.
-        // Del tamaño de una cabeza en pantalla (~22 px), para poder apuntar a ella; crece poco con el HUD
-        float cursorSize = 16 + hudScale / 2;
+        // Pixel art de 13x13 a 2 px por píxel: más o menos del tamaño de una cabeza en pantalla (~22 px), para poder
+        // apuntar a ella. Tamaño fijo (no crece con el HUD) para que los píxeles salgan parejos.
+        float cursorSize = CURSOR_SIZE;
         Draw.sprite(TextureId.POINTER, Input.mouseX() - cursorSize / 2, Input.mouseY() - cursorSize / 2,
                 cursorSize, cursorSize);
     }
