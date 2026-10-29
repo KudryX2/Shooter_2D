@@ -22,8 +22,6 @@ import world.WorldManager;
 final class DepthRenderer {
     /** Opacidad de un muro que tapa a alguien. */
     static final float SEE_THROUGH_ALPHA = 0.45f;
-    /** Medio lado de la parte visible de un personaje (el sprite mide 100 px, pero el cuerpo unos 44). */
-    static final float VISIBLE_HALF = 24;
     /** Hasta esta distancia del jugador, los muros que tiene delante se ven del todo semitransparentes... */
     static final float FADE_NEAR = Struct.SIZE;
     /** ...y a partir de aquí ya son opacos (entre medias, degradado). */
@@ -100,13 +98,15 @@ final class DepthRenderer {
     }
 
     /**
-     * Distancia entre la parte visible de un personaje en (x, y) y el sprite del muro (de su remate al pie de la
-     * base); 0 si se solapan, es decir, si el muro lo taparía estando delante.
+     * Distancia entre un personaje en (x, y) (su cuerpo, de la cabeza a los pies) y el sprite del muro (de su
+     * remate al pie de la base); 0 si se solapan, es decir, si el muro lo taparía estando delante.
      */
     static float distanceToSprite(Struct s, float x, float y) {
-        float dx = Math.max(0, Math.abs(x - s.x()) - s.halfWidth() - VISIBLE_HALF);
-        float above = WorldRenderer.spriteTop(s) - (y + VISIBLE_HALF);
-        float below = (y - VISIBLE_HALF) - WorldRenderer.depth(s);
+        float head = CharacterRenderer.spriteTop(y);
+        float feet = y + CharacterRenderer.FEET_BELOW;
+        float dx = Math.max(0, Math.abs(x - s.x()) - s.halfWidth() - CharacterRenderer.BODY_HALF_WIDTH);
+        float above = WorldRenderer.spriteTop(s) - feet;
+        float below = head - WorldRenderer.depth(s);
         float dy = Math.max(0, Math.max(above, below));
         return (float) Math.hypot(dx, dy);
     }

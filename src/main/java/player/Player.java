@@ -12,9 +12,11 @@ import items.DroppedItem;
 import items.Gun;
 import items.Inventory;
 import items.Item;
+import items.Projectile;
 import items.StructItem;
 import structs.Struct;
 import util.GameClock;
+import util.WalkCycle;
 import world.Chunk;
 import world.Movement;
 import world.WorldManager;
@@ -44,6 +46,8 @@ public final class Player {
     public static float rotation;
     public static int hp;
     public static final Inventory inventory = new Inventory(INVENTORY_SLOTS);
+    /** Para la animación de andar. */
+    public static final WalkCycle walkCycle = new WalkCycle();
 
     /**
      * Punto del mundo al que apunta, actualizado en cada frame. Lo usa el mundo para los headshots.
@@ -82,6 +86,7 @@ public final class Player {
         int steps = Math.max(1, (int) Math.ceil(distance / MAX_STEP));
         float step = distance / steps;
         float half = SIZE / 2;
+        float startX = x, startY = y;
         for (int i = 0; i < steps; i++) {
             float nextX = x + dx * step;
             if (Movement.canMove(x, y, nextX, y, half)) {
@@ -92,14 +97,20 @@ public final class Player {
                 y = nextY;
             }
         }
+        walkCycle.step(distance(startX, startY, x, y));
     }
 
-    /** Apunta (y mira) hacia el punto del mundo (wx, wy). */
+    /**
+     * Apunta (y mira) hacia el punto del mundo (wx, wy), donde está el cursor. Las balas vuelan
+     * {@link Projectile#FLIGHT_HEIGHT} por encima del suelo, así que se apunta a ese tanto más abajo: la bala que se
+     * ve pasa justo por el cursor.
+     */
     public static void aimAt(float wx, float wy) {
         aimX = wx;
         aimY = wy;
-        if (wx != x || wy != y) {
-            rotation = angleTo(x, y, wx, wy);
+        float groundY = wy + Projectile.FLIGHT_HEIGHT;
+        if (wx != x || groundY != y) {
+            rotation = angleTo(x, y, wx, groundY);
         }
     }
 

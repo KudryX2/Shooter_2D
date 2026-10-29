@@ -24,7 +24,7 @@ ESCAPE        - salir del juego
 Mundos:
 
 Por defecto se carga el "Puesto avanzado" (`OutpostWorld`): casa inicial con armas y materiales,
-aldea, fuerte militar, cementerio con horda, ruinas y algún secreto. Con `--classic` se carga el
+aldea, fuerte militar, cementerio con horda y ruinas. Con `--classic` se carga el
 mapa de pruebas original (`DemoWorld`). Ejemplo: `./gradlew run --args="--classic"`
 
 Texturas:

@@ -6,7 +6,18 @@ import static util.Geometry.dirY;
 import util.GameClock;
 import util.Geometry;
 
+/**
+ * Una bala. Su posición (x, y) está en el suelo, en el mismo plano que los pies de los personajes y la base de los
+ * muros (así choca con ellos), pero en la vista 3/4 vuela a la altura del pecho: se dibuja {@link #FLIGHT_HEIGHT}
+ * más arriba en pantalla.
+ */
 public final class Projectile {
+    /**
+     * Altura a la que vuela: por debajo de un muro (48) y por encima de un saco terrero (24), que por eso no la para.
+     * También es la altura de la mano que sujeta el arma.
+     */
+    public static final float FLIGHT_HEIGHT = 32;
+
     public float x, y;
     public final float startX, startY, speed, rotation;
     public final int range, damage;

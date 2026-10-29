@@ -26,7 +26,17 @@ class TextureIdTest {
         Set<String> regions = new HashSet<>();
         data.getRegions().forEach(region -> regions.add(region.name));
         for (TextureId id : TextureId.values()) {
-            assertTrue(regions.contains(id.file), id + ": falta assets-raw/textures/" + id.file + ".png");
+            if (!id.character) {
+                assertTrue(regions.contains(id.file), id + ": falta assets-raw/textures/" + id.file + ".png");
+                continue;
+            }
+            for (String direction : TextureId.DIRECTIONS) {
+                for (String pose : new String[] {"idle", "walk"}) {
+                    String name = id.pose(pose, direction);
+                    assertTrue(regions.contains(name), id + ": falta la pose " + name);
+                }
+            }
         }
+        assertTrue(regions.contains(TextureId.HUMAN.lying()), "los humanos abatidos se dibujan tumbados");
     }
 }

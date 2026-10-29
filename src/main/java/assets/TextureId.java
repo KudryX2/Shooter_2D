@@ -13,12 +13,12 @@ public enum TextureId {
     // Efectos
     BULLET("0-bullet"),
 
-    // Personajes
-    PLAYER("1-player"),
-    /** No hay sprite propio para los NPC humanos: se reutiliza el del jugador (tintado al dibujarlo). */
-    HUMAN("1-player"),
-    ZOMBIE("4-zombie"),
-    ZOMBIE_ALT("4-zombie1"),
+    // Personajes en pixel art, vistos en 3/4 (ver {@link #character}).
+    PLAYER("1-player", true),
+    /** Todos los NPC humanos: se tintan al dibujarlos según su tipo. */
+    HUMAN("4-human", true),
+    ZOMBIE("4-zombie", true),
+    ZOMBIE_ALT("4-zombieAlt", true),
     /** Cadáveres y charcos de sangre. */
     BLOOD("4-blood"),
 
@@ -45,8 +45,6 @@ public enum TextureId {
     HALF_WALL("3-halfWall"),
     HALF_WALL_H("3-halfWall-h"),
     HALF_WALL_V("3-halfWall-v"),
-    /** Imagen, no textura repetible: no se gira al usarla de suelo. */
-    TEEMO("3-Teemo"),
 
     // Armas: icono (inventario y suelo) y sprite en la mano
     PISTOL_ICON("5-pistol"),
@@ -62,10 +60,36 @@ public enum TextureId {
     // Consumibles
     MEDKIT("7-medkit");
 
-    /** Nombre de la imagen en {@code assets-raw/textures/} (y de su región en el atlas), sin {@code .png}. */
+    /** Direcciones de los personajes, tal y como aparecen en el nombre de sus imágenes. */
+    public static final String[] DIRECTIONS = {"down", "up", "left", "right"};
+
+    /**
+     * Nombre de la imagen en {@code assets-raw/textures/} (y de su región en el atlas), sin {@code .png}. En los
+     * personajes es solo el principio del nombre (ver {@link #character}).
+     */
     public final String file;
+    /**
+     * Personaje con varias imágenes por dirección ({@link #DIRECTIONS}): {@code file-idle-dir} (quieto),
+     * {@code file-walk-dir_0..n} (andando) y, si puede quedarse tumbado, {@code file-lying}.
+     */
+    public final boolean character;
 
     TextureId(String file) {
+        this(file, false);
+    }
+
+    TextureId(String file, boolean character) {
         this.file = file;
+        this.character = character;
+    }
+
+    /** Nombre en el atlas de una pose de personaje, p.ej. {@code pose("walk", "left")}. */
+    public String pose(String pose, String direction) {
+        return file + "-" + pose + "-" + direction;
+    }
+
+    /** Nombre en el atlas del personaje tumbado (solo lo tienen los que se pueden quedar en el suelo). */
+    public String lying() {
+        return file + "-lying";
     }
 }

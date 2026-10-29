@@ -45,7 +45,8 @@ public final class HudRenderer {
 
         // Cursor (siempre lo último, por encima de todo el HUD). Con un objeto construible, la vista previa en el
         // mundo ya indica si se puede construir.
-        float cursorSize = 40 + hudScale;
+        // Del tamaño de una cabeza en pantalla (~22 px), para poder apuntar a ella; crece poco con el HUD
+        float cursorSize = 16 + hudScale / 2;
         Draw.sprite(TextureId.POINTER, Input.mouseX() - cursorSize / 2, Input.mouseY() - cursorSize / 2,
                 cursorSize, cursorSize);
     }

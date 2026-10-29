@@ -8,7 +8,8 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 /**
- * Genera los gráficos provisionales en pixel art de suelos y estructuras (tarea {@code generateArt} de Gradle).
+ * Genera los gráficos provisionales en pixel art de suelos, estructuras y personajes ({@link CharacterArt}) con la
+ * tarea {@code generateArt} de Gradle.
  * Siempre salen iguales (semillas fijas). Cuando haya gráficos de verdad basta con sustituir los PNG.
  *
  * <p>Escala: 1 píxel del dibujo = 4 unidades del mundo, así que una casilla ({@code Struct.SIZE} = 64) son 16 px.
@@ -67,6 +68,24 @@ public final class PixelArtGenerator {
         save("3-halfWall-h", sandbags(bagLength, SANDBAG_THICKNESS, false));
         save("3-halfWall-v", sandbags(SANDBAG_THICKNESS, bagLength, true));
         save("3-halfWall", sandbagIcon());
+
+        characters("1-player", CharacterArt.PLAYER, false);
+        characters("4-human", CharacterArt.HUMAN, true);
+        characters("4-zombie", CharacterArt.ZOMBIE, false);
+        characters("4-zombieAlt", CharacterArt.ZOMBIE_ALT, false);
+    }
+
+    /** {@code nombre-idle-dir.png} y {@code nombre-walk-dir_0..3.png} por dirección; tumbado si {@code lying}. */
+    private void characters(String name, CharacterArt.Palette palette, boolean lying) throws IOException {
+        for (String direction : CharacterArt.DIRECTIONS) {
+            save(name + "-idle-" + direction, CharacterArt.frame(palette, direction, -1));
+            for (int frame = 0; frame < CharacterArt.WALK_FRAMES; frame++) {
+                save(name + "-walk-" + direction + "_" + frame, CharacterArt.frame(palette, direction, frame));
+            }
+        }
+        if (lying) {
+            save(name + "-lying", CharacterArt.lying(palette));
+        }
     }
 
     private void save(String name, BufferedImage image) throws IOException {

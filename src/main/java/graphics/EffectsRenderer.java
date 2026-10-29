@@ -35,7 +35,10 @@ final class EffectsRenderer {
     private EffectsRenderer() {
     }
 
-    /** Bala con una estela fina que se desvanece hacia atrás (nunca más larga que lo que lleva recorrido). */
+    /**
+     * Bala con una estela fina que se desvanece hacia atrás (nunca más larga que lo que lleva recorrido). Se dibuja
+     * a la altura a la que vuela ({@link Projectile#FLIGHT_HEIGHT} sobre su posición en el suelo).
+     */
     static void drawProjectiles() {
         ShapeRenderer shapes = Draw.shapes();
         for (Projectile p : WorldManager.projectiles) {
@@ -44,7 +47,7 @@ final class EffectsRenderer {
             }
             float length = Math.min(TRAIL_LENGTH, distance(p.x, p.y, p.startX, p.startY));
             float headX = screenX(p.x);
-            float headY = screenY(p.y);
+            float headY = screenY(p.y) - Projectile.FLIGHT_HEIGHT;
             shapes.rectLine(headX, headY, headX - dirX(p.rotation) * length, headY - dirY(p.rotation) * length,
                     TRAIL_WIDTH, TRAIL_HEAD, TRAIL_TAIL);
         }
@@ -52,7 +55,7 @@ final class EffectsRenderer {
         float half = BULLET_SIZE / 2;
         for (Projectile p : WorldManager.projectiles) {
             if (isVisible(p.x, p.y)) {
-                Draw.sprite(TextureId.BULLET, screenX(p.x) - half, screenY(p.y) - half,
+                Draw.sprite(TextureId.BULLET, screenX(p.x) - half, screenY(p.y) - Projectile.FLIGHT_HEIGHT - half,
                         BULLET_SIZE, BULLET_SIZE, p.rotation);
             }
         }

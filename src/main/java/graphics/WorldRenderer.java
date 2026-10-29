@@ -47,9 +47,8 @@ final class WorldRenderer {
         for (Chunk chunk : WorldManager.activeChunks) {
             for (Struct s : chunk.floors) {
                 if (isVisible(s.x(), s.y())) {
-                    boolean picture = s.texture() == TextureId.TEEMO; // las imágenes van tal cual
                     int hash = tileHash(s.x(), s.y());
-                    float tone = picture ? 1 : 0.94f + ((hash >>> 8) & 0xFF) / 255f * 0.06f;
+                    float tone = 0.94f + ((hash >>> 8) & 0xFF) / 255f * 0.06f;
                     Draw.tint(tone, tone, tone, 1);
                     drawFloor(s);
                 }

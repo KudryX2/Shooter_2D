@@ -13,6 +13,7 @@ import items.Item;
 import npc.brain.NpcBrain;
 import npc.brain.ZombieBrain;
 import util.GameClock;
+import util.WalkCycle;
 import world.Movement;
 import world.WorldManager;
 
@@ -41,6 +42,8 @@ public class Npc {
     public float rotation;
     public int hp = 100;
     public final Inventory inventory = new Inventory(INVENTORY_SLOTS);
+    /** Para la animación de andar. */
+    public final WalkCycle walkCycle = new WalkCycle();
 
     private NpcBrain brain;
     private NpcState state = NpcState.ACTIVE;
@@ -104,6 +107,7 @@ public class Npc {
             if (Movement.canMove(x, y, nextX, nextY, Npc.BODY_HALF)) {
                 x = nextX;
                 y = nextY;
+                walkCycle.step(step);
                 return;
             }
             rotation++;

@@ -8,10 +8,23 @@ import items.Projectile;
 import npc.Npc;
 import player.Player;
 
-/** Mueve las balas ({@link WorldManager#projectiles}) y resuelve sus impactos. */
+/**
+ * Mueve las balas ({@link WorldManager#projectiles}) y resuelve sus impactos.
+ *
+ * <p>En la vista 3/4 un personaje está en el suelo por sus pies pero se dibuja hacia arriba, y las balas vuelan a
+ * la altura del pecho ({@link Projectile#FLIGHT_HEIGHT}). Por eso la caja de impacto no está centrada en sus pies:
+ * cubre las balas que, tal y como se dibujan, le pasan por el cuerpo (de la cabeza a las rodillas). Las medidas
+ * cuadran con el sprite de 12x20 px de {@code graphics.CharacterRenderer}.
+ */
 final class Projectiles {
-    /** Medio lado de la caja de impacto de jugador y NPC. */
-    private static final float HITBOX = 20;
+    /** Caja de impacto de jugador y NPC, relativa a sus pies: medio ancho, y cuánto sube y baja. */
+    static final float HIT_HALF_WIDTH = 20;
+    static final float HIT_ABOVE = 36;
+    static final float HIT_BELOW = 20;
+    /** Su cabeza tal y como se dibuja, relativa a sus pies (para los headshots, que dependen del cursor). */
+    static final float HEAD_HALF_WIDTH = 16;
+    static final float HEAD_TOP = 68;
+    static final float HEAD_BOTTOM = 40;
     /** El jugador recibe esta fracción del daño de la bala (si no, moriría de un par de tiros). */
     private static final int PLAYER_DAMAGE_DIVISOR = 10;
 
@@ -38,16 +51,18 @@ final class Projectiles {
         boolean hitsPlayer = false;
         Npc hitNpc = null;
 
-        float t = segmentEntersBox(x0, y0, x1, y1, Player.x, Player.y, HITBOX, HITBOX);
-        if (isEarlierHit(t, first)) {
-            first = t;
-            hitsPlayer = true;
+        if (!p.byPlayer) { // las del jugador salen de su mano: no se las come él mismo
+            float t = hitBody(x0, y0, x1, y1, Player.x, Player.y);
+            if (isEarlierHit(t, first)) {
+                first = t;
+                hitsPlayer = true;
+            }
         }
         for (Npc npc : WorldManager.npcs) {
             if (!npc.isAlive()) {
                 continue;
             }
-            t = segmentEntersBox(x0, y0, x1, y1, npc.x, npc.y, HITBOX, HITBOX);
+            float t = hitBody(x0, y0, x1, y1, npc.x, npc.y);
             if (isEarlierHit(t, first)) {
                 first = t;
                 hitsPlayer = false;
@@ -56,9 +71,8 @@ final class Projectiles {
         }
 
         if (hitNpc != null) {
-            // Headshot: solo balas del jugador, y solo si pasan justo por donde apuntaba
-            boolean throughAim = segmentEntersBox(x0, y0, x1, y1, Player.aimX, Player.aimY, HITBOX, HITBOX) != NO_HIT;
-            if (p.byPlayer && throughAim) {
+            // Headshot: solo balas del jugador, y solo si apuntaba a la cabeza que se ve
+            if (p.byPlayer && aimsAtHead(hitNpc)) {
                 hitNpc.die(true);
             } else {
                 hitNpc.takeDamage(p.damage);
@@ -70,5 +84,19 @@ final class Projectiles {
             return true;
         }
         return first != NO_HIT || p.isOutOfRange();
+    }
+
+    /** Dónde entra el tramo en la caja de impacto de alguien con los pies en (x, y), o {@code NO_HIT}. */
+    private static float hitBody(float x0, float y0, float x1, float y1, float x, float y) {
+        float halfHeight = (HIT_ABOVE + HIT_BELOW) / 2;
+        float centerY = y + (HIT_BELOW - HIT_ABOVE) / 2;
+        return segmentEntersBox(x0, y0, x1, y1, x, centerY, HIT_HALF_WIDTH, halfHeight);
+    }
+
+    /** El cursor del jugador está sobre la cabeza del NPC tal y como se dibuja. */
+    static boolean aimsAtHead(Npc npc) {
+        return Math.abs(Player.aimX - npc.x) <= HEAD_HALF_WIDTH
+                && Player.aimY >= npc.y - HEAD_TOP
+                && Player.aimY <= npc.y - HEAD_BOTTOM;
     }
 }

@@ -1,7 +1,7 @@
 package graphics;
 
 import java.util.Comparator;
-import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -16,15 +16,19 @@ import assets.TextureId;
 /**
  * Saca del atlas ({@link Assets#atlas()}) las regiones de cada {@link TextureId} y las sirve listas para dibujar.
  *
- * <p>Si en {@code assets-raw/textures} hay frames numerados ({@code 4-zombie_0.png}, {@code 4-zombie_1.png}...)
- * la textura se anima sola, a {@link #FRAME_MS} por frame. Con una sola imagen se ve siempre igual. Los suelos
- * usan esas imágenes numeradas como variantes ({@link #variant}) en lugar de como animación.
+ * <p>Si en {@code assets-raw/textures} hay frames numerados ({@code nombre_0.png}, {@code nombre_1.png}...) la
+ * textura se anima sola, a {@link #FRAME_MS} por frame. Con una sola imagen se ve siempre igual. Los suelos usan esas
+ * imágenes numeradas como variantes ({@link #variant}) en lugar de como animación, y los personajes tienen una
+ * animación por pose y dirección ({@link #character}).
  */
 public final class TexturesManager {
     /** Duración de cada frame de las animaciones. */
     static final float FRAME_MS = 100;
+    /** Al andar, un personaje pasa al siguiente frame cada vez que recorre esta distancia. */
+    static final float STRIDE = 32;
 
-    private static final Map<TextureId, Animation<TextureRegion>> animations = new EnumMap<>(TextureId.class);
+    /** Por nombre en el atlas. */
+    private static final Map<String, Animation<TextureRegion>> animations = new HashMap<>();
 
     private TexturesManager() {
     }
@@ -33,35 +37,64 @@ public final class TexturesManager {
     static void init() {
         TextureAtlas atlas = Assets.atlas();
         for (TextureId id : TextureId.values()) {
-            Array<AtlasRegion> frames = atlas.findRegions(id.file);
-            if (frames.isEmpty()) {
-                throw new IllegalStateException("Falta la textura " + id + " en el atlas: " + id.file + ".png");
+            if (!id.character) {
+                load(atlas, id.file, true);
+                continue;
             }
-            frames.sort(Comparator.comparingInt(region -> region.index));
-            animations.put(id, new Animation<>(FRAME_MS, frames, Animation.PlayMode.LOOP));
+            for (String direction : TextureId.DIRECTIONS) {
+                load(atlas, id.pose("idle", direction), true);
+                load(atlas, id.pose("walk", direction), true);
+            }
+            load(atlas, id.lying(), false);
         }
     }
 
-    /** Primer frame (el único si no está animada). */
+    private static void load(TextureAtlas atlas, String name, boolean required) {
+        Array<AtlasRegion> frames = atlas.findRegions(name);
+        if (frames.isEmpty()) {
+            if (required) {
+                throw new IllegalStateException("Falta la textura " + name + ".png en el atlas");
+            }
+            return;
+        }
+        frames.sort(Comparator.comparingInt(region -> region.index));
+        animations.put(name, new Animation<>(FRAME_MS, frames, Animation.PlayMode.LOOP));
+    }
+
+    /** Primer frame (el único si no está animada). En los personajes, quieto y de frente. */
     static TextureRegion region(TextureId id) {
-        return frame(id, 0);
+        String name = id.character ? id.pose("idle", TextureId.DIRECTIONS[0]) : id.file;
+        return animation(name).getKeyFrame(0);
     }
 
     /** Variante número {@code n} (cualquier entero: da la vuelta) de una textura con imágenes numeradas. */
     static TextureRegion variant(TextureId id, int n) {
-        TextureRegion[] variants = animation(id).getKeyFrames();
+        TextureRegion[] variants = animation(id.file).getKeyFrames();
         return variants[Math.floorMod(n, variants.length)];
     }
 
-    /** Frame que toca a los {@code timeMs} ms de animación. */
-    static TextureRegion frame(TextureId id, float timeMs) {
-        return animation(id).getKeyFrame(timeMs);
+    /**
+     * Un personaje mirando hacia {@code facing}: quieto, o andando con el frame que toca tras recorrer
+     * {@code distanceWalked} (así la animación va al ritmo del paso, ande deprisa o despacio).
+     */
+    static TextureRegion character(TextureId id, Facing facing, boolean walking, float distanceWalked) {
+        String direction = TextureId.DIRECTIONS[facing.ordinal()];
+        if (!walking) {
+            return animation(id.pose("idle", direction)).getKeyFrame(0);
+        }
+        return animation(id.pose("walk", direction)).getKeyFrame(distanceWalked / STRIDE * FRAME_MS);
     }
 
-    private static Animation<TextureRegion> animation(TextureId id) {
-        Animation<TextureRegion> animation = animations.get(id);
+    /** El personaje tumbado, o {@code null} si no tiene esa imagen. */
+    static TextureRegion lying(TextureId id) {
+        Animation<TextureRegion> animation = animations.get(id.lying());
+        return animation == null ? null : animation.getKeyFrame(0);
+    }
+
+    private static Animation<TextureRegion> animation(String name) {
+        Animation<TextureRegion> animation = animations.get(name);
         if (animation == null) {
-            throw new IllegalStateException("Textura no cargada (¿falta TexturesManager.init()?): " + id);
+            throw new IllegalStateException("Textura no cargada (¿falta TexturesManager.init()?): " + name);
         }
         return animation;
     }

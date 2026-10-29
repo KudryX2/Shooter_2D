@@ -3,6 +3,8 @@ package world;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static util.Geometry.dirX;
+import static util.Geometry.dirY;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ class ProjectilesTest {
         WorldManager.reset();
         WorldManager.chunks.add(new Chunk(0, 0));
         WorldManager.chunks.add(new Chunk(650, 0));
+        Player.aimX = Float.NaN; // sin cursor: sin headshots salvo que el test lo pida
+        Player.aimY = Float.NaN;
     }
 
     /** Dispara una bala quieta en (x, y) y dice si un muro la ha parado. */
@@ -96,6 +100,47 @@ class ProjectilesTest {
         fireRight(0, 100, 300);
         assertTrue(near.hp < 100);
         assertEquals(100, far.hp);
+    }
+
+    /** Bala del jugador hacia +x a la altura (de suelo) {@code y}, con el cursor en (aimX, aimY). */
+    private static void playerFiresRight(float y, float aimX, float aimY) {
+        Player.x = 100_000;
+        Player.y = 100_000;
+        Player.aimX = aimX;
+        Player.aimY = aimY;
+        WorldManager.projectiles.add(new Projectile(0, y, 0, 1, 600, 50, true));
+        GameClock.tick(300);
+        WorldManager.update();
+    }
+
+    @Test
+    void aimingAtTheHeadAsDrawnIsAHeadshot() {
+        Npc target = NpcManager.spawn(NpcType.CIVILIAN, 100, 100, 0);
+        playerFiresRight(100, 100, 100 - 54); // el cursor en la cabeza, que se dibuja ~54 px sobre los pies
+        assertFalse(target.isAlive(), "headshot: un humano muere del todo, sin convertirse");
+    }
+
+    @Test
+    void aimingAtTheBodyOnlyHurts() {
+        Npc target = NpcManager.spawn(NpcType.CIVILIAN, 100, 100, 0);
+        playerFiresRight(100, 100, 100 - 20);
+        assertTrue(target.isAlive());
+        assertTrue(target.hp < 100);
+    }
+
+    /** Como en el juego: apuntar con el cursor a la cabeza y disparar desde la mano. */
+    @Test
+    void anAimedShotFliesUnderTheCursorAndHitsTheHead() {
+        Player.x = 0;
+        Player.y = 100;
+        Npc target = NpcManager.spawn(NpcType.CIVILIAN, 300, 100, 0);
+        Player.aimAt(300, 100 - 54);
+        float muzzleX = Player.x + dirX(Player.rotation) * Player.HAND_OFFSET;
+        float muzzleY = Player.y + dirY(Player.rotation) * Player.HAND_OFFSET;
+        WorldManager.projectiles.add(new Projectile(muzzleX, muzzleY, Player.rotation, 1, 600, 50, true));
+        GameClock.tick(400);
+        WorldManager.update();
+        assertFalse(target.isAlive());
     }
 
     @Test

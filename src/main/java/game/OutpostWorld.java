@@ -31,7 +31,7 @@ import world.WorldManager;
  *   <li>Aldea en ruinas con civiles que huyen de los zombis y algo de botín.</li>
  *   <li>Fuerte militar con humanos agresivos y una armería con AK-47 y sniper.</li>
  *   <li>Cementerio infestado de zombis con un mausoleo.</li>
- *   <li>Ruinas al sureste y un pequeño secreto en la esquina del mapa.</li>
+ *   <li>Ruinas al sureste.</li>
  * </ul>
  *
  * <p>Todo se diseña en casillas ({@link Struct#SIZE} píxeles); la casilla (x, y) está centrada en
@@ -106,7 +106,6 @@ final class OutpostWorld {
         fort();
         cemetery();
         ruins();
-        teemoShrine();
     }
 
     private void roads() {
@@ -234,12 +233,6 @@ final class OutpostWorld {
         }
     }
 
-    private void teemoShrine() {
-        room(110, 110, 114, 114, StructKind.HALF_WALL);
-        northWalls(111, 113, 110, null);
-        ground(111, 111, 113, 113, TextureId.TEEMO);
-    }
-
     // ---------------------------------------------------------------------------------------------
     // Construcción y población
     // ---------------------------------------------------------------------------------------------
@@ -316,11 +309,6 @@ final class OutpostWorld {
         item(new Gun(GunType.random()), 75, 80);
         item(new Gun(GunType.random()), 95, 95);
         zombies(15, 70, 65, 105, 105);
-
-        // Secreto
-        item(new Gun(GunType.ASSAULT_RIFLE), 112, 112);
-        item(Consumable.medkit(), 111, 113);
-        item(Consumable.medkit(), 113, 113);
 
         // Zombis sueltos por todo el mapa
         zombies(30, 0, 0, SIZE_TILES - 1, SIZE_TILES - 1);

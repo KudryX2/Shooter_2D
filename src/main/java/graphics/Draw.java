@@ -133,11 +133,6 @@ final class Draw {
         region(TexturesManager.region(id), x, y, width, height, rotation);
     }
 
-    /** Como {@link #sprite(TextureId, float, float, float, float, float)}, con el frame de animación de {@code timeMs}. */
-    static void animated(TextureId id, float timeMs, float x, float y, float width, float height, float rotation) {
-        region(TexturesManager.frame(id, timeMs), x, y, width, height, rotation);
-    }
-
     /** Una región concreta del atlas (p.ej. una variante de {@link TexturesManager#variant}). */
     static void region(TextureRegion region, float x, float y, float width, float height, float rotation) {
         sprites().draw(region, x, y, width / 2, height / 2, width, height, 1, 1, rotation);

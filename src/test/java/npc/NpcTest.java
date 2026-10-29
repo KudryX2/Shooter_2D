@@ -103,8 +103,8 @@ class NpcTest {
     void onlyPlayerBulletsCanHeadshot() {
         Player.x = 5_000;
         Npc target = NpcManager.spawn(NpcType.CIVILIAN, 100, 0, 0);
-        Player.aimX = 100; // el jugador apunta justo al objetivo
-        Player.aimY = 0;
+        Player.aimX = 100; // el jugador apunta a la cabeza del objetivo (se dibuja ~54 px sobre sus pies)
+        Player.aimY = -54;
 
         // Bala de un NPC: aunque el jugador apunte ahí, es un impacto normal (se convierte en zombi)
         WorldManager.projectiles.add(new Projectile(100, 0, 0, 0, 600, 999, false));
@@ -113,7 +113,7 @@ class NpcTest {
         assertTrue(target.isAlive());
         assertTrue(target.isRising());
 
-        // Bala del jugador apuntando al objetivo: headshot, muere del todo
+        // Bala del jugador apuntando a su cabeza: headshot, muere del todo
         Npc second = NpcManager.spawn(NpcType.CIVILIAN, 300, 0, 0);
         Player.aimX = 300;
         WorldManager.projectiles.add(new Projectile(300, 0, 0, 0, 600, 1, true));
