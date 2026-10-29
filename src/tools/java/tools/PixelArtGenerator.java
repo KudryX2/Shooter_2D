@@ -70,6 +70,15 @@ public final class PixelArtGenerator {
         save("3-halfWall", sandbagIcon());
 
         save("2-pointer", crosshair());
+        save("0-bullet", ItemArt.bullet());
+        save("2-hp", ItemArt.healthFill(0x7ee06a, 0x45b03a));
+        save("2-hp1", ItemArt.healthFill(0xf2d46a, 0xd1a62c));
+        save("2-hp2", ItemArt.healthFill(0xf07060, 0xc8352a));
+        save("2-hpFont", ItemArt.healthFill(0x3a3634, 0x262220));
+        save("2-normalCell", ItemArt.cell());
+        save("2-selectedCell", ItemArt.selectedCell());
+        save("4-blood", ItemArt.blood());
+        save("7-medkit", ItemArt.medkit());
         for (GunArt.Gun gun : GunArt.Gun.values()) {
             save("5-" + gun.file, GunArt.icon(gun));
             save("6-" + gun.file, GunArt.held(gun));

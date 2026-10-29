@@ -22,6 +22,13 @@ final class Canvas {
         }
     }
 
+    /** Píxel con transparencia ({@code argb}: el byte alto es la opacidad). */
+    void setArgb(int x, int y, int argb) {
+        if (x >= 0 && y >= 0 && x < width && y < height) {
+            pixels[x][y] = argb;
+        }
+    }
+
     void rect(int x0, int y0, int w, int h, int rgb) {
         for (int x = x0; x < x0 + w; x++) {
             for (int y = y0; y < y0 + h; y++) {
@@ -58,6 +65,17 @@ final class Canvas {
             }
         }
         return rotated;
+    }
+
+    /** La imagen tal cual, sin contorno. */
+    BufferedImage image() {
+        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        for (int x = 0; x < width; x++) {
+            for (int y = 0; y < height; y++) {
+                image.setRGB(x, y, pixels[x][y]);
+            }
+        }
+        return image;
     }
 
     /** La imagen, con un contorno oscuro de 1 px alrededor de lo pintado. */

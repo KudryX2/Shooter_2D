@@ -6,10 +6,13 @@ import static graphics.Camera.screenY;
 
 import java.util.List;
 
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
 import items.DroppedItem;
+import items.Gun;
+import items.Item;
 import items.StructItem;
 import player.BuildTool;
 import player.Player;
@@ -33,7 +36,6 @@ final class WorldRenderer {
     static final float HALF_WALL_HEIGHT = 24;
     private static final float WALL_SHADOW_OFFSET = 8;
     private static final float HALF_WALL_SHADOW_OFFSET = 4;
-    private static final float DROPPED_ITEM_SIZE = 32;
 
     private WorldRenderer() {
     }
@@ -146,12 +148,22 @@ final class WorldRenderer {
     // Objetos tirados
     // ---------------------------------------------------------------------------------------------
 
+    /**
+     * Cada objeto a su tamaño real en píxeles del dibujo. Las armas se ven tumbadas, con su sprite de la mano; los
+     * objetos para construir, a la mitad (su icono ocupa una casilla entera).
+     */
     static void drawDroppedItems() {
-        float half = DROPPED_ITEM_SIZE / 2;
         for (Chunk chunk : WorldManager.activeChunks) {
             for (DroppedItem dropped : chunk.droppedItems) {
-                Draw.sprite(dropped.item().icon, screenX(dropped.x()) - half, screenY(dropped.y()) - half,
-                        DROPPED_ITEM_SIZE, DROPPED_ITEM_SIZE);
+                if (!isVisible(dropped.x(), dropped.y())) {
+                    continue;
+                }
+                Item item = dropped.item();
+                TextureRegion region = TexturesManager.region(item instanceof Gun ? item.heldTexture : item.icon);
+                float scale = DisplayManager.ART_PIXEL * (item instanceof StructItem ? 0.5f : 1);
+                float width = region.getRegionWidth() * scale, height = region.getRegionHeight() * scale;
+                Draw.region(region, screenX(dropped.x()) - width / 2, screenY(dropped.y()) - height / 2,
+                        width, height, 0);
             }
         }
     }

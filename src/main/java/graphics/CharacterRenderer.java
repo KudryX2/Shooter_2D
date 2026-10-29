@@ -42,17 +42,18 @@ final class CharacterRenderer {
     /** Tumbado (20x12 px). */
     private static final float LYING_WIDTH = 80;
     private static final float LYING_HEIGHT = 48;
-    private static final float CORPSE_SIZE = 62;
+    /** La mancha de sangre (16x16 px) a su tamaño real. */
+    private static final float CORPSE_SIZE = 64;
     /** Charco bajo un humano abatido mientras se convierte en zombi. */
-    private static final float BLOOD_PUDDLE_SIZE = 110;
+    private static final float BLOOD_PUDDLE_SIZE = 128;
     private static final float SHADOW_WIDTH = 34;
     private static final float SHADOW_HEIGHT = 12;
     private static final int SHADOW_SEGMENTS = 16;
     /** Duración del parpadeo al recibir un balazo. */
     private static final long HIT_FLASH_MS = 100;
-    /** 12x1 píxeles del pixel art (medidas que no sean múltiplo de un píxel salen irregulares). */
+    /** 12x2 píxeles del pixel art (medidas que no sean múltiplo de un píxel salen irregulares). */
     private static final float HEALTH_BAR_WIDTH = 48;
-    private static final float HEALTH_BAR_HEIGHT = 4;
+    private static final float HEALTH_BAR_HEIGHT = 8;
 
     private CharacterRenderer() {
     }
@@ -142,10 +143,6 @@ final class CharacterRenderer {
      * Objeto en la mano centrado en (handX, handY) de pantalla, girado hacia donde apunta. Si apunta a la izquierda
      * se voltea para que no quede boca abajo.
      */
-    private static void drawHeld(TextureId texture, float handX, float handY, float size, float rotation) {
-        drawHeld(texture, handX, handY, size, size, rotation);
-    }
-
     private static void drawHeld(TextureId texture, float handX, float handY, float width, float height,
                                  float rotation) {
         Draw.sprite(texture, handX - width / 2, handY - height / 2, width, height, rotation, pointsLeft(rotation));
@@ -243,9 +240,18 @@ final class CharacterRenderer {
         switch (Player.selectedItem()) {
             case null -> { }
             case Gun gun -> drawGun(gun, handX(), handY(), rotation);
-            case Consumable consumable -> drawHeld(consumable.heldTexture, handX(), handY(), 24, rotation);
-            case StructItem struct -> drawHeld(struct.heldTexture, handX(), handY(), 40, rotation);
+            case Consumable consumable -> drawHeldAtPixelSize(consumable.heldTexture, 1, rotation);
+            // Su icono ocupa una casilla entera: a la mitad
+            case StructItem struct -> drawHeldAtPixelSize(struct.heldTexture, 0.5f, rotation);
         }
+    }
+
+    /** Objeto que no es un arma, en la mano del jugador, a su tamaño en píxeles del dibujo por {@code scale}. */
+    private static void drawHeldAtPixelSize(TextureId texture, float scale, float rotation) {
+        TextureRegion region = TexturesManager.region(texture);
+        float size = DisplayManager.ART_PIXEL * scale;
+        drawHeld(texture, handX(), handY(), region.getRegionWidth() * size, region.getRegionHeight() * size,
+                rotation);
     }
 
     /**
@@ -268,12 +274,20 @@ final class CharacterRenderer {
         shapes.ellipse(x - SHADOW_WIDTH / 2, feetY - SHADOW_HEIGHT / 2, SHADOW_WIDTH, SHADOW_HEIGHT, SHADOW_SEGMENTS);
     }
 
-    /** Barra centrada en {@code x}, justo encima de {@code top} (lo alto de la cabeza). */
+    /**
+     * Barra centrada en {@code x}, justo encima de {@code top} (lo alto de la cabeza), con un contorno oscuro de un
+     * píxel. El relleno va por píxeles enteros del dibujo (con 1 de vida ya se ve uno).
+     */
     private static void drawHealthBar(int hp, float x, float top) {
+        float art = DisplayManager.ART_PIXEL;
         float left = x - HEALTH_BAR_WIDTH / 2;
-        float y = top - HEALTH_BAR_HEIGHT - 4;
+        float y = top - HEALTH_BAR_HEIGHT - art * 2;
+        ShapeRenderer shapes = Draw.shapes();
+        shapes.setColor(0.09f, 0.08f, 0.07f, 1);
+        shapes.rect(left - art, y - art, HEALTH_BAR_WIDTH + art * 2, HEALTH_BAR_HEIGHT + art * 2);
         Draw.sprite(TextureId.HP_BACKGROUND, left, y, HEALTH_BAR_WIDTH, HEALTH_BAR_HEIGHT);
         TextureId texture = hp > 50 ? TextureId.HP_HIGH : hp > 25 ? TextureId.HP_MEDIUM : TextureId.HP_LOW;
-        Draw.sprite(texture, left, y, HEALTH_BAR_WIDTH * hp / 100f, HEALTH_BAR_HEIGHT);
+        float pixels = (float) Math.ceil(HEALTH_BAR_WIDTH / art * Math.clamp(hp, 0, 100) / 100f);
+        Draw.sprite(texture, left, y, pixels * art, HEALTH_BAR_HEIGHT);
     }
 }

@@ -19,7 +19,8 @@ import world.WorldManager;
 
 /** Efectos de disparo: balas con su estela y fogonazos. */
 final class EffectsRenderer {
-    private static final float BULLET_SIZE = 4;
+    /** 2x2 píxeles del pixel art. */
+    private static final float BULLET_SIZE = 8;
     private static final float TRAIL_LENGTH = 22;
     /** Un píxel del pixel art: más fino parpadearía. */
     private static final float TRAIL_WIDTH = 4;
