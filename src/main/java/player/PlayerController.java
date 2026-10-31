@@ -23,7 +23,10 @@ public final class PlayerController {
         Input.centerCursor();
     }
 
-    /** @param mouseOnUi el cursor está sobre un botón del HUD */
+    /**
+     * @param mouseOnUi el ratón es para el HUD (está sobre un botón o el inventario está abierto): no dispara, no
+     *                  construye ni usa objetos
+     */
     public static void update(boolean mouseOnUi) {
         int dx = (Input.isKeyDown(Keys.D) ? 1 : 0) - (Input.isKeyDown(Keys.A) ? 1 : 0);
         int dy = (Input.isKeyDown(Keys.S) ? 1 : 0) - (Input.isKeyDown(Keys.W) ? 1 : 0);
@@ -35,7 +38,7 @@ public final class PlayerController {
 
         if (Input.wasButtonPressed(0)) clickStartedOnUi = mouseOnUi;
         if (Input.isButtonDown(0) && !clickStartedOnUi) Player.primaryAction(Input.wasButtonPressed(0));
-        if (Input.wasButtonPressed(1)) Player.secondaryAction();
+        if (Input.wasButtonPressed(1) && !mouseOnUi) Player.secondaryAction();
         if (Input.wasKeyPressed(Keys.Q)) Player.dropSelectedItem();
         if (Input.wasKeyPressed(Keys.E)) Player.pickUpItem();
 

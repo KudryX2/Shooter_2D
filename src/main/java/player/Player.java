@@ -191,6 +191,14 @@ public final class Player {
         }
     }
 
+    /** Tira al suelo la pila entera de la casilla {@code slot} (p.ej. arrastrándola fuera del inventario). */
+    public static void dropStack(int slot) {
+        ItemStack stack = inventory.removeStack(slot);
+        if (stack != null) {
+            WorldManager.dropItem(stack, x, y);
+        }
+    }
+
     /**
      * Coge un objeto (o un montón) del suelo que esté al lado y quepa en el inventario. Si del montón no cabe todo,
      * lo que sobra se queda en el suelo.

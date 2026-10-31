@@ -8,6 +8,7 @@ import assets.Assets;
 import graphics.DisplayManager;
 import graphics.GraphicsManager;
 import graphics.HudRenderer;
+import graphics.InventoryPanel;
 import graphics.PauseButton;
 import input.Input;
 import player.Player;
@@ -70,9 +71,11 @@ public final class Game extends ApplicationAdapter {
         DisplayManager.tick();
         Input.update();
         PauseButton.update();
+        InventoryPanel.update();
         // En pausa el mundo queda congelado, pero se sigue dibujando
         if (!GameClock.isPaused()) {
-            PlayerController.update(PauseButton.isHovered());
+            // Con el inventario abierto el ratón es para él: no se dispara ni se construye
+            PlayerController.update(PauseButton.isHovered() || InventoryPanel.isOpen());
             WorldManager.update();
         }
 
