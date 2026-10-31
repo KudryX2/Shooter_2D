@@ -37,8 +37,13 @@ final class CharacterRenderer {
     static final float FEET_BELOW = 8;
     /** Medio ancho de la parte pintada del sprite (cuerpo y brazos, sin el aire de los lados). */
     static final float BODY_HALF_WIDTH = 20;
-    /** Altura de las manos sobre la posición del personaje: donde lleva el arma y por donde salen las balas. */
-    private static final float HAND_HEIGHT = Projectile.FLIGHT_HEIGHT;
+    /**
+     * Altura de la boca del arma sobre la posición del personaje, por donde salen las balas. La empuñadura queda más
+     * abajo, en las manos del sprite ({@link items.GunType#barrelRise}).
+     */
+    private static final float MUZZLE_HEIGHT = Projectile.FLIGHT_HEIGHT;
+    /** Altura de las manos del sprite: ahí se sujetan los objetos que no son armas. */
+    private static final float HAND_HEIGHT = 24;
     /** Tumbado (20x12 px). */
     private static final float LYING_WIDTH = 80;
     private static final float LYING_HEIGHT = 48;
@@ -130,7 +135,7 @@ final class CharacterRenderer {
 
     private static void drawNpcGun(Npc npc, Gun gun) {
         float muzzleX = screenX(npc.x) + dirX(npc.rotation) * Npc.GUN_OFFSET;
-        float muzzleY = screenY(npc.y) - HAND_HEIGHT + dirY(npc.rotation) * Npc.GUN_OFFSET;
+        float muzzleY = screenY(npc.y) - MUZZLE_HEIGHT + dirY(npc.rotation) * Npc.GUN_OFFSET;
         drawGun(gun, muzzleX, muzzleY, npc.rotation);
     }
 
@@ -151,15 +156,22 @@ final class CharacterRenderer {
     /**
      * Arma a su tamaño real en píxeles, con la boca del cañón en (muzzleX, muzzleY) de pantalla: ahí salen las balas y
      * el fogonazo, sea cual sea el arma. Su imagen tiene la empuñadura en el centro y el cañón (el lado largo) hacia
-     * la derecha, así que una pistola queda junto al cuerpo y un fusil, delante del pecho.
+     * la derecha, así que una pistola queda junto al cuerpo y un fusil, delante del pecho. El cañón queda
+     * {@link items.GunType#barrelRise} píxeles por encima de la empuñadura, así que la imagen se baja eso (hacia su
+     * "abajo", que gira con ella) para que la boca quede en su sitio y la empuñadura, en las manos.
      */
     private static void drawGun(Gun gun, float muzzleX, float muzzleY, float rotation) {
         TextureRegion region = TexturesManager.region(gun.heldTexture);
         int width = region.getRegionWidth();
         float art = DisplayManager.ART_PIXEL;
         float reach = ((width - 1) / 2 - 1) * art; // de la empuñadura a la boca (sin el contorno)
-        float gripX = muzzleX - dirX(rotation) * reach;
-        float gripY = muzzleY - dirY(rotation) * reach;
+        float rise = gun.type.barrelRise * art;
+        // "Arriba" de la imagen una vez girada (y volteada si apunta a la izquierda), en pantalla con la y hacia abajo
+        float side = pointsLeft(rotation) ? -1 : 1;
+        float upX = side * dirY(rotation);
+        float upY = -side * dirX(rotation);
+        float gripX = muzzleX - dirX(rotation) * reach - upX * rise;
+        float gripY = muzzleY - dirY(rotation) * reach - upY * rise;
         drawHeld(gun.heldTexture, gripX, gripY, width * art, region.getRegionHeight() * art, rotation);
     }
 
@@ -250,20 +262,20 @@ final class CharacterRenderer {
     private static void drawHeldAtPixelSize(TextureId texture, float scale, float rotation) {
         TextureRegion region = TexturesManager.region(texture);
         float size = DisplayManager.ART_PIXEL * scale;
-        drawHeld(texture, handX(), handY(), region.getRegionWidth() * size, region.getRegionHeight() * size,
-                rotation);
+        drawHeld(texture, handX(), handY() + MUZZLE_HEIGHT - HAND_HEIGHT, region.getRegionWidth() * size,
+                region.getRegionHeight() * size, rotation);
     }
 
     /**
-     * Posición en pantalla de la boca del arma del jugador, a la altura del pecho: de ahí salen las balas y el
-     * fogonazo, y ahí se sujetan los objetos que no son armas.
+     * Posición en pantalla de la boca del arma del jugador: de ahí salen las balas y el fogonazo. Los objetos que no
+     * son armas se sujetan justo debajo, a la altura de las manos.
      */
     static float handX() {
         return centerX() + dirX(Player.rotation) * Player.HAND_OFFSET;
     }
 
     static float handY() {
-        return centerY() - HAND_HEIGHT + dirY(Player.rotation) * Player.HAND_OFFSET;
+        return centerY() - MUZZLE_HEIGHT + dirY(Player.rotation) * Player.HAND_OFFSET;
     }
 
     /** Sombra elíptica y aplastada (vista en 3/4) bajo los pies de un personaje en (x, y) de pantalla. */

@@ -162,9 +162,18 @@ final class WorldRenderer {
                 TextureRegion region = TexturesManager.region(item instanceof Gun ? item.heldTexture : item.icon);
                 float scale = DisplayManager.ART_PIXEL * (item instanceof StructItem ? 0.5f : 1);
                 float width = region.getRegionWidth() * scale, height = region.getRegionHeight() * scale;
-                Draw.region(region, screenX(dropped.x()) - width / 2, screenY(dropped.y()) - height / 2,
-                        width, height, 0);
+                // La esquina, en un borde de píxel del dibujo: centrado sin más, un sprite de ancho o alto impar
+                // (como las armas) queda a medio píxel y alguna fila o columna salta de uno a otro al moverse
+                float left = snapToArtPixel(dropped.x() - width / 2);
+                float top = snapToArtPixel(dropped.y() - height / 2);
+                Draw.region(region, screenX(left), screenY(top), width, height, 0);
             }
         }
+    }
+
+    /** Coordenada del mundo redondeada a un borde de píxel del dibujo. */
+    private static float snapToArtPixel(float worldCoordinate) {
+        float art = DisplayManager.ART_PIXEL;
+        return Math.round(worldCoordinate / art) * art;
     }
 }
