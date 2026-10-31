@@ -83,6 +83,13 @@ public final class PixelArtGenerator {
         for (int n = 0; n <= 9; n++) {
             save("2-digit_" + n, ItemArt.digit(n));
         }
+        save("2-slash", ItemArt.glyph('/'));
+        save("2-parenOpen", ItemArt.glyph('('));
+        save("2-parenClose", ItemArt.glyph(')'));
+        save("8-ammoPistol", ItemArt.ammoBox(0xc9a227, 0xe6c34a, 0xd8b04a));
+        save("8-ammoShotgun", ItemArt.ammoBox(0xb03a2e, 0xd0584a, 0xc84a3a));
+        save("8-ammoRifle", ItemArt.ammoBox(0x5a7a3a, 0x7a9a52, 0xd8b04a));
+        save("8-ammoSniper", ItemArt.ammoBox(0x34507a, 0x4a6a9a, 0xb8bcc4));
         for (GunArt.Gun gun : GunArt.Gun.values()) {
             save("5-" + gun.file, GunArt.icon(gun));
             save("6-" + gun.file, GunArt.held(gun));

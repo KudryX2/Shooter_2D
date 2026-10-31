@@ -135,6 +135,15 @@ public final class Inventory implements Iterable<Item> {
         if (from == to || items[from] == null) {
             return;
         }
+        // Caja de balas sobre otra del mismo tipo con sitio: le pasa las balas (y si se queda vacía, desaparece). Si
+        // la de destino está llena, se intercambian como cualquier otro objeto.
+        if (items[from] instanceof AmmoBox source && items[to] instanceof AmmoBox target && target.fillFrom(source)) {
+            if (source.isEmpty()) {
+                items[from] = null;
+                counts[from] = 0;
+            }
+            return;
+        }
         int room = roomInStack(to, items[from]);
         if (room > 0) {
             int moved = Math.min(room, counts[from]);
@@ -151,6 +160,56 @@ public final class Inventory implements Iterable<Item> {
         counts[to] = counts[from];
         items[from] = item;
         counts[from] = count;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Munición (en cajas de balas)
+    // ---------------------------------------------------------------------------------------------
+
+    /** Balas de ese tipo que quedan, sumando todas sus cajas. */
+    public int totalRounds(AmmoType type) {
+        int total = 0;
+        for (Item item : items) {
+            if (item instanceof AmmoBox box && box.type == type) {
+                total += box.rounds();
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Saca hasta {@code wanted} balas de ese tipo de las cajas, empezando por las más vacías (así se acaban antes las
+     * cajas a medias). Las cajas que se quedan vacías desaparecen.
+     *
+     * @return cuántas ha sacado
+     */
+    public int takeRounds(AmmoType type, int wanted) {
+        int taken = 0;
+        while (taken < wanted) {
+            int slot = emptiestBox(type);
+            if (slot < 0) {
+                break;
+            }
+            AmmoBox box = (AmmoBox) items[slot];
+            taken += box.take(wanted - taken);
+            if (box.isEmpty()) {
+                items[slot] = null;
+                counts[slot] = 0;
+            }
+        }
+        return taken;
+    }
+
+    /** Casilla de la caja de ese tipo con menos balas, o -1 si no hay ninguna. */
+    private int emptiestBox(AmmoType type) {
+        int best = -1;
+        for (int slot = 0; slot < items.length; slot++) {
+            if (items[slot] instanceof AmmoBox box && box.type == type
+                    && (best < 0 || box.rounds() < ((AmmoBox) items[best]).rounds())) {
+                best = slot;
+            }
+        }
+        return best;
     }
 
     /** Vacía el inventario y devuelve lo que llevaba (p.ej. para soltarlo al morir). */

@@ -115,6 +115,23 @@ final class ItemArt {
         return c.outlined();
     }
 
+    /**
+     * Caja de balas 8x7 (10x9 con el contorno): caja de cartón con las puntas de las balas asomando por arriba y una
+     * franja del color de su munición ({@code band}), para distinguir los tipos de un vistazo.
+     */
+    static BufferedImage ammoBox(int band, int bandLight, int tip) {
+        Canvas c = new Canvas(10, 9);
+        for (int x = 2; x <= 7; x += 2) {              // puntas de las balas
+            c.set(x, 1, tip);
+        }
+        c.rect(1, 2, 8, 6, 0x8a6a42);              // caja
+        c.rect(1, 2, 8, 1, 0xa8845a);              // borde de arriba, iluminado
+        c.rect(1, 4, 8, 2, band);                  // franja del tipo de munición
+        c.rect(1, 4, 8, 1, bandLight);
+        c.rect(1, 7, 8, 1, 0x66492a);              // sombra de abajo
+        return c.outlined();
+    }
+
     /** Cifras de 3x5 píxeles, fila a fila de arriba abajo ('#' = pintado). */
     private static final String[] DIGITS = {
         "####.##.##.####", // 0
@@ -139,6 +156,24 @@ final class ItemArt {
         for (int i = 0; i < pattern.length(); i++) {
             if (pattern.charAt(i) == '#') {
                 c.set(1 + i % 3, 1 + i / 3, 0xf4f4ee);
+            }
+        }
+        return c.outlined();
+    }
+
+    /** Signos para escribir cantidades como {@code 7/12 (48)}, igual que las cifras: 5 filas, en blanco con contorno. */
+    static BufferedImage glyph(char glyph) {
+        String pattern = switch (glyph) {
+            case '/' -> "..#..#.#.#..#..";
+            case '(' -> ".##.#.#..#";
+            case ')' -> "#..#.#.##.";
+            default -> throw new IllegalArgumentException("Sin dibujo para " + glyph);
+        };
+        int width = pattern.length() / 5;
+        Canvas c = new Canvas(width + 2, 7);
+        for (int i = 0; i < pattern.length(); i++) {
+            if (pattern.charAt(i) == '#') {
+                c.set(1 + i % width, 1 + i / width, 0xf4f4ee);
             }
         }
         return c.outlined();

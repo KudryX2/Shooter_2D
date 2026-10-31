@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
+import items.AmmoBox;
 import items.Consumable;
 import items.Gun;
 import items.MeleeWeapon;
@@ -75,6 +76,8 @@ final class CharacterRenderer {
     /** 12x2 píxeles del pixel art (medidas que no sean múltiplo de un píxel salen irregulares). */
     private static final float HEALTH_BAR_WIDTH = 48;
     private static final float HEALTH_BAR_HEIGHT = 8;
+    /** Barra de recarga, encima de la de vida: un píxel del pixel art de alto. */
+    private static final float RELOAD_BAR_HEIGHT = 4;
 
     private CharacterRenderer() {
     }
@@ -123,7 +126,30 @@ final class CharacterRenderer {
         }
         if (Player.hp > 0) {
             drawHealthBar(Player.hp, centerX(), screenY(spriteTop(Player.y)));
+            float reload = Player.reloadProgress();
+            if (reload >= 0) {
+                drawReloadBar(reload, centerX(), screenY(spriteTop(Player.y)));
+            }
         }
+    }
+
+    /**
+     * Barra fina de la recarga en curso ({@code progress} de 0 a 1), encima de la barra de vida del jugador (cuya
+     * cabeza está en {@code top}). Del mismo ancho, un píxel de alto y con su contorno.
+     */
+    private static void drawReloadBar(float progress, float x, float top) {
+        float art = DisplayManager.ART_PIXEL;
+        float left = x - HEALTH_BAR_WIDTH / 2;
+        float healthBarY = top - HEALTH_BAR_HEIGHT - art * 2;
+        float y = healthBarY - art * 3 - RELOAD_BAR_HEIGHT; // deja un píxel entre los dos contornos
+        ShapeRenderer shapes = Draw.shapes();
+        shapes.setColor(0.09f, 0.08f, 0.07f, 1);
+        shapes.rect(left - art, y - art, HEALTH_BAR_WIDTH + art * 2, RELOAD_BAR_HEIGHT + art * 2);
+        shapes.setColor(0.23f, 0.21f, 0.2f, 1);
+        shapes.rect(left, y, HEALTH_BAR_WIDTH, RELOAD_BAR_HEIGHT);
+        float pixels = (float) Math.floor(HEALTH_BAR_WIDTH / art * progress); // por píxeles enteros del dibujo
+        shapes.setColor(0.95f, 0.85f, 0.45f, 1);
+        shapes.rect(left, y, pixels * art, RELOAD_BAR_HEIGHT);
     }
 
     /** NPC en pie con su arma, si lleva (tinte según su tipo y parpadeo si acaba de recibir un balazo). */
@@ -288,6 +314,7 @@ final class CharacterRenderer {
             case Gun gun -> drawGun(gun, handX(), handY(), rotation);
             case MeleeWeapon melee -> drawMelee(melee, rotation);
             case Consumable consumable -> drawHeldAtPixelSize(consumable.heldTexture, 1, rotation);
+            case AmmoBox box -> drawHeldAtPixelSize(box.heldTexture, 1, rotation);
             // Su icono ocupa una casilla entera: a la mitad
             case StructItem struct -> drawHeldAtPixelSize(struct.heldTexture, 0.5f, rotation);
         }

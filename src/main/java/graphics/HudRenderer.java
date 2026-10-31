@@ -5,6 +5,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
 import input.Input;
+import items.AmmoBox;
+import items.Gun;
 import items.Item;
 import player.Player;
 
@@ -14,8 +16,10 @@ import player.Player;
  */
 public final class HudRenderer {
     private static final float CURSOR_SIZE = 26;
-    /** Distancia del número de una pila al borde de su casilla, en píxeles del dibujo (el marco de selección mide 2). */
+    /** Del número de una pila al borde de su casilla, en píxeles del dibujo (el marco de selección mide 2). */
     private static final int COUNT_INSET = 2;
+    /** Distancia del contador de munición al borde derecho, en píxeles del dibujo de las casillas. */
+    private static final int AMMO_MARGIN = 6;
     /** Opacidad del fondo del inventario abierto (deja ver un poco el mundo, que sigue en marcha). */
     private static final float PANEL_ALPHA = 0.55f;
     /** Opacidad de lo que queda en una casilla mientras se arrastra (para ver de dónde sale). */
@@ -41,6 +45,7 @@ public final class HudRenderer {
             drawSlot(slot);
         }
         drawDragged();
+        drawAmmoCounter();
 
         PauseButton.draw();
 
@@ -51,6 +56,20 @@ public final class HudRenderer {
         float cursorSize = CURSOR_SIZE;
         Draw.sprite(TextureId.POINTER, Input.mouseX() - cursorSize / 2, Input.mouseY() - cursorSize / 2,
                 cursorSize, cursorSize);
+    }
+
+    /**
+     * Abajo a la derecha, con un arma en la mano: balas en el cargador / caben en el cargador (y entre paréntesis, las
+     * que quedan en las cajas de su munición), p.ej. {@code 7/12 (48)}. A la altura de la barra rápida.
+     */
+    private static void drawAmmoCounter() {
+        if (!(Player.selectedItem() instanceof Gun gun)) {
+            return;
+        }
+        String text = gun.rounds() + "/" + gun.type.magazine + " (" + Player.inventory.totalRounds(gun.type.ammo) + ")";
+        int pixel = InventoryLayout.pixel();
+        float bottom = InventoryLayout.slotY(0) + InventoryLayout.cellSize();
+        PixelText.drawRightAligned(text, DisplayManager.WIDTH - AMMO_MARGIN * pixel, bottom, pixel);
     }
 
     /** Fondos oscuros detrás de la mochila y de la barra rápida (por separado), con el inventario abierto. */
@@ -80,9 +99,9 @@ public final class HudRenderer {
         if (slot == Player.inventory.selectedSlot()) {
             Draw.sprite(TextureId.SELECTED_CELL, x, y, size, size);
         }
-        if (count > 1 && !dragged) {
+        if (item != null && !dragged) {
             // Abajo a la derecha, por dentro del marco de selección y encima de él, para que no lo tape
-            drawCount(count, x + size, y + size);
+            drawCount(item, count, x + size, y + size);
         }
     }
 
@@ -94,11 +113,10 @@ public final class HudRenderer {
         }
         int count = Player.inventory.count(slot);
         float centerX = Math.round(Input.mouseX()), centerY = Math.round(Input.mouseY());
-        drawStack(Player.inventory.get(slot), count, centerX, centerY);
-        if (count > 1) {
-            float half = InventoryLayout.cellSize() / 2;
-            drawCount(count, centerX + half, centerY + half);
-        }
+        Item item = Player.inventory.get(slot);
+        drawStack(item, count, centerX, centerY);
+        float half = InventoryLayout.cellSize() / 2;
+        drawCount(item, count, centerX + half, centerY + half);
     }
 
     /** Icono (amontonado si es una pila) centrado en (centerX, centerY), a los píxeles enteros de los iconos. */
@@ -110,8 +128,16 @@ public final class HudRenderer {
                 iconPixel);
     }
 
-    /** Cantidad acabando abajo a la derecha de una casilla cuya esquina inferior derecha es (right, bottom). */
-    private static void drawCount(int count, float right, float bottom) {
+    /**
+     * Cantidad de una casilla, abajo a la derecha de la casilla cuya esquina inferior derecha es (right, bottom): las
+     * balas de una caja de balas (siempre), o cuántos hay en una pila (si hay más de uno).
+     */
+    private static void drawCount(Item item, int count, float right, float bottom) {
+        if (item instanceof AmmoBox box) {
+            count = box.rounds();
+        } else if (count <= 1) {
+            return;
+        }
         int pixel = InventoryLayout.pixel();
         float inset = COUNT_INSET * pixel;
         StackDrawing.number(count, right - inset, bottom - inset, Math.max(2, pixel / 2));

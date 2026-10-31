@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import items.AmmoBox;
+import items.AmmoType;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
@@ -218,5 +220,45 @@ class PlayerTest {
         assertEquals(3, WorldManager.chunks.getFirst().droppedItems.get(1).count(), "la pila entera");
         assertEquals(Player.MAX_HP, Player.hp);
         assertEquals(Player.spawnX(), Player.x);
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Recarga
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    void reloadingFillsTheGunInHandFromItsAmmoBoxes() {
+        Gun pistol = new Gun(GunType.PISTOL);
+        Player.inventory.add(pistol);
+        Player.inventory.add(new AmmoBox(AmmoType.PISTOL, 20));
+        pistol.shoot(0, 0, 0, true, true);
+
+        Player.reload();
+        assertEquals(0, Player.reloadProgress(), 0.01f);
+        GameClock.tick(GunType.PISTOL.reloadMs);
+        Player.update();
+
+        assertEquals(GunType.PISTOL.magazine, pistol.rounds());
+        assertEquals(19, Player.inventory.totalRounds(AmmoType.PISTOL));
+        assertEquals(-1, Player.reloadProgress(), "ya no recarga");
+    }
+
+    @Test
+    void switchingWeaponsCancelsTheReloadWithoutSpendingAmmo() {
+        Gun pistol = new Gun(GunType.PISTOL);
+        Player.inventory.add(pistol);
+        Player.inventory.add(new AmmoBox(AmmoType.PISTOL, 20));
+        pistol.shoot(0, 0, 0, true, true);
+
+        Player.reload();
+        Player.inventory.select(1);
+        Player.update();
+        assertEquals(-1, Player.reloadProgress());
+        GameClock.tick(GunType.PISTOL.reloadMs);
+        Player.inventory.select(0);
+        Player.update();
+
+        assertEquals(GunType.PISTOL.magazine - 1, pistol.rounds());
+        assertEquals(20, Player.inventory.totalRounds(AmmoType.PISTOL));
     }
 }

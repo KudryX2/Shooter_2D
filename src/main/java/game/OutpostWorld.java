@@ -7,6 +7,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
 import assets.TextureId;
+import items.AmmoBox;
+import items.AmmoType;
 import items.Consumable;
 import items.Gun;
 import items.GunType;
@@ -78,6 +80,7 @@ final class OutpostWorld {
         Player.setSpawn(px(0), px(0));
         Player.teleportToSpawn();
         Player.inventory.add(new Gun(GunType.PISTOL));
+        Player.inventory.add(new AmmoBox(AmmoType.PISTOL, 48));
 
         for (int i = 0; i < SIZE_TILES; i += CHUNK_TILES) {
             for (int j = 0; j < SIZE_TILES; j += CHUNK_TILES) {
@@ -284,6 +287,11 @@ final class OutpostWorld {
         item(new StructItem(StructKind.HALF_WALL), StructItem.MAX_STACK, 3, 4);
         item(new StructItem(StructKind.FLOOR), StructItem.MAX_STACK, 4, 4);
         item(Consumable.medkit(), 3, -4, 4);
+        // Una caja de cada munición junto a los botiquines
+        item(new AmmoBox(AmmoType.PISTOL, AmmoBox.CAPACITY), -3, 4);
+        item(new AmmoBox(AmmoType.SHOTGUN, 60), -2, 4);
+        item(new AmmoBox(AmmoType.RIFLE, AmmoBox.CAPACITY), -1, 4);
+        item(new AmmoBox(AmmoType.SNIPER, 40), 0, 4);
         // Guardias aliados entre la casa y los sacos terreros (solo disparan a zombis)
         human(NpcType.GUARD, -3, 7);
         human(NpcType.GUARD, 3, 7);
@@ -298,6 +306,8 @@ final class OutpostWorld {
         item(new StructItem(StructKind.HALF_WALL), 10, 38, -7);
         item(Consumable.medkit(), 24, -4);
         item(Consumable.medkit(), 32, 5);
+        item(new AmmoBox(AmmoType.PISTOL, 50), 25, -4);
+        item(new AmmoBox(AmmoType.SHOTGUN, 30), 33, 5);
         human(NpcType.CIVILIAN, 24, -6);
         human(NpcType.CIVILIAN, 28, -5);
         human(NpcType.CIVILIAN, 34, -5);
@@ -315,6 +325,8 @@ final class OutpostWorld {
         item(new StructItem(StructKind.WALL), 10, 33, 38);
         item(Consumable.medkit(), 29, 38);
         item(Consumable.medkit(), 33, 35);
+        item(new AmmoBox(AmmoType.RIFLE, AmmoBox.CAPACITY), 30, 38);
+        item(new AmmoBox(AmmoType.SNIPER, 30), 32, 38);
         human(NpcType.SOLDIER, 21, 34);
         human(NpcType.SOLDIER, 25, 40);
         human(NpcType.SOLDIER, 19, 40);
@@ -327,12 +339,16 @@ final class OutpostWorld {
         item(new Gun(GunType.random()), -1, -51);
         item(Consumable.medkit(), 1, -51);
         item(Consumable.medkit(), 1, -49);
+        item(new AmmoBox(AmmoType.SNIPER, 20), 0, -49);
+        item(new AmmoBox(AmmoType.RIFLE, 60), -1, -49);
         zombies(25, -9, -59, 9, -41);
 
         // Ruinas
         item(new Gun(GunType.random()), -65, -3);
         item(new MeleeWeapon(MeleeType.AXE), -64, -3);
         item(new Gun(GunType.random()), -45, 12);
+        item(new AmmoBox(AmmoType.PISTOL, 40), -65, -2);
+        item(new AmmoBox(AmmoType.SHOTGUN, 40), -46, 12);
         zombies(15, -70, -18, -35, 22);
 
         // Zombis sueltos por todo el mapa

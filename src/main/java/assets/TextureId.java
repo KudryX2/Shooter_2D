@@ -32,6 +32,10 @@ public enum TextureId {
     HP_BACKGROUND("2-hpFont"),
     /** Cifras del 0 al 9 (variantes {@code _0} a {@code _9}) para cantidades, p.ej. las pilas del inventario. */
     DIGITS("2-digit"),
+    /** Signos para escribir cantidades junto a las cifras, p.ej. la munición: {@code 7/12 (48)}. */
+    SLASH("2-slash"),
+    PAREN_OPEN("2-parenOpen"),
+    PAREN_CLOSE("2-parenClose"),
 
     // Entorno, en pixel art (assets-raw/textures/pixel, generados con la tarea generateArt). En los suelos, las
     // imágenes numeradas no son una animación sino variantes: cada casilla elige una según su posición.
@@ -73,7 +77,13 @@ public enum TextureId {
     SHOVEL_HELD("6-shovel"),
 
     // Consumibles
-    MEDKIT("7-medkit");
+    MEDKIT("7-medkit"),
+
+    // Cajas de balas, una por tipo de munición
+    AMMO_PISTOL("8-ammoPistol"),
+    AMMO_SHOTGUN("8-ammoShotgun"),
+    AMMO_RIFLE("8-ammoRifle"),
+    AMMO_SNIPER("8-ammoSniper");
 
     /** Direcciones de los personajes, tal y como aparecen en el nombre de sus imágenes. */
     public static final String[] DIRECTIONS = {"down", "up", "left", "right"};

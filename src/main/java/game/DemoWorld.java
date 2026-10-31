@@ -3,6 +3,8 @@ package game;
 import java.util.concurrent.ThreadLocalRandom;
 
 import assets.TextureId;
+import items.AmmoBox;
+import items.AmmoType;
 import items.Consumable;
 import items.Gun;
 import items.GunType;
@@ -29,6 +31,7 @@ final class DemoWorld {
         Player.setSpawn(Player.DEFAULT_SPAWN_X, Player.DEFAULT_SPAWN_Y);
         Player.teleportToSpawn();
         Player.inventory.add(new Gun(GunType.PISTOL));
+        Player.inventory.add(new AmmoBox(AmmoType.PISTOL, 48));
 
         for (int i = 0; i < WORLD_SIZE; i += CHUNK_SIZE) {
             for (int j = 0; j < WORLD_SIZE; j += CHUNK_SIZE) {
@@ -46,6 +49,9 @@ final class DemoWorld {
         WorldManager.dropItem(new Gun(GunType.ASSAULT_RIFLE), 100, 1000);
         WorldManager.dropItem(Consumable.medkit(), 100, 1050);
         WorldManager.dropItem(Consumable.medkit(), 100, 1100);
+        for (AmmoType ammo : AmmoType.values()) {
+            WorldManager.dropItem(new AmmoBox(ammo, AmmoBox.CAPACITY), 150, 900 + ammo.ordinal() * 50);
+        }
 
         // Suelo
         for (int i = 0; i < WORLD_SIZE; i += TILE) {

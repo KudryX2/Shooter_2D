@@ -100,7 +100,7 @@ public final class Game extends ApplicationAdapter {
         if (Input.wasKeyPressed(Keys.M)) HudRenderer.hudScale++;
         if (Input.wasKeyPressed(Keys.P) || Input.wasKeyPressed(Keys.SPACE)) GameClock.togglePause();
 
-        // En pausa no se lanzan oleadas ni se vuelve al inicio
+        // En pausa no se lanzan oleadas
         if (!GameClock.isPaused()) {
             if (Input.wasKeyPressed(Keys.H)) { // horda
                 if (classicWorld) {
@@ -109,7 +109,6 @@ public final class Game extends ApplicationAdapter {
                     OutpostWorld.spawnWave();
                 }
             }
-            if (Input.isKeyDown(Keys.R)) Player.teleportToSpawn();
         }
 
         return !Input.isKeyDown(Keys.ESCAPE);

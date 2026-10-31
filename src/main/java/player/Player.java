@@ -60,19 +60,23 @@ public final class Player {
      * NaN = no apunta a nada.
      */
     public static float aimX = Float.NaN, aimY = Float.NaN;
+    /** Arma que está recargando, o {@code null}. */
+    private static Gun reloading;
 
     private Player() {
     }
 
     public static void create() {
+        cancelReload();
         teleportToSpawn();
         hp = MAX_HP;
         inventory.select(0);
         BuildTool.update(null, x, y);
     }
 
-    /** Muere si se ha quedado sin vida. Una vez por frame, después de sus acciones. */
+    /** Avanza la recarga y muere si se ha quedado sin vida. Una vez por frame, después de sus acciones. */
     public static void update() {
+        updateReload();
         if (hp <= 0) {
             die();
             respawn();
@@ -191,6 +195,44 @@ public final class Player {
         }
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Recarga
+    // ---------------------------------------------------------------------------------------------
+
+    /** R: recarga el arma de la mano, si le faltan balas y quedan en alguna caja de su munición. */
+    public static void reload() {
+        if (reloading == null && selectedItem() instanceof Gun gun && gun.startReload(inventory)) {
+            reloading = gun;
+        }
+    }
+
+    /**
+     * Termina la recarga en curso cuando le toca. Si el arma ya no está en la mano (se ha cambiado de casilla o se ha
+     * soltado), se deja a medias sin gastar balas.
+     */
+    private static void updateReload() {
+        if (reloading == null) {
+            return;
+        }
+        if (selectedItem() != reloading) {
+            cancelReload();
+        } else if (reloading.updateReload(inventory)) {
+            reloading = null;
+        }
+    }
+
+    private static void cancelReload() {
+        if (reloading != null) {
+            reloading.cancelReload();
+            reloading = null;
+        }
+    }
+
+    /** Cuánto lleva la recarga en curso, de 0 a 1, o -1 si no está recargando (para su barra de progreso). */
+    public static float reloadProgress() {
+        return reloading == null ? -1 : reloading.reloadProgress();
+    }
+
     /** Tira al suelo la pila entera de la casilla {@code slot} (p.ej. arrastrándola fuera del inventario). */
     public static void dropStack(int slot) {
         ItemStack stack = inventory.removeStack(slot);
@@ -227,6 +269,7 @@ public final class Player {
 
     /** Suelta todo lo que lleva donde está. */
     public static void die() {
+        cancelReload();
         for (ItemStack stack : inventory.removeAll()) {
             WorldManager.dropItem(stack, x, y);
         }
