@@ -38,18 +38,22 @@ public final class Structures {
     /**
      * Derriba el muro o medio muro que haya en el mismo borde que {@code edge}.
      *
-     * @return {@code true} si había alguno
+     * @return qué había ({@link StructKind#WALL} o {@link StructKind#HALF_WALL}), o {@code null} si no había nada
      */
-    public static boolean removeWallAt(Struct edge) {
-        if (!solids.removeIf(edge.x(), edge.y(), s -> s.samePlaceAs(edge))) {
-            return false;
+    public static StructKind removeWallAt(Struct edge) {
+        StructKind[] removed = {null};
+        solids.forEachNear(edge.x(), edge.y(), 0, s -> {
+            if (s.samePlaceAs(edge)) removed[0] = s.kind();
+        });
+        if (removed[0] == null || !solids.removeIf(edge.x(), edge.y(), s -> s.samePlaceAs(edge))) {
+            return null;
         }
         bulletWalls.removeIf(edge.x(), edge.y(), s -> s.samePlaceAs(edge));
         for (Chunk chunk : WorldManager.chunks) {
             chunk.walls.removeIf(s -> s.samePlaceAs(edge));
             chunk.halfWalls.removeIf(s -> s.samePlaceAs(edge));
         }
-        return true;
+        return removed[0];
     }
 
     /**

@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 import assets.TextureId;
 import input.Input;
+import items.Item;
 import player.Player;
 
 /** Inventario, botón de pausa y cursor, en coordenadas de pantalla. */
@@ -13,6 +14,8 @@ public final class HudRenderer {
     /** Lado de la imagen de una casilla, en píxeles del dibujo. */
     private static final float CELL_PIXELS = 16;
     private static final float CURSOR_SIZE = 26;
+    /** Distancia del número de una pila al borde de su casilla, en píxeles del dibujo (el marco de selección mide 2). */
+    private static final int COUNT_INSET = 2;
 
     /** Escala del HUD (teclas N/M). */
     public static float hudScale;
@@ -37,20 +40,27 @@ public final class HudRenderer {
         float cellSize = CELL_PIXELS * pixel;
         float step = cellSize + pixel; // un píxel de separación
         float cellY = Math.round(height / 1.1f);
-        float firstX = Math.round((width - step * Player.INVENTORY_SLOTS) / 2);
+        float firstX = Math.round((width - step * Player.HOTBAR_SLOTS) / 2);
 
-        for (int i = 0; i < Player.INVENTORY_SLOTS; i++) {
+        for (int i = 0; i < Player.HOTBAR_SLOTS; i++) {
             float x = firstX + step * i;
             Draw.sprite(TextureId.NORMAL_CELL, x, cellY, cellSize, cellSize);
-            if (i < Player.inventory.size()) {
-                TextureRegion icon = TexturesManager.region(Player.inventory.get(i).icon);
+            Item item = Player.inventory.get(i);
+            int count = Player.inventory.count(i);
+            if (item != null) {
+                TextureRegion icon = TexturesManager.region(item.icon);
                 float iconWidth = icon.getRegionWidth() * iconPixel, iconHeight = icon.getRegionHeight() * iconPixel;
                 float iconX = x + Math.round((cellSize - iconWidth) / 2);
                 float iconY = cellY + Math.round((cellSize - iconHeight) / 2);
-                Draw.region(icon, iconX, iconY, iconWidth, iconHeight, 0);
+                StackDrawing.draw(icon, iconX, iconY, iconWidth, iconHeight, count, iconPixel);
             }
             if (i == Player.inventory.selectedSlot()) {
                 Draw.sprite(TextureId.SELECTED_CELL, x, cellY, cellSize, cellSize);
+            }
+            if (count > 1) {
+                // Abajo a la derecha, por dentro del marco de selección (2 px) y encima de él, para que no lo tape
+                float inset = COUNT_INSET * pixel;
+                StackDrawing.number(count, x + cellSize - inset, cellY + cellSize - inset, Math.max(2, pixel / 2));
             }
         }
 

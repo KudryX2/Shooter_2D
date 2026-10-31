@@ -166,7 +166,9 @@ final class WorldRenderer {
                 // (como las armas) queda a medio píxel y alguna fila o columna salta de uno a otro al moverse
                 float left = snapToArtPixel(dropped.x() - width / 2);
                 float top = snapToArtPixel(dropped.y() - height / 2);
-                Draw.region(region, screenX(left), screenY(top), width, height, 0);
+                // Un montón se ve como varias copias amontonadas
+                StackDrawing.draw(region, screenX(left), screenY(top), width, height, dropped.count(),
+                        DisplayManager.ART_PIXEL);
             }
         }
     }

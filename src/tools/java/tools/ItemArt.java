@@ -114,4 +114,33 @@ final class ItemArt {
         c.set(4, 3, 0xe85050);                    // brillo de la cruz
         return c.outlined();
     }
+
+    /** Cifras de 3x5 píxeles, fila a fila de arriba abajo ('#' = pintado). */
+    private static final String[] DIGITS = {
+        "####.##.##.####", // 0
+        ".#.##..#..#.###", // 1
+        "###..#####..###", // 2
+        "###..####..####", // 3
+        "#.##.####..#..#", // 4
+        "####..###..####", // 5
+        "####..####.####", // 6
+        "###..#..#..#..#", // 7
+        "####.#####.####", // 8
+        "####.####..####", // 9
+    };
+
+    /**
+     * Cifra {@code n} para contar objetos en el HUD (p.ej. una pila del inventario): 3x5 px en blanco con contorno
+     * oscuro, así que la imagen es de 5x7.
+     */
+    static BufferedImage digit(int n) {
+        Canvas c = new Canvas(5, 7);
+        String pattern = DIGITS[n];
+        for (int i = 0; i < pattern.length(); i++) {
+            if (pattern.charAt(i) == '#') {
+                c.set(1 + i % 3, 1 + i / 3, 0xf4f4ee);
+            }
+        }
+        return c.outlined();
+    }
 }

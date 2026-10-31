@@ -8,6 +8,7 @@ import java.util.List;
 import graphics.DisplayManager;
 import items.DroppedItem;
 import items.Item;
+import items.ItemStack;
 import items.Projectile;
 import npc.Npc;
 import player.Player;
@@ -54,7 +55,16 @@ public final class WorldManager {
     }
 
     public static void dropItem(Item item, float x, float y) {
-        closestChunk(x, y).droppedItems.add(new DroppedItem(item, x, y));
+        dropItem(item, 1, x, y);
+    }
+
+    /** Deja en el suelo {@code count} de {@code item} juntos, en un solo montón. */
+    public static void dropItem(Item item, int count, float x, float y) {
+        closestChunk(x, y).droppedItems.add(new DroppedItem(item, count, x, y));
+    }
+
+    public static void dropItem(ItemStack stack, float x, float y) {
+        dropItem(stack.item(), stack.count(), x, y);
     }
 
     /** Vacía el mundo por completo (chunks, estructuras, NPCs, proyectiles, efectos y contador). */

@@ -39,16 +39,22 @@ public final class BuildTool {
             canBuild = false;
             return;
         }
-        preview = Struct.snapped(aimX, aimY, item.kind, item.icon);
+        preview = Struct.snapped(aimX, aimY, item.kind, item.kind.texture);
         canBuild = canBuild(preview);
     }
 
-    /** Construye la vista previa, si se puede. */
-    static void build() {
-        if (preview != null && canBuild) {
-            Structures.build(preview);
-            canBuild = false; // ese borde ya está ocupado hasta el siguiente frame
+    /**
+     * Construye la vista previa, si se puede.
+     *
+     * @return {@code true} si ha construido (quien llama gasta el material)
+     */
+    static boolean build() {
+        if (preview == null || !canBuild) {
+            return false;
         }
+        Structures.build(preview);
+        canBuild = false; // ese borde ya está ocupado hasta el siguiente frame
+        return true;
     }
 
     /**
@@ -70,15 +76,18 @@ public final class BuildTool {
      * Derriba, si está al alcance, el muro del borde más cercano a (wx, wy) (el mismo que marcaría la vista
      * previa); si no hay, un suelo construido en esa casilla.
      *
-     * @return {@code true} si ha derribado algo
+     * @return qué ha derribado (para devolver el material), o {@code null} si nada
      */
-    static boolean demolish(float wx, float wy) {
+    static StructKind demolish(float wx, float wy) {
         Struct edge = Struct.snapped(wx, wy, StructKind.WALL, null);
-        if (inRange(edge) && Structures.removeWallAt(edge)) {
-            return true;
+        if (inRange(edge)) {
+            StructKind wall = Structures.removeWallAt(edge);
+            if (wall != null) {
+                return wall;
+            }
         }
         Struct tile = Struct.snapped(wx, wy, StructKind.FLOOR, null);
-        return inRange(tile) && Structures.removeBuiltFloorAt(tile.x(), tile.y());
+        return inRange(tile) && Structures.removeBuiltFloorAt(tile.x(), tile.y()) ? StructKind.FLOOR : null;
     }
 
     private static boolean inRange(Struct struct) {

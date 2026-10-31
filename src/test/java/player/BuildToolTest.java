@@ -94,16 +94,16 @@ class BuildToolTest {
         Structures.build(next);
         Structures.build(far);
 
-        assertTrue(BuildTool.demolish(wall.x() + 5, wall.y() - 3)); // apuntando cerca del muro
+        assertEquals(StructKind.WALL, BuildTool.demolish(wall.x() + 5, wall.y() - 3)); // apuntando cerca del muro
         assertFalse(Structures.hasWallAt(wall));
         assertFalse(Structures.isBlocked(wall.x(), wall.y(), 1, 1), "ya no bloquea el paso");
         assertTrue(Structures.hasWallAt(next), "el de al lado sigue en pie");
         assertTrue(WorldManager.chunks.stream().noneMatch(c -> c.walls.contains(wall)), "ya no se dibuja");
 
-        assertFalse(BuildTool.demolish(far.x(), far.y()), "fuera de alcance");
+        assertNull(BuildTool.demolish(far.x(), far.y()), "fuera de alcance");
         assertTrue(Structures.hasWallAt(far));
 
-        assertTrue(BuildTool.demolish(next.x(), next.y()), "también medios muros");
+        assertEquals(StructKind.HALF_WALL, BuildTool.demolish(next.x(), next.y()), "también medios muros");
         assertFalse(Structures.hasWallAt(next));
     }
 
@@ -112,9 +112,9 @@ class BuildToolTest {
         Structures.build(new Struct(Struct.SIZE, 0, StructKind.FLOOR, TextureId.GRASS)); // suelo del mapa
         Structures.build(new Struct(Struct.SIZE, 0, StructKind.FLOOR, TextureId.DIRT));  // construido encima
 
-        assertTrue(BuildTool.demolish(70, 5));
+        assertEquals(StructKind.FLOOR, BuildTool.demolish(70, 5));
         assertEquals(1, WorldManager.chunks.getFirst().floors.size());
         assertEquals(TextureId.GRASS, WorldManager.chunks.getFirst().floors.getFirst().texture());
-        assertFalse(BuildTool.demolish(70, 5), "el suelo del mapa no se quita");
+        assertNull(BuildTool.demolish(70, 5), "el suelo del mapa no se quita");
     }
 }

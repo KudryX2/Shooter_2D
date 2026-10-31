@@ -38,9 +38,9 @@ final class DemoWorld {
         System.out.println("Se han creado " + WorldManager.chunks.size() + " chunks");
 
         // Objetos en el suelo
-        WorldManager.dropItem(new StructItem(StructKind.WALL), -100, 500);
-        WorldManager.dropItem(new StructItem(StructKind.HALF_WALL), -100, 550);
-        WorldManager.dropItem(new StructItem(StructKind.FLOOR), -100, 600);
+        WorldManager.dropItem(new StructItem(StructKind.WALL), StructItem.MAX_STACK, -100, 500);
+        WorldManager.dropItem(new StructItem(StructKind.HALF_WALL), StructItem.MAX_STACK, -100, 550);
+        WorldManager.dropItem(new StructItem(StructKind.FLOOR), StructItem.MAX_STACK, -100, 600);
         WorldManager.dropItem(new Gun(GunType.SHOTGUN), 100, 900);
         WorldManager.dropItem(new Gun(GunType.SNIPER), 100, 950);
         WorldManager.dropItem(new Gun(GunType.ASSAULT_RIFLE), 100, 1000);

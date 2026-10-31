@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import assets.TextureId;
 import items.Gun;
 import items.Inventory;
-import items.Item;
+import items.ItemStack;
 import npc.brain.NpcBrain;
 import npc.brain.ZombieBrain;
 import util.GameClock;
@@ -208,8 +208,8 @@ public class Npc {
         if (kind == NpcKind.ZOMBIE) {
             WorldManager.zombiesKilled++;
         }
-        for (Item item : inventory.removeAll()) {
-            WorldManager.dropItem(item, x, y);
+        for (ItemStack stack : inventory.removeAll()) {
+            WorldManager.dropItem(stack, x, y);
         }
         hp = 0;
         texture = TextureId.BLOOD;

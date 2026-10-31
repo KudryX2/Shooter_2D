@@ -313,7 +313,7 @@ final class CharacterRenderer {
             drawSwingTrail(start, angle, side, tip, 1 - progress);
         }
         float width = region.getRegionWidth() * art, height = region.getRegionHeight() * art;
-        // Volteada según hacia dónde apunta, no según el ángulo del barrido: si no, se daría la vuelta a medio golpe
+        // Volteada según hacia dónde apunta, no según el ángulo del barrido (si no, giraría a medio golpe)
         Draw.sprite(melee.heldTexture, gripX - width / 2, gripY - height / 2, width, height, angle,
                 pointsLeft(rotation));
     }

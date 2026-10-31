@@ -18,4 +18,17 @@ public abstract sealed class Item permits Gun, MeleeWeapon, StructItem, Consumab
         this.icon = icon;
         this.heldTexture = heldTexture;
     }
+
+    /**
+     * Cuántos caben en una casilla del inventario. 1 = no se apila: cada uno es único (p.ej. un arma lleva su propio
+     * tiempo de recarga). Los que se apilan no deben cambiar nunca, porque una pila guarda uno solo y su cantidad.
+     */
+    public int maxStack() {
+        return 1;
+    }
+
+    /** {@code other} puede ir en la misma pila que este (son el mismo objeto a efectos de juego). */
+    public boolean stacksWith(Item other) {
+        return false;
+    }
 }

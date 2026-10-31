@@ -280,11 +280,10 @@ final class OutpostWorld {
         for (int i = 0; i < melee.length; i++) {
             item(new MeleeWeapon(melee[i]), 1 + i, -4); // cuerpo a cuerpo, al este
         }
-        item(new StructItem(StructKind.WALL), 2, 4);
-        item(new StructItem(StructKind.HALF_WALL), 3, 4);
-        item(new StructItem(StructKind.FLOOR), 4, 4);
-        item(Consumable.medkit(), -4, 4);
-        item(Consumable.medkit(), -3, 4);
+        item(new StructItem(StructKind.WALL), StructItem.MAX_STACK, 2, 4);
+        item(new StructItem(StructKind.HALF_WALL), StructItem.MAX_STACK, 3, 4);
+        item(new StructItem(StructKind.FLOOR), StructItem.MAX_STACK, 4, 4);
+        item(Consumable.medkit(), 3, -4, 4);
         // Guardias aliados entre la casa y los sacos terreros (solo disparan a zombis)
         human(NpcType.GUARD, -3, 7);
         human(NpcType.GUARD, 3, 7);
@@ -296,7 +295,7 @@ final class OutpostWorld {
         item(new MeleeWeapon(MeleeType.SHOVEL), 27, -6);
         item(new Gun(GunType.random()), 36, -6);
         item(new Gun(GunType.random()), 30, 6);
-        item(new StructItem(StructKind.HALF_WALL), 38, -7);
+        item(new StructItem(StructKind.HALF_WALL), 10, 38, -7);
         item(Consumable.medkit(), 24, -4);
         item(Consumable.medkit(), 32, 5);
         human(NpcType.CIVILIAN, 24, -6);
@@ -313,7 +312,7 @@ final class OutpostWorld {
         item(new Gun(GunType.ASSAULT_RIFLE), 32, 36);
         item(new Gun(GunType.SNIPER), 31, 38);
         item(new MeleeWeapon(MeleeType.MACHETE), 31, 36);
-        item(new StructItem(StructKind.WALL), 33, 38);
+        item(new StructItem(StructKind.WALL), 10, 33, 38);
         item(Consumable.medkit(), 29, 38);
         item(Consumable.medkit(), 33, 35);
         human(NpcType.SOLDIER, 21, 34);
@@ -341,7 +340,12 @@ final class OutpostWorld {
     }
 
     private void item(Item item, int x, int y) {
-        WorldManager.dropItem(item, px(x), px(y));
+        item(item, 1, x, y);
+    }
+
+    /** Un montón de {@code count} en la casilla (x, y). */
+    private void item(Item item, int count, int x, int y) {
+        WorldManager.dropItem(item, count, px(x), px(y));
     }
 
     private void human(NpcType type, int x, int y) {

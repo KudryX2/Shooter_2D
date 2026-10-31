@@ -2,15 +2,18 @@ package player;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import items.Consumable;
+import items.DroppedItem;
 import items.Gun;
 import items.GunType;
 import items.Projectile;
+import items.StructItem;
 import structs.Struct;
 import structs.StructKind;
 import util.GameClock;
@@ -138,7 +141,7 @@ class PlayerTest {
         Player.inventory.add(Consumable.medkit());
 
         assertFalse(Player.useSelectedConsumable());
-        assertEquals(1, Player.inventory.size());
+        assertEquals(1, Player.inventory.count(0));
     }
 
     @Test
@@ -150,34 +153,69 @@ class PlayerTest {
         assertFalse(Player.useSelectedConsumable(), "la casilla 0 es una pistola");
         Player.inventory.select(1);
         assertTrue(Player.useSelectedConsumable());
-        assertEquals(1, Player.inventory.size());
+        assertNull(Player.inventory.get(1), "gastado");
+        assertTrue(Player.inventory.get(0) instanceof Gun, "la pistola sigue ahí");
     }
 
     @Test
-    void carriesUpToTenItems() {
+    void fillsTheHotbarFirstAndThenTheBackpack() {
         WorldManager.activeChunks.addAll(WorldManager.chunks);
-        for (int i = 0; i < 11; i++) {
-            WorldManager.dropItem(Consumable.medkit(), 0, 0);
+        int slots = Player.HOTBAR_SLOTS + Player.BACKPACK_SLOTS;
+        for (int i = 0; i <= slots; i++) {
+            WorldManager.dropItem(new Gun(GunType.PISTOL), 0, 0);
         }
-        for (int i = 0; i < 11; i++) {
+        for (int i = 0; i <= slots; i++) {
             Player.pickUpItem();
         }
-        assertEquals(10, Player.inventory.size());
-        assertEquals(1, WorldManager.chunks.getFirst().droppedItems.size(), "el undécimo se queda en el suelo");
+        assertTrue(Player.inventory.get(Player.HOTBAR_SLOTS - 1) instanceof Gun, "barra rápida llena");
+        assertTrue(Player.inventory.get(slots - 1) instanceof Gun, "y la mochila también");
+        assertEquals(1, WorldManager.chunks.getFirst().droppedItems.size(), "el que sobra se queda en el suelo");
+    }
 
-        Player.inventory.select(9); // tecla 0
-        assertTrue(Player.selectedItem() instanceof Consumable);
+    @Test
+    void picksUpPilesAndLeavesWhatDoesNotFit() {
+        WorldManager.activeChunks.addAll(WorldManager.chunks);
+        for (int slot = 0; slot < Player.inventory.capacity() - 1; slot++) {
+            Player.inventory.add(new Gun(GunType.PISTOL)); // solo queda una casilla libre
+        }
+        WorldManager.dropItem(Consumable.medkit(), Consumable.MAX_STACK + 4, 0, 0);
+
+        Player.pickUpItem();
+        assertEquals(Consumable.MAX_STACK, Player.inventory.count(Player.inventory.capacity() - 1));
+        DroppedItem left = WorldManager.chunks.getFirst().droppedItems.getFirst();
+        assertEquals(4, left.count(), "lo que no cabe se queda en el suelo");
+    }
+
+    @Test
+    void droppingLeavesOneOnTheGround() {
+        Player.inventory.add(Consumable.medkit(), 3);
+        Player.dropSelectedItem();
+        assertEquals(2, Player.inventory.count(0));
+        assertEquals(1, WorldManager.chunks.getFirst().droppedItems.getFirst().count());
+    }
+
+    @Test
+    void buildingSpendsMaterialAndDemolishingGivesItBack() {
+        Player.inventory.add(new StructItem(StructKind.WALL), 2);
+        Player.aimAt(Struct.SIZE * 2, Struct.SIZE / 2f - Projectile.FLIGHT_HEIGHT); // borde de casilla al este
+        Player.updateBuildPreview();
+        Player.primaryAction(true);
+        assertEquals(1, Player.inventory.count(0), "gasta uno");
+
+        Player.secondaryAction(); // lo derriba
+        assertEquals(2, Player.inventory.count(0), "y lo recupera");
     }
 
     @Test
     void dyingDropsEverythingAndRespawnsWithFullHealth() {
         Player.inventory.add(new Gun(GunType.PISTOL));
-        Player.inventory.add(Consumable.medkit());
+        Player.inventory.add(Consumable.medkit(), 3);
         Player.hp = 0;
 
         Player.update();
         assertTrue(Player.inventory.isEmpty());
         assertEquals(2, WorldManager.chunks.getFirst().droppedItems.size());
+        assertEquals(3, WorldManager.chunks.getFirst().droppedItems.get(1).count(), "la pila entera");
         assertEquals(Player.MAX_HP, Player.hp);
         assertEquals(Player.spawnX(), Player.x);
     }

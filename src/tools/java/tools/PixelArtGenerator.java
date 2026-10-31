@@ -68,6 +68,7 @@ public final class PixelArtGenerator {
         save("3-halfWall-h", sandbags(bagLength, SANDBAG_THICKNESS, false));
         save("3-halfWall-v", sandbags(SANDBAG_THICKNESS, bagLength, true));
         save("3-halfWall", sandbagIcon());
+        save("3-floor", floorIcon());
 
         save("2-pointer", crosshair());
         save("0-bullet", ItemArt.bullet());
@@ -79,6 +80,9 @@ public final class PixelArtGenerator {
         save("2-selectedCell", ItemArt.selectedCell());
         save("4-blood", ItemArt.blood());
         save("7-medkit", ItemArt.medkit());
+        for (int n = 0; n <= 9; n++) {
+            save("2-digit_" + n, ItemArt.digit(n));
+        }
         for (GunArt.Gun gun : GunArt.Gun.values()) {
             save("5-" + gun.file, GunArt.icon(gun));
             save("6-" + gun.file, GunArt.held(gun));
@@ -309,6 +313,29 @@ public final class PixelArtGenerator {
         bagTops(image, 1, 5, 14, 3, false);
         bagFront(image, 1, 8, 14, 6);
         return image;
+    }
+
+    /**
+     * Icono del material de suelo: un bloque de césped visto en 3/4 (arriba el césped y delante el borde de tierra),
+     * con margen y contorno como los demás iconos. No es la textura que se construye, que ocupa la casilla entera.
+     */
+    private static BufferedImage floorIcon() {
+        Canvas c = new Canvas(TILE, TILE);
+        Random random = new Random(400);
+        for (int x = 2; x < 14; x++) {
+            for (int y = 3; y < 11; y++) {
+                c.set(x, y, GRASS[random.nextInt(GRASS.length)]);
+            }
+        }
+        for (int i = 0; i < 4; i++) { // matas
+            int x = 3 + random.nextInt(10), y = 5 + random.nextInt(5);
+            c.set(x, y, GRASS_DARK);
+            c.set(x, y - 1, GRASS_LIGHT);
+        }
+        c.rect(2, 3, 12, 1, GRASS_LIGHT);   // borde de arriba, iluminado
+        c.rect(2, 11, 12, 2, DIRT[0]);      // cara de delante: tierra
+        c.rect(2, 12, 12, 1, DIRT[3]);
+        return c.outlined();
     }
 
     // ---------------------------------------------------------------------------------------------

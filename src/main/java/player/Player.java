@@ -5,17 +5,19 @@ import static util.Geometry.dirX;
 import static util.Geometry.dirY;
 import static util.Geometry.distance;
 
-import java.util.Iterator;
+import java.util.ListIterator;
 
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
 import items.Inventory;
 import items.Item;
+import items.ItemStack;
 import items.MeleeWeapon;
 import items.Projectile;
 import items.StructItem;
 import structs.Struct;
+import structs.StructKind;
 import util.GameClock;
 import util.WalkCycle;
 import world.Chunk;
@@ -31,8 +33,10 @@ public final class Player {
     /** Punto de inicio si el mundo no pone otro ({@link #setSpawn}): el centro de la casilla (9, 9). */
     public static final float DEFAULT_SPAWN_X = 9 * Struct.SIZE;
     public static final float DEFAULT_SPAWN_Y = 9 * Struct.SIZE;
-    /** Casillas del inventario; se seleccionan con 1-9, 0 y la rueda. */
-    public static final int INVENTORY_SLOTS = 10;
+    /** Casillas de la barra rápida; se seleccionan con 1-9, 0 y la rueda. */
+    public static final int HOTBAR_SLOTS = 10;
+    /** Casillas de la mochila (3 filas de la barra rápida). */
+    public static final int BACKPACK_SLOTS = 30;
     public static final int MAX_HP = 100;
     /** Distancia del centro a la boca del arma, de donde salen las balas (el arma se dibuja para que encaje). */
     public static final float HAND_OFFSET = 40;
@@ -46,7 +50,7 @@ public final class Player {
     /** Hacia dónde mira, en grados (ver {@link util.Geometry}). */
     public static float rotation;
     public static int hp;
-    public static final Inventory inventory = new Inventory(INVENTORY_SLOTS);
+    public static final Inventory inventory = new Inventory(HOTBAR_SLOTS + BACKPACK_SLOTS, HOTBAR_SLOTS);
     /** Para la animación de andar. */
     public static final WalkCycle walkCycle = new WalkCycle();
     private static float spawnX = DEFAULT_SPAWN_X, spawnY = DEFAULT_SPAWN_Y;
@@ -141,18 +145,25 @@ public final class Player {
             gun.shoot(x, y, muzzleX, muzzleY, rotation, true, justPressed);
         } else if (item instanceof MeleeWeapon melee) {
             melee.swing(x, y, rotation);
-        } else if (item instanceof StructItem && justPressed) {
-            BuildTool.build();
+        } else if (item instanceof StructItem && justPressed && BuildTool.build()) {
+            inventory.removeSelected(); // gasta el material
         }
     }
 
     /**
-     * Botón derecho: con un objeto construible en la mano derriba lo apuntado; con un consumible, lo usa. Con
-     * un arma no hace nada, para no derribar muros sin querer.
+     * Botón derecho: con un objeto construible en la mano derriba lo apuntado (y recupera su material: al
+     * inventario o, si no cabe, al suelo); con un consumible, lo usa. Con un arma no hace nada, para no derribar
+     * muros sin querer.
      */
     public static void secondaryAction() {
         if (selectedItem() instanceof StructItem) {
-            BuildTool.demolish(aimX, aimY);
+            StructKind demolished = BuildTool.demolish(aimX, aimY);
+            if (demolished != null) {
+                StructItem material = new StructItem(demolished);
+                if (!inventory.add(material)) {
+                    WorldManager.dropItem(material, x, y);
+                }
+            }
         } else {
             useSelectedConsumable();
         }
@@ -180,18 +191,22 @@ public final class Player {
         }
     }
 
-    /** Coge un objeto del suelo que esté al lado, si cabe en el inventario. */
+    /**
+     * Coge un objeto (o un montón) del suelo que esté al lado y quepa en el inventario. Si del montón no cabe todo,
+     * lo que sobra se queda en el suelo.
+     */
     public static void pickUpItem() {
-        if (inventory.isFull()) {
-            return;
-        }
         for (Chunk chunk : WorldManager.activeChunks) {
-            Iterator<DroppedItem> it = chunk.droppedItems.iterator();
+            ListIterator<DroppedItem> it = chunk.droppedItems.listIterator();
             while (it.hasNext()) {
                 DroppedItem dropped = it.next();
-                if (distance(dropped.x(), dropped.y(), x, y) < PICKUP_RANGE) {
-                    it.remove();
-                    inventory.add(dropped.item());
+                if (distance(dropped.x(), dropped.y(), x, y) < PICKUP_RANGE && inventory.canAdd(dropped.item())) {
+                    int left = inventory.add(dropped.item(), dropped.count());
+                    if (left == 0) {
+                        it.remove();
+                    } else {
+                        it.set(new DroppedItem(dropped.item(), left, dropped.x(), dropped.y()));
+                    }
                     return;
                 }
             }
@@ -204,8 +219,8 @@ public final class Player {
 
     /** Suelta todo lo que lleva donde está. */
     public static void die() {
-        for (Item item : inventory.removeAll()) {
-            WorldManager.dropItem(item, x, y);
+        for (ItemStack stack : inventory.removeAll()) {
+            WorldManager.dropItem(stack, x, y);
         }
     }
 

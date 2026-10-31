@@ -30,6 +30,8 @@ public enum TextureId {
     HP_MEDIUM("2-hp1"),
     HP_LOW("2-hp2"),
     HP_BACKGROUND("2-hpFont"),
+    /** Cifras del 0 al 9 (variantes {@code _0} a {@code _9}) para cantidades, p.ej. las pilas del inventario. */
+    DIGITS("2-digit"),
 
     // Entorno, en pixel art (assets-raw/textures/pixel, generados con la tarea generateArt). En los suelos, las
     // imágenes numeradas no son una animación sino variantes: cada casilla elige una según su posición.
@@ -45,6 +47,8 @@ public enum TextureId {
     HALF_WALL("3-halfWall"),
     HALF_WALL_H("3-halfWall-h"),
     HALF_WALL_V("3-halfWall-v"),
+    /** Icono del material de suelo (en el mundo se dibuja con su textura, p.ej. {@link #GRASS}). */
+    FLOOR_ICON("3-floor"),
 
     // Armas en pixel art: icono (inventario y suelo) y en la mano (con la empuñadura en el centro de la imagen)
     PISTOL_ICON("5-pistol"),
