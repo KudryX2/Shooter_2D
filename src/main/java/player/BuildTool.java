@@ -6,6 +6,7 @@ import items.Item;
 import items.StructItem;
 import structs.Struct;
 import structs.StructKind;
+import world.Container;
 import world.Structures;
 
 /**
@@ -58,14 +59,14 @@ public final class BuildTool {
     }
 
     /**
-     * Se puede construir al alcance, y un muro solo en un borde libre y sin quedar encima del jugador. Si deja
-     * huecos con los muros vecinos es cosa del jugador.
+     * Se puede construir al alcance; lo que bloquea el paso (un muro o una caja), solo en un sitio libre y sin quedar
+     * encima del jugador. Si deja huecos con los muros vecinos es cosa del jugador.
      */
     static boolean canBuild(Struct struct) {
         if (distance(struct.x(), struct.y(), Player.x, Player.y) > RANGE) {
             return false;
         }
-        if (!struct.isWall()) {
+        if (!struct.kind().solid) {
             return true;
         }
         float half = Player.SIZE / 2;
@@ -73,12 +74,18 @@ public final class BuildTool {
     }
 
     /**
-     * Derriba, si está al alcance, el muro del borde más cercano a (wx, wy) (el mismo que marcaría la vista
-     * previa); si no hay, un suelo construido en esa casilla.
+     * Derriba, si está al alcance, la caja de la casilla de (wx, wy) (lo que tuviera dentro queda esparcido); si
+     * no hay, el muro del borde más cercano (el mismo que marcaría la vista previa), y si tampoco, un suelo
+     * construido en esa casilla.
      *
      * @return qué ha derribado (para devolver el material), o {@code null} si nada
      */
     static StructKind demolish(float wx, float wy) {
+        Container crate = Structures.containerAt(wx, wy);
+        if (crate != null && inRange(crate.struct)) {
+            Structures.remove(crate);
+            return crate.struct.kind();
+        }
         Struct edge = Struct.snapped(wx, wy, StructKind.WALL, null);
         if (inRange(edge)) {
             StructKind wall = Structures.removeWallAt(edge);

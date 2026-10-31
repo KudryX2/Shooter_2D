@@ -6,9 +6,10 @@ import assets.TextureId;
  * Estructura construida en el mundo, centrada en (x, y).
  *
  * <p>El mundo es una cuadrícula de casillas de {@link #SIZE} px; la casilla (i, j) está centrada en
- * (i * SIZE, j * SIZE). Los suelos ocupan una casilla entera. Los muros y medios muros son finos y van sobre
- * los bordes entre casillas: horizontales ({@code vertical = false}) o verticales. Miden una casilla de largo
- * más su grosor, para que dos muros que se juntan en una esquina se solapen y no quede hueco.
+ * (i * SIZE, j * SIZE). Los suelos ocupan una casilla entera y las cajas, un rectángulo en su centro. Los muros y
+ * medios muros son finos y van sobre los bordes entre casillas: horizontales ({@code vertical = false}) o
+ * verticales. Miden una casilla de largo más su grosor, para que dos muros que se juntan en una esquina se solapen y
+ * no quede hueco.
  */
 public record Struct(float x, float y, StructKind kind, TextureId texture, boolean vertical) {
     public static final float SIZE = 64;
@@ -18,6 +19,11 @@ public record Struct(float x, float y, StructKind kind, TextureId texture, boole
     /** Suelo, o muro horizontal. */
     public Struct(float x, float y, StructKind kind, TextureId texture) {
         this(x, y, kind, texture, false);
+    }
+
+    /** Suelo o caja en la casilla (tileX, tileY). */
+    public static Struct onTile(int tileX, int tileY, StructKind kind) {
+        return new Struct(tileX * SIZE, tileY * SIZE, kind, kind.texture, false);
     }
 
     /** Muro horizontal en el borde norte de la casilla (tileX, tileY). */
@@ -31,13 +37,13 @@ public record Struct(float x, float y, StructKind kind, TextureId texture, boole
     }
 
     /**
-     * La estructura que se construiría apuntando a (x, y): un suelo va a la casilla que hay debajo; un muro, al
-     * borde más cercano, y su orientación sale de ese borde.
+     * La estructura que se construiría apuntando a (x, y): un suelo o una caja van a la casilla que hay debajo; un
+     * muro, al borde más cercano, y su orientación sale de ese borde.
      */
     public static Struct snapped(float x, float y, StructKind kind, TextureId texture) {
         float tileX = Math.round(x / SIZE) * SIZE;
         float tileY = Math.round(y / SIZE) * SIZE;
-        if (kind == StructKind.FLOOR) {
+        if (!kind.isWall) {
             return new Struct(tileX, tileY, kind, texture);
         }
         // Los bordes están a media casilla de los centros
@@ -64,11 +70,11 @@ public record Struct(float x, float y, StructKind kind, TextureId texture, boole
 
     /** Mitad del alto (eje y) de su caja. */
     public float halfHeight() {
-        return (vertical ? length() : thickness()) / 2;
+        return (vertical ? length() : isWall() ? thickness() : kind.depth()) / 2;
     }
 
     private float length() {
-        return isWall() ? SIZE + thickness() : SIZE;
+        return isWall() ? SIZE + thickness() : thickness(); // en lo que va en una casilla, su ancho
     }
 
     /** {@code true} si su caja se solapa con la caja centrada en (x, y) de medio ancho halfW y medio alto halfH. */

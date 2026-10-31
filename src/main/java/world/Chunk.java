@@ -13,6 +13,7 @@ public final class Chunk {
     public final List<Struct> walls = new ArrayList<>();     // colisionan con jugador, NPC y proyectiles
     public final List<Struct> halfWalls = new ArrayList<>(); // colisionan con jugador y NPC
     public final List<Struct> floors = new ArrayList<>();    // sin colisión
+    public final List<Container> containers = new ArrayList<>(); // colisionan con jugador y NPC
 
     public Chunk(float x, float y) {
         this.x = x;
@@ -24,6 +25,7 @@ public final class Chunk {
             case WALL -> walls.add(struct);
             case HALF_WALL -> halfWalls.add(struct);
             case FLOOR -> floors.add(struct);
+            case CRATE -> containers.add(new Container(struct));
             default -> throw new IllegalArgumentException("No es una estructura: " + struct.kind());
         }
     }

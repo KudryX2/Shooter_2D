@@ -21,7 +21,9 @@ import structs.StructKind;
 import util.GameClock;
 import util.WalkCycle;
 import world.Chunk;
+import world.Container;
 import world.Movement;
+import world.Structures;
 import world.WorldManager;
 
 /**
@@ -45,6 +47,10 @@ public final class Player {
     /** Paso máximo entre comprobaciones de muros, para no atravesar uno fino si un frame va lento. */
     private static final float MAX_STEP = 8;
     private static final float PICKUP_RANGE = 50;
+    /** Distancia (al centro de la caja) a la que se puede abrir un contenedor... */
+    static final float OPEN_RANGE = 80;
+    /** ...y a la que se cierra solo al alejarse (algo más, para que no se cierre por moverse un poco). */
+    static final float CLOSE_RANGE = 110;
 
     public static float x, y;
     /** Hacia dónde mira, en grados (ver {@link util.Geometry}). */
@@ -62,12 +68,15 @@ public final class Player {
     public static float aimX = Float.NaN, aimY = Float.NaN;
     /** Arma que está recargando, o {@code null}. */
     private static Gun reloading;
+    /** Contenedor abierto (su inventario se ve junto al del jugador), o {@code null}. */
+    private static Container openContainer;
 
     private Player() {
     }
 
     public static void create() {
         cancelReload();
+        closeContainer();
         teleportToSpawn();
         hp = MAX_HP;
         inventory.select(0);
@@ -77,6 +86,7 @@ public final class Player {
     /** Avanza la recarga y muere si se ha quedado sin vida. Una vez por frame, después de sus acciones. */
     public static void update() {
         updateReload();
+        updateOpenContainer();
         if (hp <= 0) {
             die();
             respawn();
@@ -196,6 +206,54 @@ public final class Player {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // Contenedores
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * E: abre el contenedor al alcance o coge lo que haya en el suelo al lado, lo que esté más cerca (así se puede
+     * recoger algo tirado junto a una caja).
+     */
+    public static void interact() {
+        Container nearest = Structures.nearestContainer(x, y, OPEN_RANGE);
+        if (nearest != null && distance(x, y, nearest.struct.x(), nearest.struct.y()) <= nearestPickableDistance()) {
+            openContainer = nearest;
+        } else {
+            pickUpItem();
+        }
+    }
+
+    /** Distancia al objeto del suelo más cercano que se podría coger, o infinito si no hay ninguno al alcance. */
+    private static float nearestPickableDistance() {
+        float best = Float.POSITIVE_INFINITY;
+        for (Chunk chunk : WorldManager.activeChunks) {
+            for (DroppedItem dropped : chunk.droppedItems) {
+                float d = distance(dropped.x(), dropped.y(), x, y);
+                if (d < PICKUP_RANGE && d < best && inventory.canAdd(dropped.item())) {
+                    best = d;
+                }
+            }
+        }
+        return best;
+    }
+
+    /** El contenedor abierto, o {@code null}. */
+    public static Container openContainer() {
+        return openContainer;
+    }
+
+    public static void closeContainer() {
+        openContainer = null;
+    }
+
+    /** Se cierra solo si se ha roto o el jugador se ha alejado. */
+    private static void updateOpenContainer() {
+        if (openContainer != null && (openContainer.isRemoved()
+                || distance(x, y, openContainer.struct.x(), openContainer.struct.y()) > CLOSE_RANGE)) {
+            closeContainer();
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Recarga
     // ---------------------------------------------------------------------------------------------
 
@@ -235,7 +293,12 @@ public final class Player {
 
     /** Tira al suelo la pila entera de la casilla {@code slot} (p.ej. arrastrándola fuera del inventario). */
     public static void dropStack(int slot) {
-        ItemStack stack = inventory.removeStack(slot);
+        dropStack(inventory, slot);
+    }
+
+    /** Tira junto al jugador la pila entera de una casilla de {@code from} (el suyo o un contenedor abierto). */
+    public static void dropStack(Inventory from, int slot) {
+        ItemStack stack = from.removeStack(slot);
         if (stack != null) {
             WorldManager.dropItem(stack, x, y);
         }
@@ -270,6 +333,7 @@ public final class Player {
     /** Suelta todo lo que lleva donde está. */
     public static void die() {
         cancelReload();
+        closeContainer();
         for (ItemStack stack : inventory.removeAll()) {
             WorldManager.dropItem(stack, x, y);
         }

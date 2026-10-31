@@ -53,6 +53,9 @@ public enum TextureId {
     HALF_WALL_V("3-halfWall-v"),
     /** Icono del material de suelo (en el mundo se dibuja con su textura, p.ej. {@link #GRASS}). */
     FLOOR_ICON("3-floor"),
+    /** Caja de madera vista en 3/4 (en el mundo) y su icono. */
+    CRATE("3-crate"),
+    CRATE_ICON("3-crateIcon"),
 
     // Armas en pixel art: icono (inventario y suelo) y en la mano (con la empuñadura en el centro de la imagen)
     PISTOL_ICON("5-pistol"),

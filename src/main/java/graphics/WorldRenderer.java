@@ -19,10 +19,11 @@ import player.Player;
 import structs.Struct;
 import structs.StructKind;
 import world.Chunk;
+import world.Container;
 import world.WorldManager;
 
 /**
- * Suelos, muros (con sus sombras), vista previa de construcción y objetos tirados.
+ * Suelos, muros y cajas (con sus sombras), vista previa de construcción y objetos tirados.
  *
  * <p>Vista en 3/4: la base de un muro (su caja de colisión) está en el suelo y el muro "sube" en pantalla
  * {@link #height} unidades, así que se ve su remate arriba y su cara frontal (la que mira al sur) debajo. El orden
@@ -34,6 +35,7 @@ final class WorldRenderer {
     /** Altura de la cara frontal; tiene que cuadrar con los PNG de {@code tools.PixelArtGenerator}. */
     static final float WALL_HEIGHT = 48;
     static final float HALF_WALL_HEIGHT = 24;
+    static final float CRATE_HEIGHT = 32;
     private static final float WALL_SHADOW_OFFSET = 8;
     private static final float HALF_WALL_SHADOW_OFFSET = 4;
 
@@ -82,23 +84,34 @@ final class WorldRenderer {
         for (Chunk chunk : WorldManager.activeChunks) {
             drawShadows(chunk.walls, WALL_SHADOW_OFFSET);
             drawShadows(chunk.halfWalls, HALF_WALL_SHADOW_OFFSET);
+            for (Container container : chunk.containers) {
+                drawShadow(container.struct, HALF_WALL_SHADOW_OFFSET);
+            }
         }
     }
 
     /** Sombra de la base, desplazada hacia abajo a la derecha; con el mismo desplazamiento todas encajan entre sí. */
     private static void drawShadows(List<Struct> structs, float offset) {
-        ShapeRenderer shapes = Draw.shapes();
-        shapes.setColor(0, 0, 0, SHADOW_ALPHA);
         for (Struct s : structs) {
-            if (isVisible(s.x(), s.y())) {
-                float w = s.halfWidth() * 2, h = s.halfHeight() * 2;
-                shapes.rect(screenX(s.x()) - w / 2 + offset, screenY(s.y()) - h / 2 + offset, w, h);
-            }
+            drawShadow(s, offset);
+        }
+    }
+
+    private static void drawShadow(Struct s, float offset) {
+        if (isVisible(s.x(), s.y())) {
+            ShapeRenderer shapes = Draw.shapes();
+            shapes.setColor(0, 0, 0, SHADOW_ALPHA);
+            float w = s.halfWidth() * 2, h = s.halfHeight() * 2;
+            shapes.rect(screenX(s.x()) - w / 2 + offset, screenY(s.y()) - h / 2 + offset, w, h);
         }
     }
 
     static float height(Struct s) {
-        return s.kind() == StructKind.WALL ? WALL_HEIGHT : HALF_WALL_HEIGHT;
+        return switch (s.kind()) {
+            case WALL -> WALL_HEIGHT;
+            case CRATE -> CRATE_HEIGHT;
+            default -> HALF_WALL_HEIGHT;
+        };
     }
 
     /** Hasta dónde llega la base por abajo (el sur): lo que está más al sur se dibuja encima. */
@@ -112,13 +125,16 @@ final class WorldRenderer {
     }
 
     private static TextureId sideTexture(Struct s) {
+        if (s.kind() == StructKind.CRATE) {
+            return TextureId.CRATE;
+        }
         if (s.kind() == StructKind.WALL) {
             return s.vertical() ? TextureId.WALL_V : TextureId.WALL_H;
         }
         return s.vertical() ? TextureId.HALF_WALL_V : TextureId.HALF_WALL_H;
     }
 
-    /** Muro o saco terrero en 3/4, con el tinte actual. */
+    /** Muro, saco terrero o caja en 3/4, con el tinte actual. */
     static void drawWall(Struct s) {
         float w = s.halfWidth() * 2;
         float top = spriteTop(s);
@@ -136,7 +152,7 @@ final class WorldRenderer {
         } else {
             Draw.tint(1f, 0.4f, 0.4f, 0.7f);
         }
-        if (preview.isWall()) {
+        if (preview.kind() != StructKind.FLOOR) {
             drawWall(preview);
         } else {
             drawFloor(preview);

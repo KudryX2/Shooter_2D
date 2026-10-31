@@ -157,4 +157,23 @@ class InventoryTest {
         assertEquals(3, all.getFirst().count());
         assertTrue(inventory.isEmpty());
     }
+
+    @Test
+    void transferringSendsTheWholeStackAndKeepsWhatDoesNotFit() {
+        Inventory crate = new Inventory(3);
+        Inventory player = new Inventory(1);
+        crate.add(Consumable.medkit(), Consumable.MAX_STACK);
+        player.add(Consumable.medkit(), Consumable.MAX_STACK - 4); // solo caben 4 más
+
+        crate.transfer(0, player);
+        assertEquals(Consumable.MAX_STACK, player.count(0));
+        assertEquals(Consumable.MAX_STACK - 4, crate.count(0), "lo que no cabe se queda");
+
+        Gun gun = new Gun(GunType.PISTOL);
+        Inventory other = new Inventory(2);
+        other.add(gun);
+        other.transfer(0, crate);
+        assertNull(other.get(0));
+        assertSame(gun, crate.get(1));
+    }
 }

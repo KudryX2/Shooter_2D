@@ -14,7 +14,11 @@ import items.Consumable;
 import items.Gun;
 import items.GunType;
 import player.Player;
+import structs.Struct;
+import structs.StructKind;
 import world.Chunk;
+import world.Container;
+import world.Structures;
 import world.WorldManager;
 
 class InventoryPanelTest {
@@ -51,11 +55,12 @@ class InventoryPanelTest {
     @Test
     void everySlotIsFoundAtItsCenterAndTheBackpackIsAboveTheHotbar() {
         for (int slot = 0; slot < SLOTS; slot++) {
-            assertEquals(slot, InventoryLayout.slotAt(centerX(slot), centerY(slot), true), "casilla " + slot);
+            assertEquals(slot, InventoryLayout.slotAt(centerX(slot), centerY(slot), true, false), "casilla " + slot);
         }
         assertTrue(InventoryLayout.slotY(Player.HOTBAR_SLOTS) < InventoryLayout.slotY(SLOTS - 1), "filas en orden");
         assertTrue(InventoryLayout.slotY(SLOTS - 1) < InventoryLayout.slotY(0), "mochila encima de la barra");
-        assertEquals(-1, InventoryLayout.slotAt(centerX(Player.HOTBAR_SLOTS), centerY(Player.HOTBAR_SLOTS), false),
+        int backpack = Player.HOTBAR_SLOTS;
+        assertEquals(-1, InventoryLayout.slotAt(centerX(backpack), centerY(backpack), false, false),
                 "cerrado, la mochila no cuenta");
         assertTrue(InventoryLayout.slotY(Player.HOTBAR_SLOTS) > 0, "cabe en la pantalla");
     }
@@ -65,7 +70,7 @@ class InventoryPanelTest {
         float backpackPanelBottom = InventoryLayout.backpackPanelTop() + InventoryLayout.backpackPanelHeight();
         float gap = InventoryLayout.hotbarPanelTop() - backpackPanelBottom;
         assertEquals(InventoryLayout.hotbarPanelHeight(), gap, 0.01f);
-        assertTrue(InventoryLayout.panelContains(DisplayManager.WIDTH / 2f, backpackPanelBottom + gap / 2),
+        assertTrue(InventoryLayout.panelContains(DisplayManager.WIDTH / 2f, backpackPanelBottom + gap / 2, false),
                 "soltar en el hueco no tira nada");
     }
 
@@ -129,5 +134,49 @@ class InventoryPanelTest {
         InventoryPanel.toggle();
         assertFalse(InventoryPanel.isOpen());
         assertEquals(-1, InventoryPanel.draggedSlot());
+    }
+
+    @Test
+    void openingACrateOpensThePanelAndItemsCanBeDraggedBetweenBoth() {
+        InventoryPanel.toggle(); // empieza cerrado
+        Container crate = Structures.buildContainer(Struct.onTile(1, 0, StructKind.CRATE));
+        crate.inventory.add(Consumable.medkit(), 2);
+        Player.interact();
+        InventoryPanel.followContainer();
+        assertTrue(InventoryPanel.isOpen(), "se abre con la caja");
+
+        int crateSlot = InventoryLayout.CONTAINER_FIRST;
+        int backpack = Player.HOTBAR_SLOTS;
+        assertTrue(InventoryLayout.slotY(crateSlot) < InventoryLayout.backpackPanelTop(), "encima de la mochila");
+        assertTrue(InventoryLayout.slotY(crateSlot) > 0, "cabe en la pantalla");
+        InventoryPanel.startDrag(centerX(crateSlot), centerY(crateSlot));
+        InventoryPanel.release(centerX(backpack), centerY(backpack));
+        assertNull(crate.inventory.get(0));
+        assertEquals(2, Player.inventory.count(backpack));
+
+        Player.closeContainer(); // p.ej. al alejarse
+        InventoryPanel.followContainer();
+        assertFalse(InventoryPanel.isOpen(), "se cierra con la caja");
+    }
+
+    @Test
+    void shiftRightClickSendsAStackToTheOtherSide() {
+        Container crate = Structures.buildContainer(Struct.onTile(1, 0, StructKind.CRATE));
+        crate.inventory.add(Consumable.medkit(), 3);
+        Player.inventory.add(new Gun(GunType.PISTOL));
+
+        InventoryPanel.quickMove(centerX(0), centerY(0)); // sin caja abierta: nada
+        assertTrue(Player.inventory.get(0) instanceof Gun);
+
+        Player.interact();
+        int crateSlot = InventoryLayout.CONTAINER_FIRST;
+        InventoryPanel.quickMove(centerX(crateSlot), centerY(crateSlot));
+        assertNull(crate.inventory.get(0));
+        assertEquals(3, Player.inventory.count(1), "de la caja al inventario");
+
+        InventoryPanel.quickMove(centerX(0), centerY(0));
+        assertNull(Player.inventory.get(0));
+        assertTrue(crate.inventory.get(0) instanceof Gun, "y del inventario a la caja");
+        Player.closeContainer();
     }
 }

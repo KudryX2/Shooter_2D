@@ -12,6 +12,7 @@ import items.AmmoType;
 import items.Consumable;
 import items.Gun;
 import items.GunType;
+import items.Inventory;
 import items.Item;
 import items.MeleeType;
 import items.MeleeWeapon;
@@ -273,8 +274,8 @@ final class OutpostWorld {
     }
 
     private void populate() {
-        // Casa inicial: armeros al norte (una de cada arma, para probarlas), materiales junto al banco de trabajo
-        // y botiquines enfrente
+        // Casa inicial: armeros al norte (una de cada arma, para probarlas), botiquines al sur y, junto al banco de
+        // trabajo, una caja de madera con la munición y los materiales (también cajas para construir más)
         GunType[] guns = GunType.values();
         for (int i = 0; i < guns.length; i++) {
             item(new Gun(guns[i]), -4 + i, -4);  // de fuego, al oeste de la ventana
@@ -283,15 +284,16 @@ final class OutpostWorld {
         for (int i = 0; i < melee.length; i++) {
             item(new MeleeWeapon(melee[i]), 1 + i, -4); // cuerpo a cuerpo, al este
         }
-        item(new StructItem(StructKind.WALL), StructItem.MAX_STACK, 2, 4);
-        item(new StructItem(StructKind.HALF_WALL), StructItem.MAX_STACK, 3, 4);
-        item(new StructItem(StructKind.FLOOR), StructItem.MAX_STACK, 4, 4);
         item(Consumable.medkit(), 3, -4, 4);
-        // Una caja de cada munición junto a los botiquines
-        item(new AmmoBox(AmmoType.PISTOL, AmmoBox.CAPACITY), -3, 4);
-        item(new AmmoBox(AmmoType.SHOTGUN, 60), -2, 4);
-        item(new AmmoBox(AmmoType.RIFLE, AmmoBox.CAPACITY), -1, 4);
-        item(new AmmoBox(AmmoType.SNIPER, 40), 0, 4);
+        Inventory storage = crate(4, 4);
+        storage.add(new AmmoBox(AmmoType.PISTOL, AmmoBox.CAPACITY));
+        storage.add(new AmmoBox(AmmoType.SHOTGUN, 60));
+        storage.add(new AmmoBox(AmmoType.RIFLE, AmmoBox.CAPACITY));
+        storage.add(new AmmoBox(AmmoType.SNIPER, 40));
+        storage.add(new StructItem(StructKind.WALL), StructItem.MAX_STACK);
+        storage.add(new StructItem(StructKind.HALF_WALL), StructItem.MAX_STACK);
+        storage.add(new StructItem(StructKind.FLOOR), StructItem.MAX_STACK);
+        storage.add(new StructItem(StructKind.CRATE), 3);
         // Guardias aliados entre la casa y los sacos terreros (solo disparan a zombis)
         human(NpcType.GUARD, -3, 7);
         human(NpcType.GUARD, 3, 7);
@@ -306,8 +308,10 @@ final class OutpostWorld {
         item(new StructItem(StructKind.HALF_WALL), 10, 38, -7);
         item(Consumable.medkit(), 24, -4);
         item(Consumable.medkit(), 32, 5);
-        item(new AmmoBox(AmmoType.PISTOL, 50), 25, -4);
-        item(new AmmoBox(AmmoType.SHOTGUN, 30), 33, 5);
+        crate(28, -7).add(new AmmoBox(AmmoType.PISTOL, 50));
+        Inventory hutCrate = crate(33, 7);
+        hutCrate.add(new AmmoBox(AmmoType.SHOTGUN, 30));
+        hutCrate.add(Consumable.medkit());
         human(NpcType.CIVILIAN, 24, -6);
         human(NpcType.CIVILIAN, 28, -5);
         human(NpcType.CIVILIAN, 34, -5);
@@ -322,11 +326,13 @@ final class OutpostWorld {
         item(new Gun(GunType.ASSAULT_RIFLE), 32, 36);
         item(new Gun(GunType.SNIPER), 31, 38);
         item(new MeleeWeapon(MeleeType.MACHETE), 31, 36);
-        item(new StructItem(StructKind.WALL), 10, 33, 38);
         item(Consumable.medkit(), 29, 38);
-        item(Consumable.medkit(), 33, 35);
-        item(new AmmoBox(AmmoType.RIFLE, AmmoBox.CAPACITY), 30, 38);
-        item(new AmmoBox(AmmoType.SNIPER, 30), 32, 38);
+        Inventory armory = crate(33, 39);
+        armory.add(new AmmoBox(AmmoType.RIFLE, AmmoBox.CAPACITY));
+        armory.add(new AmmoBox(AmmoType.RIFLE, 60));
+        armory.add(new AmmoBox(AmmoType.SNIPER, 30));
+        armory.add(new StructItem(StructKind.WALL), 10);
+        armory.add(Consumable.medkit(), 2);
         human(NpcType.SOLDIER, 21, 34);
         human(NpcType.SOLDIER, 25, 40);
         human(NpcType.SOLDIER, 19, 40);
@@ -353,6 +359,11 @@ final class OutpostWorld {
 
         // Zombis sueltos por todo el mapa
         zombies(LOOSE_ZOMBIES, -HALF_TILES, -HALF_TILES, HALF_TILES - 1, HALF_TILES - 1);
+    }
+
+    /** Caja de madera en la casilla (x, y); devuelve su inventario para llenarla. */
+    private Inventory crate(int x, int y) {
+        return Structures.buildContainer(Struct.onTile(x, y, StructKind.CRATE)).inventory;
     }
 
     private void item(Item item, int x, int y) {

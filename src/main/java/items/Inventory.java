@@ -128,36 +128,64 @@ public final class Inventory implements Iterable<Item> {
     }
 
     /**
+     * Pasa la pila entera de la casilla {@code slot} a {@code target}, donde se guarda como al recoger algo
+     * ({@link #add(Item, int)}: completando pilas y luego en huecos). Lo que no quepa se queda en la casilla.
+     */
+    public void transfer(int slot, Inventory target) {
+        Item item = items[slot];
+        if (item == null || target == this) {
+            return;
+        }
+        int left = target.add(item, counts[slot]);
+        counts[slot] = left;
+        if (left == 0) {
+            items[slot] = null;
+        }
+    }
+
+    /**
      * Mueve lo de la casilla {@code from} a {@code to}: si allí hay una pila del mismo objeto la completa (y lo que
      * sobre se queda en {@code from}); si hay otra cosa, las intercambia.
      */
     public void move(int from, int to) {
-        if (from == to || items[from] == null) {
+        move(this, from, this, to);
+    }
+
+    /**
+     * Como {@link #move(int, int)}, pero de la casilla {@code from} de {@code source} a la {@code to} de
+     * {@code target} (p.ej. de un contenedor al inventario del jugador). Pueden ser el mismo inventario.
+     */
+    public static void move(Inventory source, int from, Inventory target, int to) {
+        Item[] items = source.items;
+        int[] counts = source.counts;
+        Item[] toItems = target.items;
+        int[] toCounts = target.counts;
+        if ((source == target && from == to) || items[from] == null) {
             return;
         }
         // Caja de balas sobre otra del mismo tipo con sitio: le pasa las balas (y si se queda vacía, desaparece). Si
         // la de destino está llena, se intercambian como cualquier otro objeto.
-        if (items[from] instanceof AmmoBox source && items[to] instanceof AmmoBox target && target.fillFrom(source)) {
-            if (source.isEmpty()) {
+        if (items[from] instanceof AmmoBox box && toItems[to] instanceof AmmoBox other && other.fillFrom(box)) {
+            if (box.isEmpty()) {
                 items[from] = null;
                 counts[from] = 0;
             }
             return;
         }
-        int room = roomInStack(to, items[from]);
+        int room = target.roomInStack(to, items[from]);
         if (room > 0) {
             int moved = Math.min(room, counts[from]);
-            counts[to] += moved;
+            toCounts[to] += moved;
             counts[from] -= moved;
             if (counts[from] == 0) {
                 items[from] = null;
             }
             return;
         }
-        Item item = items[to];
-        int count = counts[to];
-        items[to] = items[from];
-        counts[to] = counts[from];
+        Item item = toItems[to];
+        int count = toCounts[to];
+        toItems[to] = items[from];
+        toCounts[to] = counts[from];
         items[from] = item;
         counts[from] = count;
     }
@@ -178,8 +206,8 @@ public final class Inventory implements Iterable<Item> {
     }
 
     /**
-     * Saca hasta {@code wanted} balas de ese tipo de las cajas, empezando por las más vacías (así se acaban antes las
-     * cajas a medias). Las cajas que se quedan vacías desaparecen.
+     * Saca hasta {@code wanted} balas de ese tipo de las cajas, empezando por las más vacías (así se acaban antes
+     * las cajas a medias). Las cajas que se quedan vacías desaparecen.
      *
      * @return cuántas ha sacado
      */

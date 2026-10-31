@@ -3,6 +3,7 @@ package player;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +21,7 @@ import structs.Struct;
 import structs.StructKind;
 import util.GameClock;
 import world.Chunk;
+import world.Container;
 import world.Structures;
 import world.WorldManager;
 
@@ -260,5 +262,61 @@ class PlayerTest {
 
         assertEquals(GunType.PISTOL.magazine - 1, pistol.rounds());
         assertEquals(20, Player.inventory.totalRounds(AmmoType.PISTOL));
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Contenedores
+    // ---------------------------------------------------------------------------------------------
+
+    @Test
+    void interactUsesWhateverIsCloserTheCrateOrWhatIsOnTheGround() {
+        WorldManager.activeChunks.addAll(WorldManager.chunks);
+        WorldManager.dropItem(Consumable.medkit(), 0, 0); // a los pies
+        Container crate = Structures.buildContainer(Struct.onTile(1, 0, StructKind.CRATE)); // a 64
+
+        Player.interact();
+        assertNull(Player.openContainer(), "el botiquín está más cerca");
+        assertTrue(Player.inventory.get(0) instanceof Consumable);
+
+        Player.interact(); // ya no queda nada que coger
+        assertSame(crate, Player.openContainer());
+
+        Player.closeContainer();
+        WorldManager.dropItem(Consumable.medkit(), 30, 0); // entre el jugador y la caja: más cerca que ella
+        Player.interact();
+        assertNull(Player.openContainer());
+        assertEquals(2, Player.inventory.count(0));
+    }
+
+    @Test
+    void anOpenCrateClosesWhenWalkingAwayOrWhenItBreaks() {
+        Container crate = Structures.buildContainer(Struct.onTile(1, 0, StructKind.CRATE));
+        Player.interact();
+        Player.x = -Player.CLOSE_RANGE; // ya está a más de CLOSE_RANGE del centro de la caja
+        Player.update();
+        assertNull(Player.openContainer());
+
+        Player.x = 0;
+        Player.interact();
+        Structures.remove(crate);
+        Player.update();
+        assertNull(Player.openContainer());
+    }
+
+    @Test
+    void buildingACrateSpendsOneAndBreakingItGivesItBackAndScattersItsContents() {
+        WorldManager.activeChunks.addAll(WorldManager.chunks);
+        Player.inventory.add(new StructItem(StructKind.CRATE), 2);
+        Player.aimAt(Struct.SIZE * 2, -Projectile.FLIGHT_HEIGHT); // casilla (2, 0)
+        Player.updateBuildPreview();
+        Player.primaryAction(true);
+        assertEquals(1, Player.inventory.count(0), "gasta una");
+        Container crate = Structures.containerAt(Struct.SIZE * 2, 0);
+        crate.inventory.add(Consumable.medkit(), 2);
+
+        Player.secondaryAction(); // la rompe
+        assertEquals(2, Player.inventory.count(0), "la recupera");
+        assertNull(Structures.containerAt(Struct.SIZE * 2, 0));
+        assertEquals(2, WorldManager.chunks.getFirst().droppedItems.getFirst().count(), "y lo de dentro, al suelo");
     }
 }

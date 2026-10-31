@@ -7,8 +7,10 @@ import assets.TextureId;
 import input.Input;
 import items.AmmoBox;
 import items.Gun;
+import items.Inventory;
 import items.Item;
 import player.Player;
+import world.Container;
 
 /**
  * Inventario (la barra rápida y, abierto, la mochila: ver {@link InventoryLayout} e {@link InventoryPanel}), botón de
@@ -40,7 +42,9 @@ public final class HudRenderer {
         if (open) {
             drawPanelBackground();
         }
-        int slots = open ? Player.inventory.capacity() : Player.HOTBAR_SLOTS;
+        int slots = !open ? Player.HOTBAR_SLOTS
+                : InventoryPanel.container() != null ? InventoryLayout.CONTAINER_FIRST + Container.SLOTS
+                : InventoryLayout.CONTAINER_FIRST;
         for (int slot = 0; slot < slots; slot++) {
             drawSlot(slot);
         }
@@ -72,22 +76,33 @@ public final class HudRenderer {
         PixelText.drawRightAligned(text, DisplayManager.WIDTH - AMMO_MARGIN * pixel, bottom, pixel);
     }
 
-    /** Fondos oscuros detrás de la mochila y de la barra rápida (por separado), con el inventario abierto. */
+    /**
+     * Con el inventario abierto, fondos oscuros por separado detrás de la barra rápida, de la mochila y (si hay uno
+     * abierto) del contenedor.
+     */
     private static void drawPanelBackground() {
         ShapeRenderer shapes = Draw.shapes();
         shapes.setColor(0.05f, 0.04f, 0.04f, PANEL_ALPHA);
         float left = InventoryLayout.panelLeft(), width = InventoryLayout.panelWidth();
+        if (InventoryPanel.container() != null) {
+            shapes.rect(left, InventoryLayout.containerPanelTop(), width, InventoryLayout.containerPanelHeight());
+        }
         shapes.rect(left, InventoryLayout.backpackPanelTop(), width, InventoryLayout.backpackPanelHeight());
         shapes.rect(left, InventoryLayout.hotbarPanelTop(), width, InventoryLayout.hotbarPanelHeight());
     }
 
-    /** Una casilla con su contenido (atenuado si se está arrastrando), el marco si es la elegida y la cantidad. */
+    /**
+     * Una casilla (del jugador o del contenedor abierto) con su contenido (atenuado si se está arrastrando), el
+     * marco si es la elegida de la barra rápida y la cantidad.
+     */
     private static void drawSlot(int slot) {
         float x = InventoryLayout.slotX(slot), y = InventoryLayout.slotY(slot);
         float size = InventoryLayout.cellSize();
         Draw.sprite(TextureId.NORMAL_CELL, x, y, size, size);
-        Item item = Player.inventory.get(slot);
-        int count = Player.inventory.count(slot);
+        Inventory inventory = InventoryPanel.inventoryOf(slot);
+        int local = InventoryPanel.localSlot(slot);
+        Item item = inventory.get(local);
+        int count = inventory.count(local);
         boolean dragged = slot == InventoryPanel.draggedSlot();
         if (item != null) {
             if (dragged) {
@@ -96,7 +111,7 @@ public final class HudRenderer {
             drawStack(item, count, x + size / 2, y + size / 2);
             Draw.tint(1, 1, 1, 1);
         }
-        if (slot == Player.inventory.selectedSlot()) {
+        if (inventory == Player.inventory && slot == Player.inventory.selectedSlot()) {
             Draw.sprite(TextureId.SELECTED_CELL, x, y, size, size);
         }
         if (item != null && !dragged) {
@@ -108,12 +123,16 @@ public final class HudRenderer {
     /** Lo que se está arrastrando, centrado en el cursor y con su cantidad. */
     private static void drawDragged() {
         int slot = InventoryPanel.draggedSlot();
-        if (slot < 0 || Player.inventory.get(slot) == null) {
+        if (slot < 0) {
             return;
         }
-        int count = Player.inventory.count(slot);
+        Inventory inventory = InventoryPanel.inventoryOf(slot);
+        Item item = inventory.get(InventoryPanel.localSlot(slot));
+        if (item == null) {
+            return;
+        }
+        int count = inventory.count(InventoryPanel.localSlot(slot));
         float centerX = Math.round(Input.mouseX()), centerY = Math.round(Input.mouseY());
-        Item item = Player.inventory.get(slot);
         drawStack(item, count, centerX, centerY);
         float half = InventoryLayout.cellSize() / 2;
         drawCount(item, count, centerX + half, centerY + half);

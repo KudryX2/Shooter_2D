@@ -10,11 +10,12 @@ import npc.Npc;
 import player.Player;
 import structs.Struct;
 import world.Chunk;
+import world.Container;
 import world.WorldManager;
 
 /**
- * Todo lo que tiene altura (muros, sacos terreros, NPC en pie y el jugador), de norte a sur según dónde tiene el
- * pie: lo que está más al sur tapa a lo que tiene detrás.
+ * Todo lo que tiene altura (muros, sacos terreros, cajas, NPC en pie y el jugador), de norte a sur según dónde
+ * tiene el pie: lo que está más al sur tapa a lo que tiene detrás.
  *
  * <p>Para no perder de vista a nadie, los muros se aclaran: los que están delante del jugador en un radio a su
  * alrededor (con degradado hacia fuera) y cualquiera que tape a un NPC en pie.
@@ -42,6 +43,9 @@ final class DepthRenderer {
         for (Chunk chunk : WorldManager.activeChunks) {
             addWalls(chunk.walls);
             addWalls(chunk.halfWalls);
+            for (Container container : chunk.containers) {
+                addWall(container.struct);
+            }
         }
         for (Npc npc : WorldManager.npcs) {
             if (npc.isActive() && isVisible(npc.x, npc.y)) {
@@ -70,9 +74,13 @@ final class DepthRenderer {
 
     private static void addWalls(List<Struct> walls) {
         for (Struct s : walls) {
-            if (isVisible(s.x(), s.y())) {
-                entries.add(new Entry(WorldRenderer.depth(s), s));
-            }
+            addWall(s);
+        }
+    }
+
+    private static void addWall(Struct s) {
+        if (isVisible(s.x(), s.y())) {
+            entries.add(new Entry(WorldRenderer.depth(s), s));
         }
     }
 

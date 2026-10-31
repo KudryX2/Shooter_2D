@@ -25,6 +25,10 @@ public final class PixelArtGenerator {
     private static final int TILE = 16;
     private static final int WALL_THICKNESS = 4, WALL_HEIGHT = 12;
     private static final int SANDBAG_THICKNESS = 3, SANDBAG_HEIGHT = 6;
+    /** Caja de madera: ancho y fondo de lo que ocupa (12x8 px = 48x32) y alto de su frente (8 px = 32). */
+    private static final int CRATE_WIDTH = 12, CRATE_DEPTH = 8, CRATE_HEIGHT = 8;
+    private static final int CRATE_LIGHT = 0xb68a56, CRATE_PLANK = 0x9c7242, CRATE_GAP = 0x6e4c2a;
+    private static final int CRATE_FRONT = 0x8a6238, CRATE_FRONT_DARK = 0x6a4826, CRATE_EDGE = 0x3a2614;
 
     // Paletas
     private static final int[] GRASS = {0x4a8b3b, 0x4a8b3b, 0x4a8b3b, 0x478638, 0x4f913f, 0x437d35};
@@ -69,6 +73,8 @@ public final class PixelArtGenerator {
         save("3-halfWall-v", sandbags(SANDBAG_THICKNESS, bagLength, true));
         save("3-halfWall", sandbagIcon());
         save("3-floor", floorIcon());
+        save("3-crate", crate());
+        save("3-crateIcon", crateIcon());
 
         save("2-pointer", crosshair());
         save("0-bullet", ItemArt.bullet());
@@ -326,6 +332,45 @@ public final class PixelArtGenerator {
      * Icono del material de suelo: un bloque de césped visto en 3/4 (arriba el césped y delante el borde de tierra),
      * con margen y contorno como los demás iconos. No es la textura que se construye, que ocupa la casilla entera.
      */
+    /**
+     * Caja de madera en 3/4: arriba la tapa (tablas vistas desde encima) y debajo el frente, con el borde oscuro dentro
+     * de la imagen para que mida justo lo que ocupa ({@code StructKind.CRATE}) más su alto.
+     */
+    private static BufferedImage crate() {
+        Canvas c = new Canvas(CRATE_WIDTH, CRATE_DEPTH + CRATE_HEIGHT);
+        crateBox(c, 0, 0, CRATE_WIDTH, CRATE_DEPTH, CRATE_HEIGHT);
+        return c.image();
+    }
+
+    /** Icono de la caja: la misma, más pequeña (10 px de ancho, 6 de tapa y 5 de frente) y con contorno. */
+    private static BufferedImage crateIcon() {
+        Canvas c = new Canvas(TILE, TILE);
+        crateBox(c, 3, 3, 10, 6, 5);
+        return c.outlined();
+    }
+
+    /** Caja de {@code width} de ancho, con la tapa de {@code depth} filas y el frente de {@code height}. */
+    private static void crateBox(Canvas c, int x, int y, int width, int depth, int height) {
+        // Tapa: tablas de 3 filas separadas por una raya oscura, con la de arriba iluminada
+        for (int row = 0; row < depth; row++) {
+            int color = row % 3 == 2 ? CRATE_GAP : row % 3 == 0 ? CRATE_LIGHT : CRATE_PLANK;
+            c.rect(x, y + row, width, 1, color);
+        }
+        // Frente: más oscuro, con una tabla cruzada en diagonal
+        int front = y + depth;
+        c.rect(x, front, width, height, CRATE_FRONT);
+        c.rect(x, front + height - 1, width, 1, CRATE_FRONT_DARK);
+        for (int i = 1; i < width - 1; i++) {
+            c.set(x + i, front + 1 + (i - 1) * (height - 2) / (width - 2), CRATE_FRONT_DARK);
+        }
+        // Borde: marco oscuro alrededor y la arista entre la tapa y el frente
+        c.rect(x, y, width, 1, CRATE_EDGE);
+        c.rect(x, y + depth + height - 1, width, 1, CRATE_EDGE);
+        c.rect(x, y, 1, depth + height, CRATE_EDGE);
+        c.rect(x + width - 1, y, 1, depth + height, CRATE_EDGE);
+        c.rect(x, front, width, 1, CRATE_EDGE);
+    }
+
     private static BufferedImage floorIcon() {
         Canvas c = new Canvas(TILE, TILE);
         Random random = new Random(400);

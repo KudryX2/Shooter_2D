@@ -10,13 +10,14 @@ Controles:
 
 W A S D       - moverse
 Ratón         - apuntar
-Clic izquierdo - disparar / construir (con un muro, medio muro o suelo en la mano)
-Clic derecho  - usar botiquín / derribar (con un objeto construible en la mano)
+Clic izquierdo - disparar / construir (con un muro, medio muro, suelo o caja de madera en la mano)
+Clic derecho  - usar botiquín / derribar o romper una caja (con un objeto construible en la mano)
 1-9, 0, rueda - elegir casilla de la barra rápida (10 casillas)
 Tab, I        - abrir el inventario (mochila de 30 casillas): arrastrar para mover, fuera para tirar
+Mayús + clic derecho - con una caja abierta, pasar una pila de la caja al inventario o al revés
 R             - recargar (gasta balas de las cajas de munición del arma)
 Q             - soltar uno del objeto seleccionado
-E             - coger un objeto del suelo
+E             - abrir la caja de madera más cercana; si no hay, coger un objeto del suelo
 N/M           - cambiar el tamaño del HUD
 H             - lanzar una horda de zombis
 P, ESPACIO    - pausa (también el botón de arriba a la derecha)

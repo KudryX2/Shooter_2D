@@ -40,7 +40,7 @@ public final class PlayerController {
         if (Input.isButtonDown(0) && !clickStartedOnUi) Player.primaryAction(Input.wasButtonPressed(0));
         if (Input.wasButtonPressed(1) && !mouseOnUi) Player.secondaryAction();
         if (Input.wasKeyPressed(Keys.Q)) Player.dropSelectedItem();
-        if (Input.wasKeyPressed(Keys.E)) Player.pickUpItem();
+        if (Input.wasKeyPressed(Keys.E)) Player.interact();
         if (Input.wasKeyPressed(Keys.R)) Player.reload();
 
         Player.update();

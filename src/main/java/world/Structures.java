@@ -1,25 +1,31 @@
 package world;
 
 import static util.Geometry.NO_HIT;
+import static util.Geometry.distance;
 import static util.Geometry.isEarlierHit;
 import static util.Geometry.segmentEntersBox;
 
 import java.util.List;
 
+import items.ItemStack;
 import npc.Npc;
 import structs.Struct;
 import structs.StructKind;
 
 /**
- * Las estructuras del mundo (suelos, muros y medios muros): construirlas, derribarlas y preguntar si algo choca
- * con ellas. Cada estructura se guarda en su chunk (para dibujarla) y los muros, además, en rejillas de
- * colisión, que son las que hacen rápidas las consultas.
+ * Las estructuras del mundo (suelos, muros, medios muros y contenedores): construirlas, derribarlas y preguntar si
+ * algo choca con ellas. Cada estructura se guarda en su chunk (para dibujarla) y lo que bloquea el paso, además, en
+ * rejillas de colisión, que son las que hacen rápidas las consultas.
  */
 public final class Structures {
     /** Muros (no medios muros) indexados por posición, para que cada bala solo compruebe los cercanos. */
     private static final StructGrid bulletWalls = new StructGrid();
-    /** Muros y medios muros: bloquean el paso a jugador y NPC. */
+    /** Muros, medios muros y contenedores: bloquean el paso a jugador y NPC. */
     private static final StructGrid solids = new StructGrid();
+    /** Distancia al centro de un contenedor roto a la que queda lo que tenía (en un anillo, y la mitad más lejos). */
+    static final float SCATTER_RADIUS = 30;
+    /** Ángulo del primer montón al esparcir: hacia abajo a la derecha, para que no salgan todos en fila. */
+    private static final double SCATTER_START_ANGLE = Math.PI / 4;
 
     private Structures() {
     }
@@ -30,8 +36,77 @@ public final class Structures {
         if (struct.kind().blocksBullets) {
             bulletWalls.add(struct);
         }
-        if (struct.isWall()) {
+        if (struct.kind().solid) {
             solids.add(struct);
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Contenedores
+    // ---------------------------------------------------------------------------------------------
+
+    /** Construye un contenedor (p.ej. {@code Struct.onTile(x, y, StructKind.CRATE)}) y lo devuelve, para llenarlo. */
+    public static Container buildContainer(Struct struct) {
+        if (struct.kind() != StructKind.CRATE) {
+            throw new IllegalArgumentException("No es un contenedor: " + struct.kind());
+        }
+        build(struct);
+        return WorldManager.closestChunk(struct.x(), struct.y()).containers.getLast();
+    }
+
+    /** El contenedor de la casilla en la que cae (x, y), o {@code null}. */
+    public static Container containerAt(float x, float y) {
+        Struct tile = Struct.snapped(x, y, StructKind.CRATE, null);
+        for (Chunk chunk : WorldManager.chunks) {
+            for (Container container : chunk.containers) {
+                if (container.struct.samePlaceAs(tile)) {
+                    return container;
+                }
+            }
+        }
+        return null;
+    }
+
+    /** El contenedor más cercano a (x, y), a menos de {@code range} de su centro, o {@code null}. */
+    public static Container nearestContainer(float x, float y, float range) {
+        Container nearest = null;
+        float best = range;
+        for (Chunk chunk : WorldManager.chunks) {
+            for (Container container : chunk.containers) {
+                float d = distance(x, y, container.struct.x(), container.struct.y());
+                if (d < best) {
+                    best = d;
+                    nearest = container;
+                }
+            }
+        }
+        return nearest;
+    }
+
+    /**
+     * Rompe un contenedor: deja de chocar y de dibujarse, y lo que tenía queda esparcido por el suelo alrededor de
+     * donde estaba ({@link #scatter}).
+     */
+    public static void remove(Container container) {
+        Struct struct = container.struct;
+        solids.removeIf(struct.x(), struct.y(), s -> s == struct);
+        for (Chunk chunk : WorldManager.chunks) {
+            chunk.containers.remove(container);
+        }
+        container.markRemoved();
+        scatter(container.inventory.removeAll(), struct.x(), struct.y());
+    }
+
+    /**
+     * Deja cada pila en su propio montón, repartidas en círculo alrededor de (x, y): así no queda todo amontonado
+     * en un punto y se ve qué había.
+     */
+    static void scatter(List<ItemStack> stacks, float x, float y) {
+        for (int i = 0; i < stacks.size(); i++) {
+            double angle = 2 * Math.PI * i / stacks.size() + SCATTER_START_ANGLE;
+            float radius = SCATTER_RADIUS + (i % 2) * SCATTER_RADIUS / 2; // dos anillos, para que no se pisen
+            WorldManager.dropItem(stacks.get(i), x + (float) Math.cos(angle) * radius,
+                    y + (float) Math.sin(angle) * radius);
         }
     }
 
