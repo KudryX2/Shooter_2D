@@ -50,6 +50,8 @@ public class Npc {
     private long deathTime;
     private long riseDelay;
     private long lastHitTime = GameClock.NEVER;
+    /** Hasta cuándo está aturdido (ver {@link #stun}). */
+    private long stunnedUntil = GameClock.NEVER;
 
     public Npc(NpcType type) {
         this.type = type;
@@ -78,7 +80,7 @@ public class Npc {
             case ACTIVE -> {
                 if (hp <= 0) {
                     die(false);
-                } else {
+                } else if (!isStunned()) {
                     brain.update(this);
                 }
             }
@@ -131,6 +133,28 @@ public class Npc {
     public void takeDamage(int damage) {
         hp -= damage;
         lastHitTime = GameClock.now();
+    }
+
+    /**
+     * Lo deja aturdido {@code millis} ms (p.ej. tras un golpe cuerpo a cuerpo): ni se mueve ni ataca, así que un
+     * zombi golpeado no muerde. Si ya lo estaba, se queda con lo que dure más.
+     */
+    public void stun(long millis) {
+        stunnedUntil = Math.max(stunnedUntil, GameClock.now() + millis);
+    }
+
+    /** Lo aparta {@code distance} px hacia {@code angle} (un golpe, un balazo), si no acaba metido en un muro. */
+    public void push(float angle, float distance) {
+        float toX = x + dirX(angle) * distance;
+        float toY = y + dirY(angle) * distance;
+        if (distance > 0 && Movement.canMove(x, y, toX, toY, BODY_HALF)) {
+            x = toX;
+            y = toY;
+        }
+    }
+
+    public boolean isStunned() {
+        return GameClock.now() < stunnedUntil;
     }
 
     /** Sin headshot un humano se convierte en zombi (tarda un rato en levantarse); si no, muere del todo. */

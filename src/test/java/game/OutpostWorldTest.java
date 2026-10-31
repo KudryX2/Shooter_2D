@@ -5,6 +5,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static util.Geometry.distance;
 
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,6 +16,9 @@ import assets.TextureId;
 import items.Consumable;
 import items.DroppedItem;
 import items.Gun;
+import items.GunType;
+import items.MeleeType;
+import items.MeleeWeapon;
 import npc.Npc;
 import npc.NpcKind;
 import player.Player;
@@ -21,6 +28,8 @@ import world.Structures;
 import world.WorldManager;
 
 class OutpostWorldTest {
+    /** Del centro de la casa inicial (11x11 casillas de 64 px) a sus esquinas. */
+    private static final float HOUSE_RADIUS = 500;
 
     @BeforeEach
     void setUp() {
@@ -45,14 +54,27 @@ class OutpostWorldTest {
         long gunsInHouse = WorldManager.chunks.stream()
                 .flatMap(chunk -> chunk.droppedItems.stream())
                 .filter(d -> d.item() instanceof Gun)
-                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < 300)
+                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < HOUSE_RADIUS)
                 .count();
         assertTrue(gunsInHouse >= 2, "la casa inicial debería tener armas");
+
+        // Una de cada arma, para probarlas sin salir de casa
+        Set<Object> weaponTypesInHouse = WorldManager.chunks.stream()
+                .flatMap(chunk -> chunk.droppedItems.stream())
+                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < HOUSE_RADIUS)
+                .map(d -> switch (d.item()) {
+                    case Gun gun -> gun.type;
+                    case MeleeWeapon melee -> melee.type;
+                    default -> "otro";
+                })
+                .collect(Collectors.toSet());
+        assertTrue(weaponTypesInHouse.containsAll(List.of(GunType.values())), "faltan armas de fuego en la casa");
+        assertTrue(weaponTypesInHouse.containsAll(List.of(MeleeType.values())), "faltan armas cuerpo a cuerpo");
 
         long medkitsInHouse = WorldManager.chunks.stream()
                 .flatMap(chunk -> chunk.droppedItems.stream())
                 .filter(d -> d.item() instanceof Consumable)
-                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < 300)
+                .filter(d -> distance(d.x(), d.y(), Player.spawnX(), Player.spawnY()) < HOUSE_RADIUS)
                 .count();
         assertTrue(medkitsInHouse >= 1, "la casa inicial debería tener botiquines");
     }

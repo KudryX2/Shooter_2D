@@ -83,6 +83,10 @@ public final class PixelArtGenerator {
             save("5-" + gun.file, GunArt.icon(gun));
             save("6-" + gun.file, GunArt.held(gun));
         }
+        for (MeleeArt.Melee melee : MeleeArt.Melee.values()) {
+            save("5-" + melee.file, MeleeArt.icon(melee));
+            save("6-" + melee.file, MeleeArt.held(melee));
+        }
 
         characters("1-player", CharacterArt.PLAYER, false);
         characters("4-human", CharacterArt.HUMAN, true);

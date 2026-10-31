@@ -23,8 +23,17 @@ public final class Projectile {
     public final int range, damage;
     /** Disparada por el jugador. Solo sus balas pueden hacer headshot. */
     public final boolean byPlayer;
+    /** Cuánto aparta al NPC al que le da, en px (ver {@link GunType#knockback}). */
+    public final float knockback;
 
+    /** Bala sin empuje. */
     public Projectile(float x, float y, float rotation, float speed, int range, int damage, boolean byPlayer) {
+        this(x, y, rotation, speed, range, damage, byPlayer, 0);
+    }
+
+    public Projectile(float x, float y, float rotation, float speed, int range, int damage, boolean byPlayer,
+                      float knockback) {
+        this.knockback = knockback;
         this.x = x;
         this.y = y;
         this.startX = x;

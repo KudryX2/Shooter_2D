@@ -8,12 +8,14 @@ import static graphics.Camera.screenY;
 import static util.Geometry.dirX;
 import static util.Geometry.dirY;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
 import assets.TextureId;
 import items.Consumable;
 import items.Gun;
+import items.MeleeWeapon;
 import items.Projectile;
 import items.StructItem;
 import npc.Npc;
@@ -42,8 +44,16 @@ final class CharacterRenderer {
      * abajo, en las manos del sprite ({@link items.GunType#barrelRise}).
      */
     private static final float MUZZLE_HEIGHT = Projectile.FLIGHT_HEIGHT;
-    /** Altura de las manos del sprite: ahí se sujetan los objetos que no son armas. */
+    /** Altura de las manos del sprite: ahí se sujetan los objetos que no son armas de fuego. */
     private static final float HAND_HEIGHT = 24;
+    /** Distancia del centro del cuerpo a la mano que sujeta un arma cuerpo a cuerpo. */
+    private static final float MELEE_HAND_OFFSET = 16;
+    /** Cada cuántos grados va un tramo de la estela del golpe. */
+    private static final float TRAIL_STEP_DEGREES = 8;
+    /** Un píxel del pixel art. */
+    private static final float TRAIL_WIDTH = 4;
+    private static final Color trailNew = new Color(1, 1, 1, 0);
+    private static final Color trailOld = new Color(1, 1, 1, 0);
     /** Tumbado (20x12 px). */
     private static final float LYING_WIDTH = 80;
     private static final float LYING_HEIGHT = 48;
@@ -252,9 +262,53 @@ final class CharacterRenderer {
         switch (Player.selectedItem()) {
             case null -> { }
             case Gun gun -> drawGun(gun, handX(), handY(), rotation);
+            case MeleeWeapon melee -> drawMelee(melee, rotation);
             case Consumable consumable -> drawHeldAtPixelSize(consumable.heldTexture, 1, rotation);
             // Su icono ocupa una casilla entera: a la mitad
             case StructItem struct -> drawHeldAtPixelSize(struct.heldTexture, 0.5f, rotation);
+        }
+    }
+
+    /**
+     * Arma cuerpo a cuerpo en la mano del jugador. En reposo está levantada hacia un lado del arco del golpe
+     * (hacia arriba en pantalla); al golpear barre el arco entero hacia el otro lado, dejando una estela.
+     */
+    private static void drawMelee(MeleeWeapon melee, float rotation) {
+        float progress = melee.swingProgress();
+        float side = pointsLeft(rotation) ? -1 : 1; // con el arma volteada el barrido va al revés
+        float start = rotation - side * melee.type.arc / 2;
+        float eased = 1 - (1 - progress) * (1 - progress); // rápido al principio y frenando al final
+        float angle = progress >= 1 ? start : start + side * melee.type.arc * eased;
+
+        TextureRegion region = TexturesManager.region(melee.heldTexture);
+        float art = DisplayManager.ART_PIXEL;
+        float gripX = centerX() + dirX(angle) * MELEE_HAND_OFFSET;
+        float gripY = centerY() - HAND_HEIGHT + dirY(angle) * MELEE_HAND_OFFSET;
+        if (progress < 1) {
+            float tip = MELEE_HAND_OFFSET + ((region.getRegionWidth() - 1) / 2 - 1) * art;
+            drawSwingTrail(start, angle, side, tip, 1 - progress);
+        }
+        float width = region.getRegionWidth() * art, height = region.getRegionHeight() * art;
+        // Volteada según hacia dónde apunta, no según el ángulo del barrido: si no, se daría la vuelta a medio golpe
+        Draw.sprite(melee.heldTexture, gripX - width / 2, gripY - height / 2, width, height, angle,
+                pointsLeft(rotation));
+    }
+
+    /**
+     * Estela del golpe: un arco a la distancia de la punta del arma, desde donde empezó el barrido hasta donde va,
+     * más transparente cuanto más atrás y según se acaba ({@code fade}, de 1 a 0).
+     */
+    private static void drawSwingTrail(float start, float end, float side, float radius, float fade) {
+        ShapeRenderer shapes = Draw.shapes();
+        float sweep = Math.abs(end - start);
+        float centerX = centerX(), centerY = centerY() - HAND_HEIGHT;
+        for (float done = 0; done < sweep; done += TRAIL_STEP_DEGREES) {
+            float next = Math.min(sweep, done + TRAIL_STEP_DEGREES);
+            float a0 = start + side * done, a1 = start + side * next;
+            trailOld.a = 0.6f * fade * done / sweep;
+            trailNew.a = 0.6f * fade * next / sweep;
+            shapes.rectLine(centerX + dirX(a0) * radius, centerY + dirY(a0) * radius,
+                    centerX + dirX(a1) * radius, centerY + dirY(a1) * radius, TRAIL_WIDTH, trailOld, trailNew);
         }
     }
 

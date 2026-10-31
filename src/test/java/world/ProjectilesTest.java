@@ -128,6 +128,25 @@ class ProjectilesTest {
         assertTrue(target.hp < 100);
     }
 
+    @Test
+    void bulletsWithKnockbackPushNpcsButNotThePlayer() {
+        Npc target = NpcManager.spawn(NpcType.ZOMBIE, 100, 100, 0);
+        WorldManager.projectiles.add(new Projectile(70, 100, 0, 1, 600, 10, false, 30));
+        Player.x = 100_000;
+        Player.y = 100_000;
+        GameClock.tick(40); // lo justo para que le dé: así el zombi apenas se mueve por su cuenta
+        WorldManager.update();
+        assertEquals(130, target.x, 3, "apartado en la dirección de la bala");
+        assertEquals(100, target.y, 3);
+
+        Player.x = 100;
+        Player.y = 300;
+        WorldManager.projectiles.add(new Projectile(0, 300, 0, 1, 600, 10, false, 30));
+        GameClock.tick(300);
+        WorldManager.update();
+        assertEquals(100, Player.x, 0.01f, "al jugador no se le empuja");
+    }
+
     /** Como en el juego: apuntar con el cursor a la cabeza y disparar desde la mano. */
     @Test
     void anAimedShotFliesUnderTheCursorAndHitsTheHead() {

@@ -62,6 +62,7 @@ public final class Gun extends Item {
         float spread = type.spread;
         float deviation = spread > 0 ? (float) ThreadLocalRandom.current().nextDouble(-spread, spread) : 0;
         WorldManager.projectiles.add(
-                new Projectile(x, y, rotation + deviation, type.speed, type.range, type.damage, byPlayer));
+                new Projectile(x, y, rotation + deviation, type.speed, type.range, type.damage, byPlayer,
+                        type.knockback));
     }
 }

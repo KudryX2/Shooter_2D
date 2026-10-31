@@ -56,6 +56,18 @@ public enum TextureId {
     SNIPER_HELD("6-sniper"),
     AK47_HELD("6-ak47"),
 
+    // Armas cuerpo a cuerpo, igual que las de fuego: icono y en la mano (con el agarre en el centro de la imagen)
+    KNIFE_ICON("5-knife"),
+    MACHETE_ICON("5-machete"),
+    BAT_ICON("5-bat"),
+    AXE_ICON("5-axe"),
+    SHOVEL_ICON("5-shovel"),
+    KNIFE_HELD("6-knife"),
+    MACHETE_HELD("6-machete"),
+    BAT_HELD("6-bat"),
+    AXE_HELD("6-axe"),
+    SHOVEL_HELD("6-shovel"),
+
     // Consumibles
     MEDKIT("7-medkit");
 

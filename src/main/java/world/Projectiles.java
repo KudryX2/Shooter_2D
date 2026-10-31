@@ -76,6 +76,7 @@ final class Projectiles {
                 hitNpc.die(true);
             } else {
                 hitNpc.takeDamage(p.damage);
+                hitNpc.push(p.rotation, p.knockback); // en la dirección de la bala; al jugador no se le empuja
             }
             return true;
         }

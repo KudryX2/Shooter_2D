@@ -11,6 +11,8 @@ import items.Consumable;
 import items.Gun;
 import items.GunType;
 import items.Item;
+import items.MeleeType;
+import items.MeleeWeapon;
 import items.StructItem;
 import npc.NpcManager;
 import npc.NpcType;
@@ -134,21 +136,21 @@ final class OutpostWorld {
     /** Casa inicial, en la casilla (0, 0): donde aparece el jugador. */
     private void house() {
         // Anillo de sacos terreros (medio muro: frena a los zombis pero deja pasar las balas)
-        room(-7, -7, 7, 7, StructKind.HALF_WALL);
-        northWalls(-1, 1, 8, null);  // salida sur
-        westWalls(8, -1, 1, null);   // salida este
-        northWalls(-1, 1, -7, null); // salida norte, hacia el cementerio
+        room(-8, -8, 8, 8, StructKind.HALF_WALL);
+        northWalls(-1, 1, 9, null);  // salida sur
+        westWalls(9, -1, 1, null);   // salida este
+        northWalls(-1, 1, -8, null); // salida norte, hacia el cementerio
 
-        // Casa
-        room(-4, -4, 4, 4, StructKind.WALL);
-        ground(-4, -4, 4, 4, TextureId.DIRT);
-        northWalls(-1, 1, 5, null); // puerta
+        // Casa (11x11 casillas, con sitio para todas las armas)
+        room(-5, -5, 5, 5, StructKind.WALL);
+        ground(-5, -5, 5, 5, TextureId.DIRT);
+        northWalls(-1, 1, 6, null); // puerta
         // Ventanas para disparar desde dentro
-        northWalls(-1, 1, -4, StructKind.HALF_WALL);
-        westWalls(-4, -1, 1, StructKind.HALF_WALL);
-        westWalls(5, -1, 1, StructKind.HALF_WALL);
+        northWalls(-1, 1, -5, StructKind.HALF_WALL);
+        westWalls(-5, -1, 1, StructKind.HALF_WALL);
+        westWalls(6, -1, 1, StructKind.HALF_WALL);
         // Banco de trabajo (rincón de los materiales)
-        northWalls(2, 3, 2, StructKind.HALF_WALL);
+        northWalls(2, 4, 3, StructKind.HALF_WALL);
     }
 
     /** Al este, a ambos lados del camino. */
@@ -268,14 +270,21 @@ final class OutpostWorld {
     }
 
     private void populate() {
-        // Casa inicial: armero al norte y materiales junto al banco de trabajo
-        item(new Gun(GunType.SHOTGUN), -3, -3);
-        item(new Gun(GunType.SNIPER), 3, -3);
-        item(new StructItem(StructKind.WALL), 2, 3);
-        item(new StructItem(StructKind.HALF_WALL), 3, 3);
-        item(new StructItem(StructKind.FLOOR), 4, 3);
-        item(Consumable.medkit(), -3, 3);
-        item(Consumable.medkit(), -2, 3);
+        // Casa inicial: armeros al norte (una de cada arma, para probarlas), materiales junto al banco de trabajo
+        // y botiquines enfrente
+        GunType[] guns = GunType.values();
+        for (int i = 0; i < guns.length; i++) {
+            item(new Gun(guns[i]), -4 + i, -4);  // de fuego, al oeste de la ventana
+        }
+        MeleeType[] melee = MeleeType.values();
+        for (int i = 0; i < melee.length; i++) {
+            item(new MeleeWeapon(melee[i]), 1 + i, -4); // cuerpo a cuerpo, al este
+        }
+        item(new StructItem(StructKind.WALL), 2, 4);
+        item(new StructItem(StructKind.HALF_WALL), 3, 4);
+        item(new StructItem(StructKind.FLOOR), 4, 4);
+        item(Consumable.medkit(), -4, 4);
+        item(Consumable.medkit(), -3, 4);
         // Guardias aliados entre la casa y los sacos terreros (solo disparan a zombis)
         human(NpcType.GUARD, -3, 7);
         human(NpcType.GUARD, 3, 7);
@@ -284,6 +293,7 @@ final class OutpostWorld {
 
         // Aldea: civiles que huyen, un guardia en el camino y botín aleatorio
         item(new Gun(GunType.random()), 26, -6);
+        item(new MeleeWeapon(MeleeType.SHOVEL), 27, -6);
         item(new Gun(GunType.random()), 36, -6);
         item(new Gun(GunType.random()), 30, 6);
         item(new StructItem(StructKind.HALF_WALL), 38, -7);
@@ -302,6 +312,7 @@ final class OutpostWorld {
         item(new Gun(GunType.ASSAULT_RIFLE), 30, 36);
         item(new Gun(GunType.ASSAULT_RIFLE), 32, 36);
         item(new Gun(GunType.SNIPER), 31, 38);
+        item(new MeleeWeapon(MeleeType.MACHETE), 31, 36);
         item(new StructItem(StructKind.WALL), 33, 38);
         item(Consumable.medkit(), 29, 38);
         item(Consumable.medkit(), 33, 35);
@@ -321,6 +332,7 @@ final class OutpostWorld {
 
         // Ruinas
         item(new Gun(GunType.random()), -65, -3);
+        item(new MeleeWeapon(MeleeType.AXE), -64, -3);
         item(new Gun(GunType.random()), -45, 12);
         zombies(15, -70, -18, -35, 22);
 

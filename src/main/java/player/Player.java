@@ -12,6 +12,7 @@ import items.DroppedItem;
 import items.Gun;
 import items.Inventory;
 import items.Item;
+import items.MeleeWeapon;
 import items.Projectile;
 import items.StructItem;
 import structs.Struct;
@@ -128,13 +129,18 @@ public final class Player {
         BuildTool.update(selectedItem(), aimX, aimY);
     }
 
-    /** Botón izquierdo: dispara el arma o, con un objeto construible en la mano, construye (una vez por clic). */
+    /**
+     * Botón izquierdo: dispara el arma, golpea con el arma cuerpo a cuerpo (manteniéndolo, una y otra vez) o, con un
+     * objeto construible en la mano, construye (una vez por clic).
+     */
     public static void primaryAction(boolean justPressed) {
         Item item = selectedItem();
         if (item instanceof Gun gun) {
             float muzzleX = x + dirX(rotation) * HAND_OFFSET;
             float muzzleY = y + dirY(rotation) * HAND_OFFSET;
             gun.shoot(x, y, muzzleX, muzzleY, rotation, true, justPressed);
+        } else if (item instanceof MeleeWeapon melee) {
+            melee.swing(x, y, rotation);
         } else if (item instanceof StructItem && justPressed) {
             BuildTool.build();
         }
