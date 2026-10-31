@@ -52,6 +52,9 @@ public class Npc {
     private long lastHitTime = GameClock.NEVER;
     /** Hasta cuándo está aturdido (ver {@link #stun}). */
     private long stunnedUntil = GameClock.NEVER;
+    /** Lo a punto que está de atacar, de 0 a 1 (ver {@link #attackCharge}). */
+    private float attackCharge;
+    private long lastAttackTime = GameClock.NEVER;
 
     public Npc(NpcType type) {
         this.type = type;
@@ -141,6 +144,7 @@ public class Npc {
      */
     public void stun(long millis) {
         stunnedUntil = Math.max(stunnedUntil, GameClock.now() + millis);
+        attackCharge = 0; // el ataque que preparaba se cancela
     }
 
     /** Lo aparta {@code distance} px hacia {@code angle} (un golpe, un balazo), si no acaba metido en un muro. */
@@ -153,8 +157,39 @@ public class Npc {
         }
     }
 
+    /** Cuándo se le pasa (o se le pasó) el último aturdimiento; {@link GameClock#NEVER} si nunca lo ha estado. */
+    public long stunnedUntil() {
+        return stunnedUntil;
+    }
+
     public boolean isStunned() {
         return GameClock.now() < stunnedUntil;
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Ataque cuerpo a cuerpo (lo marca el cerebro; el dibujo lo usa para avisar antes de cada ataque)
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Lo a punto que está de atacar: 0 si no está preparando nada, y sube hasta 1 justo antes de hacerlo. Se pone a 0
+     * al aturdirlo.
+     */
+    public float attackCharge() {
+        return attackCharge;
+    }
+
+    public void setAttackCharge(float charge) {
+        attackCharge = Math.clamp(charge, 0, 1);
+    }
+
+    /** Acaba de atacar (p.ej. un mordisco). */
+    public void markAttack() {
+        lastAttackTime = GameClock.now();
+        attackCharge = 0;
+    }
+
+    public long millisSinceAttack() {
+        return GameClock.since(lastAttackTime);
     }
 
     /** Sin headshot un humano se convierte en zombi (tarda un rato en levantarse); si no, muere del todo. */

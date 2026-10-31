@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import assets.TextureId;
 import items.Projectile;
+import npc.brain.ZombieBrain;
 import player.Player;
 import util.GameClock;
 import world.Chunk;
@@ -32,15 +33,38 @@ class NpcTest {
     }
 
     @Test
-    void zombieNextToThePlayerBitesWithCooldown() {
+    void zombieNextToThePlayerBitesAfterAWindupAndWithCooldown() {
         Npc zombie = NpcManager.spawn(NpcType.ZOMBIE, 60, 0, 0);
 
+        zombie.update(); // empieza a preparar el mordisco
+        assertEquals(100, Player.hp, "no muerde nada más llegar");
+        GameClock.tick(ZombieBrain.BITE_WINDUP_MS);
         zombie.update();
         assertTrue(Player.hp < 100, "el zombi debería morder");
         int afterFirstBite = Player.hp;
 
         zombie.update(); // dentro del tiempo de espera: no vuelve a morder
         assertEquals(afterFirstBite, Player.hp);
+    }
+
+    @Test
+    void zombieShowsTheBiteComingAndAStunCancelsIt() {
+        Npc zombie = NpcManager.spawn(NpcType.ZOMBIE, 60, 0, 0);
+        zombie.update();
+        assertEquals(0, zombie.attackCharge(), 0.01f, "acaba de llegar");
+        GameClock.tick(ZombieBrain.BITE_WINDUP_MS / 2);
+        zombie.update();
+        assertEquals(0.5f, zombie.attackCharge(), 0.05f, "a medias");
+        GameClock.tick(ZombieBrain.BITE_WINDUP_MS / 2);
+        zombie.update();
+        assertEquals(0, zombie.attackCharge(), 0.01f, "ya ha mordido");
+        assertEquals(0, zombie.millisSinceAttack());
+
+        GameClock.tick(700); // a 100 ms del siguiente mordisco: lo vuelve a preparar
+        zombie.update();
+        assertTrue(zombie.attackCharge() > 0);
+        zombie.stun(300);
+        assertEquals(0, zombie.attackCharge(), "aturdido, lo cancela");
     }
 
     @Test

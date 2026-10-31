@@ -98,7 +98,8 @@ class MeleeWeaponTest {
         Player.y = 0;
         Player.hp = 100;
         Npc unhit = zombieAt(50, 0);
-        assertTrue(playerHpAfter(unhit, 100) < 100, "sin golpearlo, muerde");
+        assertEquals(100, playerHpAfter(unhit, ZombieBrain.BITE_WINDUP_MS - 20), "aún preparando el mordisco");
+        assertTrue(playerHpAfter(unhit, 50) < 100, "sin golpearlo, muerde");
 
         WorldManager.npcs.clear();
         Player.hp = 100;
@@ -106,7 +107,19 @@ class MeleeWeaponTest {
         new MeleeWeapon(MeleeType.KNIFE).swing(0, 0, 0);
         assertTrue(hit.isStunned());
         assertEquals(100, playerHpAfter(hit, MeleeType.KNIFE.stun - 10));
-        assertTrue(playerHpAfter(hit, 100) < 100, "se le pasa y vuelve a morder");
+        assertEquals(100, playerHpAfter(hit, ZombieBrain.BITE_WINDUP_MS), "tras el aturdimiento vuelve a prepararlo");
+        assertTrue(playerHpAfter(hit, 50) < 100, "y luego muerde");
+    }
+
+    @Test
+    void aBlowCancelsTheBiteBeingPrepared() {
+        Player.x = 0;
+        Player.y = 0;
+        Player.hp = 100;
+        Npc zombie = zombieAt(50, 0);
+        playerHpAfter(zombie, ZombieBrain.BITE_WINDUP_MS - 50); // casi a punto de morder
+        new MeleeWeapon(MeleeType.KNIFE).swing(0, 0, 0);
+        assertEquals(100, playerHpAfter(zombie, MeleeType.KNIFE.stun + ZombieBrain.BITE_WINDUP_MS - 20));
     }
 
     @Test

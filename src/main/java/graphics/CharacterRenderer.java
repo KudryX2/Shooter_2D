@@ -64,6 +64,12 @@ final class CharacterRenderer {
     private static final float SHADOW_WIDTH = 34;
     private static final float SHADOW_HEIGHT = 12;
     private static final int SHADOW_SEGMENTS = 16;
+    /** Aviso de un ataque cuerpo a cuerpo (un mordisco): se echa 2 px atrás y se lanza 3 px hacia delante. */
+    private static final float ATTACK_PULL_BACK = 8;
+    private static final float ATTACK_LUNGE = 12;
+    private static final long ATTACK_LUNGE_MS = 120;
+    /** Cuánto pierde de verde y azul (se vuelve rojo) justo antes de atacar. */
+    private static final float ATTACK_RED = 0.65f;
     /** Duración del parpadeo al recibir un balazo. */
     private static final long HIT_FLASH_MS = 100;
     /** 12x2 píxeles del pixel art (medidas que no sean múltiplo de un píxel salen irregulares). */
@@ -129,9 +135,14 @@ final class CharacterRenderer {
         }
 
         TextureRegion frame = standing(npc.texture, npc.rotation, npc.walkCycle);
-        float x = screenX(npc.x) - SPRITE_WIDTH / 2;
-        float y = screenY(spriteTop(npc.y));
+        float lean = attackLean(npc);
+        float x = screenX(npc.x) - SPRITE_WIDTH / 2 + dirX(npc.rotation) * lean;
+        float y = screenY(spriteTop(npc.y)) + dirY(npc.rotation) * lean;
         tint(npc);
+        float charge = npc.attackCharge();
+        if (charge > 0) { // se va poniendo rojo mientras prepara el ataque
+            Draw.tint(1, 1 - ATTACK_RED * charge, 1 - ATTACK_RED * charge, 1);
+        }
         Draw.region(frame, x, y, SPRITE_WIDTH, SPRITE_HEIGHT, 0);
         Draw.tint(1, 1, 1, 1);
         if (npc.wasHitWithin(HIT_FLASH_MS)) {
@@ -147,6 +158,19 @@ final class CharacterRenderer {
         float muzzleX = screenX(npc.x) + dirX(npc.rotation) * Npc.GUN_OFFSET;
         float muzzleY = screenY(npc.y) - MUZZLE_HEIGHT + dirY(npc.rotation) * Npc.GUN_OFFSET;
         drawGun(gun, muzzleX, muzzleY, npc.rotation);
+    }
+
+    /**
+     * Cuánto se desplaza el sprite hacia donde mira por su ataque cuerpo a cuerpo: se echa atrás mientras lo prepara
+     * y se lanza hacia delante un instante al atacar. Solo el dibujo: su posición no cambia.
+     */
+    static float attackLean(Npc npc) {
+        float lean = -ATTACK_PULL_BACK * npc.attackCharge();
+        long since = npc.millisSinceAttack();
+        if (since >= 0 && since < ATTACK_LUNGE_MS) {
+            lean += ATTACK_LUNGE * (1 - since / (float) ATTACK_LUNGE_MS);
+        }
+        return lean;
     }
 
     /** De espaldas (mirando hacia arriba) lo que lleva en la mano queda detrás del cuerpo. */

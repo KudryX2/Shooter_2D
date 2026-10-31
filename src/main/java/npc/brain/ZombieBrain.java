@@ -17,6 +17,11 @@ public final class ZombieBrain implements NpcBrain {
     public static final float BITE_RANGE = 65;
     private static final int BITE_DAMAGE = 10;
     private static final long BITE_COOLDOWN_MS = 800;
+    /**
+     * Tiempo seguido en rango antes de morder: da margen para apartarse o golpearle. Se reinicia al salir del rango
+     * y al quedar aturdido (un golpe cuerpo a cuerpo cancela el mordisco que estaba preparando).
+     */
+    public static final long BITE_WINDUP_MS = 200;
     private static final float WANDER_RADIUS = 200;
     /** Al deambular va a esta fracción de su velocidad. */
     private static final float WANDER_SPEED_FACTOR = 0.2f;
@@ -25,6 +30,8 @@ public final class ZombieBrain implements NpcBrain {
     private float homeX, homeY;
     private boolean wandering;
     private long lastBite = GameClock.NEVER;
+    /** Desde cuándo está seguido en rango de morder; {@link GameClock#NEVER} si no lo está. */
+    private long inRangeSince = GameClock.NEVER;
 
     @Override
     public void update(Npc npc) {
@@ -34,12 +41,15 @@ public final class ZombieBrain implements NpcBrain {
             homeY = npc.y;
         }
 
+        npc.setAttackCharge(0); // solo lo prepara mientras está en rango (lo pone bite)
         float playerDistance = distance(npc.x, npc.y, Player.x, Player.y);
         if (playerDistance < CHASE_RANGE) {
             wandering = false;
             npc.lookAt(Player.x, Player.y);
             if (playerDistance < BITE_RANGE) {
-                bite();
+                bite(npc);
+            } else {
+                inRangeSince = GameClock.NEVER;
             }
             if (playerDistance > ATTACK_DISTANCE) {
                 npc.walk(1);
@@ -56,12 +66,25 @@ public final class ZombieBrain implements NpcBrain {
         }
     }
 
-    /** Ataque cuerpo a cuerpo al jugador, como mucho una vez cada {@link #BITE_COOLDOWN_MS}. */
-    private void bite() {
+    /**
+     * Ataque cuerpo a cuerpo al jugador, tras {@link #BITE_WINDUP_MS} en rango y como mucho una vez cada
+     * {@link #BITE_COOLDOWN_MS}. Durante los {@link #BITE_WINDUP_MS} anteriores a cada mordisco (también a los
+     * siguientes al primero) va marcando en el NPC lo a punto que está, para que se vea venir.
+     */
+    private void bite(Npc npc) {
         long now = GameClock.now();
-        if (now - lastBite >= BITE_COOLDOWN_MS) {
+        if (inRangeSince == GameClock.NEVER) {
+            inRangeSince = now;
+        }
+        // Mientras está aturdido no se le llama, así que se cuenta desde que se le pasó
+        long preparingSince = Math.max(inRangeSince, npc.stunnedUntil());
+        long nextBite = Math.max(preparingSince + BITE_WINDUP_MS, lastBite + BITE_COOLDOWN_MS);
+        if (now >= nextBite) {
             Player.hp -= BITE_DAMAGE;
             lastBite = now;
+            npc.markAttack();
+        } else {
+            npc.setAttackCharge(1 - (nextBite - now) / (float) BITE_WINDUP_MS);
         }
     }
 }
